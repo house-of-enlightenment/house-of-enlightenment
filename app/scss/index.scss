@@ -1,0 +1,13 @@
+html,
+body {
+    height: 100%;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "Lucida Grande", sans-serif;
+}
