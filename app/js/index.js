@@ -1,5 +1,33 @@
-import R from "ramda";
+import createRenderer from "./three/createRenderer.js";
+import createCamera from "./three/createCamera.js";
+import createScene from "./three/createScene.js";
+import createSphere from "./three/createSphere.js";
+import createLight from "./three/createLight.js";
 
-const message = R.join(" ", ["index.js", "loaded!"]);
+import configureStore from "./redux/configureStore.js";
+import rootReducer from "./redux/rootReducer.js";
 
-console.log(message);
+const store = configureStore(rootReducer);
+
+
+const renderer = createRenderer(store);
+const camera   = createCamera(store);
+const sphere   = createSphere(store);
+const light    = createLight(store);
+const scene    = createScene(store, [ camera, light, sphere ]);
+
+// initialize everything
+store.dispatch({ type: "INIT" });
+
+
+// update loop
+function update() {
+  // Draw!
+  renderer.render(scene, camera);
+
+  // Schedule the next frame.
+  requestAnimationFrame(update);
+}
+
+// Schedule the first frame.
+requestAnimationFrame(update);
