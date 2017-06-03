@@ -1,4 +1,8 @@
-## Cosmic praise
+## House of Enlightenment
+
+https://douglasruuska.com/tower-of-light/
+
+http://mikelambert.me/house-of-enlightenment
 
 ## Quick start
 ```
@@ -6,6 +10,7 @@ npm install -g gulp-cli // installs gulp cli globally
 npm install             // installs projects dependancies
 gulp                    // compiles files and starts server
 ```
+open browser to `http://localhost:3000`
 
 ### Gulp
 See gulp [readme.md](./gulp/readme.md) for setup.
