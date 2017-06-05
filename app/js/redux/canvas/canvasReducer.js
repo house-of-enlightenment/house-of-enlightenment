@@ -1,5 +1,4 @@
 import R from "ramda";
-import createLookupReducer from "../createLookupReducer.js";
 import { CANVAS_SET_SIZE } from "./canvasActions.js";
 
 const initialState = {
@@ -8,9 +7,15 @@ const initialState = {
   selector: ".js-canvas-mount"
 };
 
-export default createLookupReducer({
-  [CANVAS_SET_SIZE]: setSize
-}, initialState);
+export default function canvasReducer(state = initialState, action = {}){
+
+  switch (action.type){
+    case CANVAS_SET_SIZE:
+      return setSize(state, action);
+    default:
+      return state;
+  }
+}
 
 
 function setSize(state, action) {
