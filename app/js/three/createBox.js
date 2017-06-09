@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-export default function createBox(store) {
+export default function createBox() {
 
   // create the box's material
   const boxMaterial =
