@@ -52,7 +52,7 @@ export default function createCamera(store) {
         store.dispatch(tickCamera());
 
         /* movement */
-        const actualMoveSpeed = 1;
+        const actualMoveSpeed = 2;
 
         if ( moving.forward ) camera.translateZ( - actualMoveSpeed );
         if ( moving.backward ) camera.translateZ( actualMoveSpeed );
@@ -112,8 +112,8 @@ const handleMouseMove = (camera, store) => (event) => {
     const movementY = event.movementY || event.mozMovementY || event.webkitMovementY || 0;
 
     ///
-    camera.rotation.y -= Math.max( -π/2, Math.min( π/2, movementX * 0.002 ) );
-    // camera.rotation.x -= movementY * 0.002;
+    camera.rotateY(-Math.max( -π/2, Math.min( π/2, movementX * 0.002 ) ));
+    camera.rotateX(-movementY * 0.002);
     ///
 
 

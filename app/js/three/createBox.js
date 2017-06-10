@@ -21,5 +21,7 @@ export default function createBox() {
     boxMaterial
   );
 
+  box.castShadow = true;
+
   return box;
 }

@@ -25,30 +25,28 @@ const ground   = createGround();
 const scene = createScene(store, [
   camera, light, ambientLight, box, ground
 ]);
-console.log(ground);
-loadSpandex()
-  .then((spandex) => {
-    console.log(spandex);
-  });
+
+
+// loadSpandex()
+//   .then((spandex) => {
+//     console.log(spandex);
+//   });
 
 
 function render() {
 
-  renderer.render( scene, camera );
+  requestAnimationFrame(() => {
+    renderer.render( scene, camera );
+  });
 
 }
 
-function animate() {
+render();
 
-  requestAnimationFrame( animate );
-  render();
 
-}
-
-animate();
 
 // re-render when the store updates
-store.subscribe(() => render);
+store.subscribe(render);
 
 
 // initialize everything

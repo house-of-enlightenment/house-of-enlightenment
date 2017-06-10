@@ -90,17 +90,10 @@ function onMouseMove(state, action, canvas){
 
   newLat = Math.max( - 85, Math.min( 85, newLat ) );
 
-  //  camera.rotation.y -= Math.max( -π/2, Math.min( π/2, movementX * 0.002 ) );
-  //  camera.rotation.x -= movementY * 0.002;
+  const rotationY = -Math.max( -π/2, Math.min( π/2, movementX * 0.002 ) );
+  const rotationX = -movementY * 0.002;
 
   newLat = 0;
-
-  // let phi = THREE.Math.degToRad( 90 - newLat );
-  //
-  // const theta = THREE.Math.degToRad( newLon );
-
-  let phi = movementY * 0.002;
-  let theta = Math.max( -π/2, Math.min( π/2, movementX * 0.002 ) ); 
 
   // contstrain veritcal
   // const verticalMin = 0;
@@ -111,8 +104,8 @@ function onMouseMove(state, action, canvas){
   return {
     ...state,
     look: {
-      phi,
-      theta,
+      rotationY,
+      rotationX,
       lat: newLat,
       lon: newLon
     },
