@@ -10,17 +10,17 @@ const path   = require("path");
 
 
 // tasks: can run in parallel or in series, see "user supplied keys" in quench.js
-const defaultTasks = ["copy", "js", "css", "svg-sprite"];
+const defaultTasks = ["copy", "js", "css"];
 
 
 // default configuration
 // For details, see "user supplied keys" in quench.js
 const defaults = {
-    root: path.resolve(__dirname, "../app"),
-    dest: path.resolve(__dirname, "../build"),
-    tasks: defaultTasks,
-    env: "development", // "development", "production", "local"
-    watch: false
+  root: path.resolve(__dirname, "../app"),
+  dest: path.resolve(__dirname, "../build"),
+  tasks: defaultTasks,
+  env: "development", // "development", "production", "local"
+  watch: false
 };
 
 /* watch for single tasks on the command line, eg "gulp js" */
@@ -33,13 +33,13 @@ quench.singleTasks(defaults);
  */
 gulp.task("default", function(next){
 
-    const config = R.merge(defaults, {
-        env   : "development",
-        watch : true,
-        tasks : [defaultTasks, "browser-sync"]
-    });
+  const config = R.merge(defaults, {
+    env   : "development",
+    watch : true,
+    tasks : [defaultTasks, "browser-sync"]
+  });
 
-    quench.build(config, next);
+  quench.build(config, next);
 
 });
 
@@ -49,12 +49,12 @@ gulp.task("default", function(next){
  */
 gulp.task("prod", function(next){
 
-    const config = R.merge(defaults, {
-        env   : "production",
-        watch : false
-    });
+  const config = R.merge(defaults, {
+    env   : "production",
+    watch : false
+  });
 
-    quench.build(config, next);
+  quench.build(config, next);
 
 });
 
@@ -64,11 +64,11 @@ gulp.task("prod", function(next){
  */
 gulp.task("build", function(next){
 
-    const config = R.merge(defaults, {
-        env   : "development",
-        watch : false
-    });
+  const config = R.merge(defaults, {
+    env   : "development",
+    watch : false
+  });
 
-    quench.build(config, next);
+  quench.build(config, next);
 
 });

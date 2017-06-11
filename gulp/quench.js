@@ -83,7 +83,7 @@ let config = {};
 
 // register the environments with gulp-environments
 environments.forEach(function(environment) {
-    env[environment] = env.make(environment);
+  env[environment] = env.make(environment);
 });
 
 // --watch will be treated as a boolean
@@ -97,7 +97,7 @@ const argv = require("yargs").boolean("watch").argv;
  * @return {String} The relative path to the task file
  */
 function getTaskPath(task) {
-    return path.join(__dirname, "tasks", task + ".js");
+  return path.join(__dirname, "tasks", task + ".js");
 }
 
 
@@ -108,20 +108,20 @@ function getTaskPath(task) {
  * @return {Function} augmented plumber
  */
 module.exports.drano = function drano() {
-    return plumber({
-        errorHandler: function(error) {
+  return plumber({
+    errorHandler: function(error) {
 
-            // gulp notify is freezing jenkins builds, so we're only going to show this message if we're watching
-            if (config.watch) {
-                notify.onError({ title: "<%= error.plugin %>", message: "<%= error.message %>", sound: "Beep" })(error);
-            }
-            else {
-                logError(error.plugin + ": " + error.message);
-                process.exit(1);
-            }
-            this.emit("end");
-        }
-    });
+      // gulp notify is freezing jenkins builds, so we're only going to show this message if we're watching
+      if (config.watch) {
+        notify.onError({ title: "<%= error.plugin %>", message: "<%= error.message %>", sound: "Beep" })(error);
+      }
+      else {
+        logError(error.plugin + ": " + error.message);
+        process.exit(1);
+      }
+      this.emit("end");
+    }
+  });
 };
 
 
@@ -134,9 +134,9 @@ module.exports.drano = function drano() {
  */
 module.exports.registerWatcher = function registerWatch(watcherTask, watcherFiles) {
 
-    config.watchers = config.watchers || [];
+  config.watchers = config.watchers || [];
 
-    config.watchers.push({task: watcherTask, files: watcherFiles});
+  config.watchers.push({ task: watcherTask, files: watcherFiles });
 };
 
 
@@ -149,93 +149,93 @@ module.exports.registerWatcher = function registerWatch(watcherTask, watcherFile
  */
 const build = module.exports.build = function build(_config, callback) {
 
-    config = _config;
+  config = _config;
 
-    if (!config || !config.root || !config.dest || !fileExists(config.root)) {
-        logError("config.root and config.dest are required!");
-        console.log("config:", JSON.stringify(config, null, 2));
-        process.exit();
+  if (!config || !config.root || !config.dest || !fileExists(config.root)) {
+    logError("config.root and config.dest are required!");
+    console.log("config:", JSON.stringify(config, null, 2));
+    process.exit();
+  }
+
+  if (!config.tasks || config.tasks.length === 0) {
+    logError("No tasks loaded! Make sure you pass config.tasks as an array of task names to quench.build(config)!");
+    console.log("config:", JSON.stringify(config, null, 2));
+    process.exit();
+  }
+
+  // if no callback was passed, use an empty function
+  if (typeof(callback) === "undefined") {
+    callback = function() {};
+  }
+
+  // set the environment
+  const environment = argv.env || config.env;
+  if (environment) {
+
+    // make sure config.env is up to date (if argv.env was specified)
+    config.env = environment;
+
+    // validate the env
+    if (environments.indexOf(environment) === -1) {
+      logError("Environment '" + environment + "' not found! Check your spelling or add a new environment in quench.js.");
+      logError("Valid environments: " + environments.join(", "));
+      process.exit();
     }
 
-    if (!config.tasks || config.tasks.length === 0) {
-        logError("No tasks loaded! Make sure you pass config.tasks as an array of task names to quench.build(config)!");
-        console.log("config:", JSON.stringify(config, null, 2));
-        process.exit();
-    }
+    // set NODE_ENV https://facebook.github.io/react/downloads.html#npm
+    process.env.NODE_ENV = environment;
+    // set gulp-environments
+    env.current(env[environment]);
 
-    // if no callback was passed, use an empty function
-    if (typeof(callback) === "undefined") {
-        callback = function() {};
-    }
+    console.log(color.green("Building for '" + config.env + "' environment"));
+  }
 
-    // set the environment
-    const environment = argv.env || config.env;
-    if (environment) {
+  // load local.js config or initalize to empty object
+  const localJs = path.join(__dirname, "local.js");
+  config.local = fileExists(localJs) ? require(localJs) : {};
 
-        // make sure config.env is up to date (if argv.env was specified)
-        config.env = environment;
+  // loadTask: given a task, require it, and pass params
+  const loadTask = function(name) {
+    // console.log("loading task: ", name);
+    const taskFactory = require(getTaskPath(name));
+    taskFactory(config, env);
+  };
 
-        // validate the env
-        if (environments.indexOf(environment) === -1) {
-            logError("Environment '" + environment + "' not found! Check your spelling or add a new environment in quench.js.");
-            logError("Valid environments: " + environments.join(", "));
-            process.exit();
-        }
+  // flatten the task list and load all of them
+  R.compose(
+    R.forEach(loadTask),
+    R.flatten
+  )(config.tasks);
 
-        // set NODE_ENV https://facebook.github.io/react/downloads.html#npm
-        process.env.NODE_ENV = environment;
-        // set gulp-environments
-        env.current(env[environment]);
+  // start watchers if specified
+  if (config.watch && config.watchers) {
 
-        console.log(color.green("Building for '" + config.env + "' environment"));
-    }
+    // start the gulp watch for each registered watcher
+    config.watchers.forEach(function(watcher) {
 
-    // load local.js config or initalize to empty object
-    const localJs = path.join(__dirname, "local.js");
-    config.local = fileExists(localJs) ? require(localJs) : {};
+      logYellow("watching", watcher.task + ":", JSON.stringify(watcher.files, null, 2));
 
-    // loadTask: given a task, require it, and pass params
-    const loadTask = function(name) {
-        // console.log("loading task: ", name);
-        const taskFactory = require(getTaskPath(name));
-        taskFactory(config, env);
-    };
-
-    // flatten the task list and load all of them
-    R.compose(
-        R.forEach(loadTask),
-        R.flatten
-    )(config.tasks);
-
-    // start watchers if specified
-    if (config.watch && config.watchers) {
-
-        // start the gulp watch for each registered watcher
-        config.watchers.forEach(function(watcher) {
-
-            logYellow("watching", watcher.task + ":", JSON.stringify(watcher.files, null, 2));
-
-            // using gulp-watch instead of gulp.watch because gulp-watch will
-            // recognize when new files are added/deleted.
-            watch(watcher.files, function() {
-                gulp.start([watcher.task]);
-            });
-        });
-    }
+      // using gulp-watch instead of gulp.watch because gulp-watch will
+      // recognize when new files are added/deleted.
+      watch(watcher.files, function() {
+        gulp.start([watcher.task]);
+      });
+    });
+  }
 
 
-    // figure out how to run the tasks
-    const tasksAreNested = R.any(Array.isArray, config.tasks);
-    const taskArg = tasksAreNested
-        // if the tasks are nested, they will run in series,
-        // add the callback to the end
-        ? config.tasks.concat(callback)
-        // if not, nest them so config.tasks runs in parallel,
-        // then the callback afterward
-        : [config.tasks, callback];
+  // figure out how to run the tasks
+  const tasksAreNested = R.any(Array.isArray, config.tasks);
+  const taskArg = tasksAreNested
+    // if the tasks are nested, they will run in series,
+    // add the callback to the end
+    ? config.tasks.concat(callback)
+    // if not, nest them so config.tasks runs in parallel,
+    // then the callback afterward
+    : [config.tasks, callback];
 
-    // 3, 2, 1, take off!
-    runSequence.apply(null, taskArg);
+  // 3, 2, 1, take off!
+  runSequence.apply(null, taskArg);
 
 };
 
@@ -247,19 +247,19 @@ const build = module.exports.build = function build(_config, callback) {
  */
 const logYellow = module.exports.logYellow = function logYellow() {
 
-    const args = (Array.prototype.slice.call(arguments));
-    const first = args.shift();
+  const args = (Array.prototype.slice.call(arguments));
+  const first = args.shift();
 
-    if (args.length) {
+  if (args.length) {
 
-        const argString = args.map(function(arg) {
-            return (typeof arg === "object")
-                ? JSON.stringify(arg)
-                : arg.toString();
-        }).join(" ");
+    const argString = args.map(function(arg) {
+      return (typeof arg === "object")
+        ? JSON.stringify(arg)
+        : arg.toString();
+    }).join(" ");
 
-        console.log("[" + color.yellow(first) + "]", argString);
-    }
+    console.log("[" + color.yellow(first) + "]", argString);
+  }
 };
 
 
@@ -269,17 +269,17 @@ const logYellow = module.exports.logYellow = function logYellow() {
  */
 const logError = module.exports.logError = function logError() {
 
-    const args = (Array.prototype.slice.call(arguments));
+  const args = (Array.prototype.slice.call(arguments));
 
-    if (args.length) {
+  if (args.length) {
 
-        const argString = args.map(function(arg) {
-            // return (typeof arg  === "object") ? JSON.stringify(arg) : arg.toString();
-            return arg.toString();
-        }).join("");
+    const argString = args.map(function(arg) {
+      // return (typeof arg  === "object") ? JSON.stringify(arg) : arg.toString();
+      return arg.toString();
+    }).join("");
 
-        console.log("[" + color.red("error") + "]", color.red(argString));
-    }
+    console.log("[" + color.red("error") + "]", color.red(argString));
+  }
 
 };
 
@@ -297,24 +297,24 @@ const logError = module.exports.logError = function logError() {
  */
 module.exports.singleTasks = function singleTasks(config) {
 
-    // argv._ are the non-hyphenated options passed to gulp
-    // eg: `gulp css js`, argv._ would be ["css", "js"]
-    if (argv._.length) {
+  // argv._ are the non-hyphenated options passed to gulp
+  // eg: `gulp css js`, argv._ would be ["css", "js"]
+  if (argv._.length) {
 
-        // filter out tasks that don't exist
-        const tasks = argv._.filter(function(task) {
-            // console.log(getTaskPath(task));
-            return fileExists(getTaskPath(task));
-        });
+    // filter out tasks that don't exist
+    const tasks = argv._.filter(function(task) {
+      // console.log(getTaskPath(task));
+      return fileExists(getTaskPath(task));
+    });
 
-        if (tasks.length) {
+    if (tasks.length) {
 
-            const watch = (typeof argv.watch !== "undefined") ? { watch: argv.watch } : {};
+      const watch = (typeof argv.watch !== "undefined") ? { watch: argv.watch } : {};
 
-            // load and build those tasks
-            build(Object.assign({}, config, watch, {tasks: tasks}));
-        }
+      // load and build those tasks
+      build(Object.assign({}, config, watch, { tasks: tasks }));
     }
+  }
 };
 
 
@@ -324,13 +324,13 @@ module.exports.singleTasks = function singleTasks(config) {
  * @return {Boolean} true if the filepath exists and is readable
  */
 const fileExists = module.exports.fileExists = function fileExists(filepath) {
-    try {
-        fs.accessSync(filepath, fs.R_OK);
-        return true;
-    }
-    catch(e) {
-        return false;
-    }
+  try {
+    fs.accessSync(filepath, fs.R_OK);
+    return true;
+  }
+  catch(e) {
+    return false;
+  }
 };
 
 
@@ -342,32 +342,32 @@ const fileExists = module.exports.fileExists = function fileExists(filepath) {
  */
 module.exports.findPackageJson = function findPackageJson(dirname) {
 
-    // use the current directory if dirname wasn't provided.
-    if (typeof(dirname) === "undefined") {
-        dirname = path.resolve(__dirname);
-    }
+  // use the current directory if dirname wasn't provided.
+  if (typeof(dirname) === "undefined") {
+    dirname = path.resolve(__dirname);
+  }
 
-    // use absolute path
-    dirname = path.resolve(dirname);
+  // use absolute path
+  dirname = path.resolve(dirname);
 
-    // create a filepath to package.json in this directory
-    const filepath = path.resolve(dirname, "package.json");
+  // create a filepath to package.json in this directory
+  const filepath = path.resolve(dirname, "package.json");
 
-    // check if it's there, if so, return the directory
-    if (fileExists(filepath)) {
-        return filepath;
-    }
+  // check if it's there, if so, return the directory
+  if (fileExists(filepath)) {
+    return filepath;
+  }
 
-    // otherwise, check the parent
-    const parent = path.resolve(dirname, "..");
+  // otherwise, check the parent
+  const parent = path.resolve(dirname, "..");
 
-    // if we've hit the root and haven't found it, return undefined
-    if (parent === dirname) {
-        return;
-    }
+  // if we've hit the root and haven't found it, return undefined
+  if (parent === dirname) {
+    return;
+  }
 
-    // otherwise, recurse into the parent
-    return findPackageJson(parent);
+  // otherwise, recurse into the parent
+  return findPackageJson(parent);
 };
 
 
@@ -380,38 +380,38 @@ module.exports.findPackageJson = function findPackageJson(dirname) {
  */
 module.exports.findAllNpmDependencies = function findAllNpmDependencies(entryFilePath){
 
-    try {
-        // eg. import "./polyfill", resolve it to "./polyfill.js" or "./polyfill/index.js"
-        const entryFile = require.resolve(entryFilePath);
+  try {
+    // eg. import "./polyfill", resolve it to "./polyfill.js" or "./polyfill/index.js"
+    const entryFile = require.resolve(entryFilePath);
 
-        // list of all imported modules and files from the entryFilePath
-        // eg. ["react", "../App.jsx"]
-        const imports = detective(fs.readFileSync(entryFile, "utf8"))
-            .map(moduleOrFilePath => {
-                // if this is a relativePath (begins with .), then resolve the path
-                // from the current entryFilePath directory name
-                return (R.test(/^(\.)/, moduleOrFilePath))
-                    ? path.resolve(path.dirname(entryFile), moduleOrFilePath)
-                    : moduleOrFilePath;
-            });
+    // list of all imported modules and files from the entryFilePath
+    // eg. ["react", "../App.jsx"]
+    const imports = detective(fs.readFileSync(entryFile, "utf8"))
+      .map(moduleOrFilePath => {
+        // if this is a relativePath (begins with .), then resolve the path
+        // from the current entryFilePath directory name
+        return (R.test(/^(\.)/, moduleOrFilePath))
+          ? path.resolve(path.dirname(entryFile), moduleOrFilePath)
+          : moduleOrFilePath;
+      });
 
-        // list of all the modules in this entryFilePath
-        const modules = R.reject(fileExists, imports);
+    // list of all the modules in this entryFilePath
+    const modules = R.reject(fileExists, imports);
 
-        // list of all the modules in imported files
-        const importedFilesModules = R.compose(
-            R.chain(findAllNpmDependencies), // recurse, and flatten
-            R.filter(fileExists)             // only look in files, not modules
-        )(imports);
+    // list of all the modules in imported files
+    const importedFilesModules = R.compose(
+      R.chain(findAllNpmDependencies), // recurse, and flatten
+      R.filter(fileExists)             // only look in files, not modules
+    )(imports);
 
-        // a set of the modules from this file + the modules from imported paths
-        const allModules = R.uniq(R.concat( modules, importedFilesModules ));
+    // a set of the modules from this file + the modules from imported paths
+    const allModules = R.uniq(R.concat( modules, importedFilesModules ));
 
-        return allModules;
+    return allModules;
 
-    }
-    catch(e) {
-        logError("findAllNpmDependencies failed :( ", e);
-        return [];
-    }
+  }
+  catch(e) {
+    logError("findAllNpmDependencies failed :( ", e);
+    return [];
+  }
 };

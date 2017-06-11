@@ -4,24 +4,27 @@ const debug  = require("gulp-debug");
 
 module.exports = function copyTask(config, env) {
 
-    // copy files settings
-    const copy = {
-        src: [
-            config.root + "/index.html"
-        ],
-        dest: config.dest
-    };
+  // copy files settings
+  const copy = {
+    src: [
+      config.root + "/index.html",
+      config.root + "/layout.html",
+      config.root + "/models/**",
+      config.root + "/layout/**"
+    ],
+    dest: config.dest
+  };
 
-    // register the watch
-    quench.registerWatcher("copy", copy.src);
+  // register the watch
+  quench.registerWatcher("copy", copy.src);
 
 
-    /* copy files */
-    gulp.task("copy", function(next) {
+  /* copy files */
+  gulp.task("copy", function(next) {
 
-        return gulp.src(copy.src, { base: config.root })
-            .pipe(quench.drano())
-            .pipe(gulp.dest(copy.dest))
-            .pipe(debug({title: "copy:"}));
-    });
+    return gulp.src(copy.src, { base: config.root })
+      .pipe(quench.drano())
+      .pipe(gulp.dest(copy.dest))
+      .pipe(debug({ title: "copy:" }));
+  });
 };
