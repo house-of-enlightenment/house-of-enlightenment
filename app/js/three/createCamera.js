@@ -47,23 +47,23 @@ export default function createCamera(store) {
     const state = store.getState();
 
     const { width, height } = state.canvas;
-    const { moving, mouseIsDown } = state.camera;
+    const { moving } = state.camera;
 
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
 
-
     // fire a move action if we're moving
-    if (isMovingAnyDirection(state.camera) || mouseIsDown){
+    if (isMovingAnyDirection(state.camera)){
 
       // make sure we don't request more than once per frame
       cancelAnimationFrame(nextFrameRequest);
 
+      // TODO abstract out requestAnimationFrame?
       nextFrameRequest = requestAnimationFrame(() => {
         store.dispatch(tickCamera());
 
         /* movement */
-        const actualMoveSpeed = 2;
+        const actualMoveSpeed = 4;
 
         if ( moving.forward ) yaw.translateZ( - actualMoveSpeed );
         if ( moving.backward ) yaw.translateZ( actualMoveSpeed );
@@ -73,17 +73,6 @@ export default function createCamera(store) {
 
         if ( moving.up ) yaw.translateY( actualMoveSpeed );
         if ( moving.down ) yaw.translateY( - actualMoveSpeed );
-
-
-        /* looking */
-        // const targetPosition = new THREE.Vector3( 0, 0, 0 );
-        // const position = camera.position;
-        //
-        // targetPosition.x = position.x + 100 * Math.sin( look.phi ) * Math.cos( look.theta );
-        // targetPosition.y = position.y + 100 * Math.cos( look.phi );
-        // targetPosition.z = position.z + 100 * Math.sin( look.phi ) * Math.sin( look.theta );
-        //
-        // camera.lookAt( targetPosition );
 
       });
     }
@@ -102,31 +91,17 @@ const handleMouseMove = (camera, store, yaw, pitch) => (event) => {
 
   if (mouseIsDown){
 
-
     const movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
     const movementY = event.movementY || event.mozMovementY || event.webkitMovementY || 0;
 
-    ///
-    // camera.rotateY(-Math.max( -π/2, Math.min( π/2, movementX * 0.002 ) ));
-    // camera.rotateX(-movementY * 0.002);
-    ///
-    ///
+    // rotate the containers, not the camera
     yaw.rotation.y += (-Math.max( -π/2, Math.min( π/2, movementX * 0.002 ) ));
     pitch.rotation.x += (-movementY * 0.002);
-    ///
 
-
-    // store.dispatch(mouseMove({
-    //   mouseX: event.pageX,
-    //   mouseY: event.pageY,
-    //   movementX,
-    //   movementY
-    // }));
-
-
+    // TODO use requestAnimationFrame or abstracted version of it
     store.dispatch(tickCamera());
   }
-  // console.log("move", pitch.rotation.x, yaw.rotation.y);
+
 };
 
 
@@ -202,3 +177,39 @@ const handleKeyUp = (store) => (event) => {
   }
 
 };
+
+
+
+
+// const animateWhile = function (){gu
+//
+//   // keep track of requestAnimationFrame
+//   let nextFrameRequest;
+//
+//
+//   return function animateWhile(callback, predicate) {
+//
+//     // function to stop the loop
+//     const stopLoop = () => cancelAnimationFrame(nextFrameRequest);
+//
+//     // make sure we don't request more than once per frame
+//     stopLoop();
+//
+//     const render = () => {
+//       if (predicate()){
+//         nextFrameRequest = requestAnimationFrame(() => {
+//           callback();
+//           render();
+//         });
+//       }
+//       else {
+//         stopLoop();
+//       }
+//     };
+//
+//     render();
+//
+//     return stopLoop;
+//   };
+//
+// }();

@@ -5,32 +5,44 @@ import layout from "../../layout/lower-points.json";
 
 export default function createLEDs() {
 
-  // Set up the sphere vars
-  const RADIUS = 0.5;
-  const SEGMENTS = 16;
-  const RINGS = 16;
-
-
   // re-use these
   // https://stackoverflow.com/questions/22028288/how-to-optimize-rendering-of-many-spheregeometry-in-three-js
-  const geometry = new THREE.SphereBufferGeometry(RADIUS, SEGMENTS, RINGS);
-  const material = new THREE.MeshLambertMaterial({ color: 0xffffff });
+  const geometry = new THREE.BoxGeometry( 1, 1, 1 );
+  const material = new THREE.MeshLambertMaterial( { color: 0xffffff } );
 
 
-  const createLED = (led) => {
+  // using a BoxGeometry instead of a sphere to reduce the triangle count
+  const createLED = ( led ) => {
     const [ x, y, z ] = led.point;
-    const sphere = new THREE.Mesh(geometry, material);
-    sphere.position.x = x;
-    sphere.position.y = y;
-    sphere.position.z = z;
-    return sphere;
+    const box = new THREE.Mesh( geometry, material );
+    box.position.set( x, y, z );
+    return box;
   };
 
-  const leds = R.compose(
-    R.map(createLED)
-    // R.take(10000)
+
+  const ledMesh = R.compose(
+
+    // make the Geometry into a Mesh so we can render it in the scene.
+    ( combined ) => {
+      return new THREE.Mesh( combined, material );
+    },
+
+    // merge all the LED geometries into one so it renders fast
+    // http://www.jbernier.com/merging-geometries-in-three-js
+    R.reduce( ( combined, mesh ) => {
+
+      mesh.updateMatrix(); // << not sure what this is doing, but it's required for this to work
+      combined.merge( mesh.geometry, mesh.matrix );
+      return combined;
+
+    }, new THREE.Geometry() ),
+
+    // create an LED mesh out of each layout object
+    R.map(createLED),
+
+    // R.take(1000)
   )(layout);
 
-  return leds;
+  return ledMesh;
 
 }
