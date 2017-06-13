@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-import { startMoving, stopMoving, tickCamera, setMouseIsDown, mouseMove } from "../redux/camera/cameraActions.js";
+import { startMoving, stopMoving, tickCamera, setMouseIsDown } from "../redux/camera/cameraActions.js";
 import { isMovingAnyDirection } from "../redux/camera/cameraSelectors.js";
 
 const π = Math.PI;
@@ -17,14 +17,24 @@ export default function createCamera(store) {
 
   // https://github.com/mrdoob/three.js/blob/master/examples/js/controls/PointerLockControls.js
   camera.rotation.set( 0, 0, 0 );
-  camera.position.set(0, 0, 300);
+
+  // rotation container for up/down
+  const pitch = new THREE.Object3D();
+  pitch.add( camera );
+
+  // container that doesn't rotate up/down
+  // this is what the arrows or WASD will move
+  const yaw = new THREE.Object3D();
+  yaw.position.y = 10;
+  yaw.add( pitch );
+  yaw.position.set(0, 0, 300);
 
   window.addEventListener("keydown", handleKeyDown(store));
   window.addEventListener("keyup", handleKeyUp(store));
 
   window.addEventListener("mousedown", () => store.dispatch(setMouseIsDown(true)));
   window.addEventListener("mouseup", () => store.dispatch(setMouseIsDown(false)));
-  window.addEventListener("mousemove", handleMouseMove(camera, store));
+  window.addEventListener("mousemove", handleMouseMove(camera, store, yaw, pitch));
 
 
 
@@ -37,10 +47,11 @@ export default function createCamera(store) {
     const state = store.getState();
 
     const { width, height } = state.canvas;
-    const { moving, mouseIsDown, look } = state.camera;
+    const { moving, mouseIsDown } = state.camera;
 
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
+
 
     // fire a move action if we're moving
     if (isMovingAnyDirection(state.camera) || mouseIsDown){
@@ -54,14 +65,14 @@ export default function createCamera(store) {
         /* movement */
         const actualMoveSpeed = 2;
 
-        if ( moving.forward ) camera.translateZ( - actualMoveSpeed );
-        if ( moving.backward ) camera.translateZ( actualMoveSpeed );
+        if ( moving.forward ) yaw.translateZ( - actualMoveSpeed );
+        if ( moving.backward ) yaw.translateZ( actualMoveSpeed );
 
-        if ( moving.left ) camera.translateX( - actualMoveSpeed );
-        if ( moving.right ) camera.translateX( actualMoveSpeed );
+        if ( moving.left ) yaw.translateX( - actualMoveSpeed );
+        if ( moving.right ) yaw.translateX( actualMoveSpeed );
 
-        if ( moving.up ) camera.translateY( actualMoveSpeed );
-        if ( moving.down ) camera.translateY( - actualMoveSpeed );
+        if ( moving.up ) yaw.translateY( actualMoveSpeed );
+        if ( moving.down ) yaw.translateY( - actualMoveSpeed );
 
 
         /* looking */
@@ -80,28 +91,12 @@ export default function createCamera(store) {
   });
 
 
-  return camera;
+  return { camera, container: yaw };
 
 }
 
 
-// function loop(callback) {
-//   // keep track of requestAnimationFrame
-//   let nextFrameRequest;
-//
-//   // function to stop the loop
-//   const stopLoop = () => cancelAnimationFrame(nextFrameRequest);
-//
-//   // make sure we don't request more than once per frame
-//   stopLoop();
-//
-//   nextFrameRequest = requestAnimationFrame(callback);
-//
-//   return stopLoop;
-// }
-
-
-const handleMouseMove = (camera, store) => (event) => {
+const handleMouseMove = (camera, store, yaw, pitch) => (event) => {
 
   const { mouseIsDown } = store.getState().camera;
 
@@ -112,8 +107,12 @@ const handleMouseMove = (camera, store) => (event) => {
     const movementY = event.movementY || event.mozMovementY || event.webkitMovementY || 0;
 
     ///
-    camera.rotateY(-Math.max( -π/2, Math.min( π/2, movementX * 0.002 ) ));
-    camera.rotateX(-movementY * 0.002);
+    // camera.rotateY(-Math.max( -π/2, Math.min( π/2, movementX * 0.002 ) ));
+    // camera.rotateX(-movementY * 0.002);
+    ///
+    ///
+    yaw.rotation.y += (-Math.max( -π/2, Math.min( π/2, movementX * 0.002 ) ));
+    pitch.rotation.x += (-movementY * 0.002);
     ///
 
 
@@ -125,10 +124,11 @@ const handleMouseMove = (camera, store) => (event) => {
     // }));
 
 
-    // store.dispatch(tickCamera());
+    store.dispatch(tickCamera());
   }
-  // console.log("move", pitchObject.rotation.x, yawObject.rotation.y);
+  // console.log("move", pitch.rotation.x, yaw.rotation.y);
 };
+
 
 const handleKeyDown = (store) => (event) => {
 

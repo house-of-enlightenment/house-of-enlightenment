@@ -16,14 +16,14 @@ const store = configureStore(rootReducer);
 
 const ambientLight = new THREE.AmbientLight( 0x404040 ); // soft white light
 const renderer = createRenderer(store);
-const camera   = createCamera(store);
+const { camera, container } = createCamera(store);
 const box      = createBox();
 const light    = createLight(store);
 const ground   = createGround();
 
 
 const scene = createScene(store, [
-  camera, light, ambientLight, box, ground
+  container, light, ambientLight, box, ground
 ]);
 
 
