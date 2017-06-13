@@ -20,11 +20,17 @@ module.exports = function generateLayout(data) {
 
   // 66 strips going around the center
   const strips = R.compose(
+
     R.flatten,
     R.map(i => {
       const angle = (i/66) * 2*π;
-      const xyz = calculatePoint(slice, angle);
-      return { point: R.values(xyz) };
+
+      const points = calculateSlicePoints(slice, angle);
+
+      return R.map((xyz) => {
+        return { point: R.values(xyz) };
+      }, points);
+
     })
   )(R.range(0, 66));
 
@@ -35,7 +41,7 @@ module.exports = function generateLayout(data) {
 
 
 
-function calculatePoint(slice, angle) {
+function calculateSlicePoints(slice, angle) {
 
   // for each point in the slice
   return R.map(point => {
@@ -43,9 +49,9 @@ function calculatePoint(slice, angle) {
     const radius = point.X;
 
     const xyz = {
-      x: cos(angle) * radius / 60,
-      y: point.Y / 60,
-      z: sin(angle) * radius / 60
+      x: cos(angle) * radius,
+      y: point.Y,
+      z: sin(angle) * radius
     };
 
     return xyz;

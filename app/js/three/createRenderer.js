@@ -7,7 +7,7 @@ export default function createRenderer(store) {
   const { selector } = store.getState().canvas;
   const renderer = new THREE.WebGLRenderer();
 
-  renderer.shadowMapEnabled = true;
+  renderer.shadowMap.enabled = true;
   renderer.shadowMapSoft = true;
 
 
