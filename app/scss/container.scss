@@ -14,8 +14,9 @@
 }
 
 .container__bottom {
+    position: relative;
     flex: auto;
-    padding: 20px;
+    // padding: 20px;
     box-sizing: border-box;
     overflow: hidden; // important for resize measurements
 }

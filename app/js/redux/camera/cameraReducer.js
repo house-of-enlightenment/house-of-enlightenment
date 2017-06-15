@@ -8,7 +8,7 @@ const { PI: π } = Math;
 
 const initialState = {
   moving: {
-    forward: false, backward: false, left: false, right: false
+    forward: false, backward: false, left: false, right: false, up: false, down: false
   },
   mouse: { x: 0, y: 0 },
   look: { lat: 0, lon: 0, phi: 0, theta: 0 },

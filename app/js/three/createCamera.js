@@ -142,8 +142,13 @@ const handleKeyDown = (store) => (event) => {
       maybeStartMoving("right");
       break;
 
-    // case 82: /*R*/ this.moveUp = true; break;
-    // case 70: /*F*/ this.moveDown = true; break;
+    case 82: /*R*/
+      maybeStartMoving("up");
+      break;
+
+    case 70: /*F*/
+      maybeStartMoving("down");
+      break;
 
   }
 
@@ -172,6 +177,14 @@ const handleKeyUp = (store) => (event) => {
     case 39: /*right*/
     case 68: /*D*/
       store.dispatch(stopMoving("right"));
+      break;
+
+    case 82: /*R*/
+      store.dispatch(stopMoving("up"));
+      break;
+
+    case 70: /*F*/
+      store.dispatch(stopMoving("down"));
       break;
 
   }

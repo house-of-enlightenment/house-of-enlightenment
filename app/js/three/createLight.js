@@ -15,7 +15,7 @@ export default function createLight(store) {
   //
   // return pointLight;
 
-  const light = new THREE.HemisphereLight( 0xffffbb, 0x080820, 1 );
+  const light = new THREE.HemisphereLight( 0xeeeeff, 0x777788, 0.75 );
 
   return light;
 }

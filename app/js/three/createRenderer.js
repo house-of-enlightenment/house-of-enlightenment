@@ -7,8 +7,8 @@ export default function createRenderer(store) {
   const { selector } = store.getState().canvas;
   const renderer = new THREE.WebGLRenderer();
 
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMapSoft = true;
+  renderer.shadowMap.enabled = false;
+  renderer.shadowMapSoft = false;
 
 
   // Attach the renderer-supplied DOM element to the container
