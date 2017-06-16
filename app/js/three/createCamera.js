@@ -27,7 +27,7 @@ export default function createCamera(store) {
   const yaw = new THREE.Object3D();
   yaw.position.y = 10;
   yaw.add( pitch );
-  yaw.position.set(0, 80, 300);
+  yaw.position.set(0, 80, 500);
 
   window.addEventListener("keydown", handleKeyDown(store));
   window.addEventListener("keyup", handleKeyUp(store));

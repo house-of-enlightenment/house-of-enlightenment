@@ -1,45 +1,74 @@
 import * as THREE from "three";
-import R from "ramda";
 
-import layout from "../../layout/lower-points.json";
+import layout from "../../layout/layout.json";
 
+
+
+// view-source:https://threejs.org/examples/webgl_buffergeometry_points.html
 export default function createLEDs() {
 
-  let hex = Math.floor(Math.random() * 0xffffff);
+  const color = new THREE.Color(Math.floor(Math.random() * 0xffffff));
 
-  // using a sprite instead of a sphere/box to r
-  const createLED = ( led ) => {
+  const geometry = new THREE.BufferGeometry();
+
+
+  const positions = new Float32Array(layout.length * 3);
+  const colors = new Float32Array(layout.length * 3);
+
+  // add a single LED to the buffer geometry
+  const createLED = ( led, i ) => {
+
     const [ x, y, z ] = led.point;
 
-    const material = new THREE.SpriteMaterial( {
-      map: new THREE.CanvasTexture( generateSprite() ),
-      blending: THREE.AdditiveBlending,
-      color: hex
-    } );
+    const j = i * 3;
 
-    const sprite = new THREE.Sprite( material );
-    sprite.position.set( x, y, z );
+    positions[ j ]     = x;
+    positions[ j + 1 ] = y;
+    positions[ j + 2 ] = z;
 
-    return sprite;
+    colors[ j ]     = color.r;
+    colors[ j + 1 ] = color.g;
+    colors[ j + 2 ] = color.b;
+
   };
 
 
   // create an LED mesh out of each layout object
-  const leds = R.map(createLED)(layout);
+  layout.forEach(createLED);
+
+
+
+
+  geometry.addAttribute( "position", new THREE.BufferAttribute( positions, 3 ) );
+  geometry.addAttribute( "color",    new THREE.BufferAttribute( colors,    3 ) );
+
+  geometry.computeBoundingSphere();
+
+
+  const material = new THREE.PointsMaterial( {
+    map: new THREE.CanvasTexture( generateSprite() ),
+    blending: THREE.AdditiveBlending,
+    size: 3
+  } );
+
+  // const material = new THREE.PointsMaterial( { size: 10, vertexColors: THREE.VertexColors } );
+
+  const points = new THREE.Points( geometry, material );
+
 
 
   function update() {
 
-    hex += 5 % 0xffffff;
+    // hex += 5 % 0xffffff;
 
-    leds.forEach(led => {
-      led.material.color.setHex(hex);
-    });
+    // leds.forEach(led => {
+      // led.material.color.setHex(hex);
+    // });
   }
 
   return {
     update,
-    sprites: leds
+    points
   };
 
 }

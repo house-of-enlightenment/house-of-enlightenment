@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import Stats from "stats.js"
+import Stats from "stats.js";
 import createRenderer from "./three/createRenderer.js";
 import createCamera from "./three/createCamera.js";
 import createScene from "./three/createScene.js";
@@ -26,7 +26,7 @@ document.body.appendChild( stats.dom );
 
 
 const scene = createScene(store, [
-  container, ambientLight, ground, ...leds.sprites
+  container, ambientLight, ground, leds.points
 ]);
 
 
@@ -36,9 +36,9 @@ function animate() {
 
   stats.begin();
 
-  console.time("led");
-  leds.update();
-  console.timeEnd("led");
+
+  // leds.update();
+
 
 
   renderer.render( scene, camera );
