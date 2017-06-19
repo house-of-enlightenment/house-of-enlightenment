@@ -37,8 +37,6 @@ export default function createLEDs() {
   layout.forEach(createLED);
 
 
-
-
   geometry.addAttribute( "position", new THREE.BufferAttribute( positions, 3 ) );
   geometry.addAttribute( "color",    new THREE.BufferAttribute( colors,    3 ) );
 
@@ -48,7 +46,9 @@ export default function createLEDs() {
   const material = new THREE.PointsMaterial( {
     map: new THREE.CanvasTexture( generateSprite() ),
     blending: THREE.AdditiveBlending,
-    size: 3
+    size: 3,
+    transparent : true,
+    depthTest: false
   } );
 
   // const material = new THREE.PointsMaterial( { size: 10, vertexColors: THREE.VertexColors } );
