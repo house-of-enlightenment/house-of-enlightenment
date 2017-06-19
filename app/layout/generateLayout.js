@@ -1,5 +1,32 @@
 const R = require("ramda");
 const { PI: π, sin, cos } = Math;
+const Papa = require("papaparse");
+
+
+exports.generateLayoutFromCsvString = function(csvString) {
+
+  return new Promise((resolve, reject) => {
+
+    // parse the csv
+    Papa.parse(csvString, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (response) => {
+
+        const { data, errors, meta } = response;
+
+        // console.log(response);
+
+        if (errors.length > 0){
+          reject(JSON.stringify(errors));
+        }
+        else {
+          resolve(generateLayout(data));
+        }
+      }
+    });
+  });
+};
 
 
 /**
@@ -8,7 +35,7 @@ const { PI: π, sin, cos } = Math;
  *                      $ csvjson Lower\ LED\ Strip.csv > lower-led-data.json
  * @return
  */
-module.exports = function generateLayout(data) {
+const generateLayout = exports.generateLayout = function generateLayout(data) {
 
   // the x/y coordinates for all 127 LEDs in a strip
   // at 0 radians (z will be 0)
