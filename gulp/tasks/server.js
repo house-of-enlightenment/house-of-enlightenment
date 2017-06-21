@@ -2,8 +2,15 @@ const gulp        = require("gulp");
 const quench      = require("../quench.js");
 const path        = require("path");
 const browserSync = require("browser-sync").create();
+const nodemon     = require("nodemon");
 
 module.exports = function(config, env){
+
+
+  if (config.watch !== true){
+    quench.logYellow("WARNING", "Trying to run server without watching!  Server not started.");
+    return;
+  }
 
   // if not using proxy, use this as the server root
   var serverRoot = path.resolve(config.dest);
@@ -25,11 +32,14 @@ module.exports = function(config, env){
   };
 
 
+  // the node server
+  const hostname = "http://localhost:3030";
+
   // set the server root, or proxy if it's set in local.js
   // use proxy if you have a server running the site already (eg, IIS)
-  if (config.local.hostname) {
+  if (hostname) {
     // http://www.browsersync.io/docs/options/#option-proxy
-    settings.proxy = config.local.hostname;
+    settings.proxy = hostname;
   }
   else {
     // http://www.browsersync.io/docs/options/#option-server
@@ -38,12 +48,36 @@ module.exports = function(config, env){
 
 
   /* start browser sync if we have the "watch" option */
-  gulp.task("browser-sync", function(){
+  gulp.task("server", ["nodemon"], function(){
 
-    if (config.watch === true){
-      quench.logYellow("watching", "browser-sync:", JSON.stringify(settings.files, null, 2));
-      browserSync.init(settings);
-    }
+    quench.logYellow("watching", "browser-sync:", JSON.stringify(settings.files, null, 2));
+    browserSync.init(settings);
 
+  });
+
+  gulp.task("nodemon", function (cb) {
+
+    var started = false;
+
+    const serverDir = path.resolve(__dirname, "../../server/");
+
+    return nodemon({
+      script: path.resolve(serverDir, "server.js"),
+      watch: [ serverDir ]
+    }).on("start", function () {
+      // to avoid nodemon being started multiple times
+      // thanks @matthisk
+      if (!started) {
+        cb();
+        started = true;
+      }
+    })
+    .on("restart", function () {
+      console.log("restarted!");
+    })
+    .on("crash", function() {
+      console.error("server.js crashed!\n");
+      // stream.emit("restart", 10)  // restart the server in 10 seconds
+    });
   });
 };

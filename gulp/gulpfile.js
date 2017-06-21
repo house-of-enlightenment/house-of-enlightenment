@@ -18,7 +18,7 @@ const defaultTasks = ["copy", "js", "css"];
 const defaults = {
   root: path.resolve(__dirname, "../app"),
   dest: path.resolve(__dirname, "../build"),
-  tasks: defaultTasks,
+  tasks: [defaultTasks, "server"],
   env: "development", // "development", "production", "local"
   watch: false
 };
@@ -35,8 +35,7 @@ gulp.task("default", function(next){
 
   const config = R.merge(defaults, {
     env   : "development",
-    watch : true,
-    tasks : [defaultTasks, "browser-sync"]
+    watch : true
   });
 
   quench.build(config, next);
