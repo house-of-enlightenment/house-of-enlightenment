@@ -1,13 +1,14 @@
 import * as THREE from "three";
 
 import layout from "../../layout/layout.json";
-
+import chroma from "chroma-js";
 
 
 // view-source:https://threejs.org/examples/webgl_buffergeometry_points.html
 export default function createLEDs() {
 
-  const color = new THREE.Color(Math.floor(Math.random() * 0xffffff));
+  // const color = new THREE.Color(Math.floor(Math.random() * 0xffffff));
+  // const color = new THREE.Color(0xffffff);
 
   const geometry = new THREE.BufferGeometry();
 
@@ -26,11 +27,11 @@ export default function createLEDs() {
     positions[ j + 1 ] = y;
     positions[ j + 2 ] = z;
 
-    colors[ j ]     = color.r;
-    colors[ j + 1 ] = color.g;
-    colors[ j + 2 ] = color.b;
+    const hue = i % 256;
+    setHue(i, hue);
 
   };
+
 
 
   // create an LED mesh out of each layout object
@@ -46,24 +47,61 @@ export default function createLEDs() {
   const material = new THREE.PointsMaterial( {
     map: new THREE.CanvasTexture( generateSprite() ),
     blending: THREE.AdditiveBlending,
-    size: 3,
+    size: 6,
     transparent : true,
-    depthTest: false
+    depthTest: false, // https://github.com/mrdoob/three.js/issues/149
+    vertexColors: THREE.VertexColors // https://github.com/mrdoob/three.js/blob/master/examples/webgl_buffergeometry_points.html
   } );
 
   // const material = new THREE.PointsMaterial( { size: 10, vertexColors: THREE.VertexColors } );
 
   const points = new THREE.Points( geometry, material );
 
+  /** setHue
+    THREE uses 0-1, chroma uses 255
+  */
+  function setHue(i, hue){
 
+    const j = i * 3;
+
+    const [ r, g, b ] = chroma.hsl(hue, 1, 0.5).rgb();
+
+    colors[ j ]     = r / 255;
+    colors[ j + 1 ] = g / 255;
+    colors[ j + 2 ] = b / 255;
+  }
+
+  /** getHue */
+  function getHue(i) {
+
+    const j = i * 3;
+
+    const rgb = [
+      colors[ j ] * 255,
+      colors[ j + 1 ] * 255,
+      colors[ j + 2 ] * 255
+    ];
+
+    const hsl = chroma(rgb).hsl();
+
+    return hsl;
+
+  }
 
   function update() {
 
-    // hex += 5 % 0xffffff;
+    layout.forEach( ( led, i ) => {
+      const [ oldHue ] = getHue(i);
+      
+      // if (i === 0){
+      //   console.log("OLD HUE", oldHue);
+      // }
 
-    // leds.forEach(led => {
-      // led.material.color.setHex(hex);
-    // });
+      setHue(i, (oldHue + 10) % 256);
+
+      geometry.attributes.color.needsUpdate = true;
+
+    });
   }
 
   return {
