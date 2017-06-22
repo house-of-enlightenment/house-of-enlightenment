@@ -11,9 +11,12 @@ fetch("/layout/led-coordinates.csv")
   .then(res => res.text())
   .then(csvString => {
 
-    generateLayoutFromCsvString(csvString)
+    return generateLayoutFromCsvString(csvString)
       .then(data => {
         console.log(data);
       });
 
+  })
+  .catch(error => {
+    console.error("error reading led csv!", error);
   });

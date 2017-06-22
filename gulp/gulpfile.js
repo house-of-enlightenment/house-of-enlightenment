@@ -10,7 +10,7 @@ const path   = require("path");
 
 
 // tasks: can run in parallel or in series, see "user supplied keys" in quench.js
-const defaultTasks = ["copy", "js", "css"];
+const defaultTasks = ["copy", "js", "css", "layout"];
 
 
 // default configuration

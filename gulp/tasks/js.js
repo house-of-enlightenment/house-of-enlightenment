@@ -44,7 +44,8 @@ module.exports = function jsTask(config, env){
         filename: "index.js",
         watch: [
           config.root + "/js/**/*.js",
-          config.root + "/js/**/*.jsx"
+          config.root + "/js/**/*.jsx",
+          config.root + "/layout/**/*.json"
         ]
       },
       {

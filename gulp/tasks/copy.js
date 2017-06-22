@@ -10,7 +10,7 @@ module.exports = function copyTask(config, env) {
       config.root + "/index.html",
       config.root + "/layout.html",
       config.root + "/models/**",
-      config.root + "/layout/**"
+      config.root + "/layout/**" // need csv
     ],
     dest: config.dest
   };
