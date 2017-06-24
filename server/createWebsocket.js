@@ -6,53 +6,21 @@ module.exports = function createWebsocket(server){
 
   wss.on("connection", function connection(ws) {
 
-    ws.on("message", function incoming(json){
+    ws.on("message", function incoming(buffer){
 
-      const actions = getActionsMap(ws, handleMessage);
+      // OPC byte array
+      const byteArray = Array.from(buffer.values());
 
-      /**
-       * Look in the actions lookup and execute if the msgType is there
-       */
-      function handleMessage(message){
-
-        const action = actions[message.msgType];
-
-        if (typeof(action) === "function"){
-          action(message.payload);
+      // broadcast to all clients
+      wss.clients.forEach(function each(client) {
+        if (client !== ws && client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify(byteArray));
         }
-        else {
-          console.log(`message not recognized: ${JSON.stringify(message)}`);
-        }
-
-      }
-
-      /**
-       * Actual code to handle the message
-       */
-      console.log("received: %s", json);
-
-      try {
-
-        const message = JSON.parse(json);
-
-        handleMessage(message);
-      } catch(e) {
-        console.log("can't parse json!");
-      }
+      });
 
     });
 
   });
+
+  return wss;
 };
-
-
-function getActionsMap(ws){
-  /**
-   * Lookup of actions
-   */
-  const actions = {
-
-  };
-
-  return actions;
-}

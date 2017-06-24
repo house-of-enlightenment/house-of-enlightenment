@@ -1,14 +1,32 @@
 import * as THREE from "three";
-
+import R from "ramda";
 import layout from "../../layout/layout.json";
 import chroma from "chroma-js";
 
+const forEachIndexed = R.addIndex(R.forEach);
 
 // view-source:https://threejs.org/examples/webgl_buffergeometry_points.html
 export default function createLEDs() {
 
-  // const color = new THREE.Color(Math.floor(Math.random() * 0xffffff));
-  // const color = new THREE.Color(0xffffff);
+  // listen to the server for OPC messages
+  const socket = new WebSocket("ws://localhost:3030");
+
+  // when we receive an OPC message
+  socket.onmessage = function (event) {
+
+    // http://openpixelcontrol.org/
+    const opcArray = JSON.parse(event.data);
+    const [ channel, command, lengthHigh, lengthLow, ...data ] = opcArray;
+
+    // change the colors of the LEDS based on the OPC signal
+    R.compose(
+      forEachIndexed((rgbArray, i) => {
+        setRGB(i, rgbArray);
+      }),
+      R.splitEvery(3) // r, g, b
+    )(data);
+
+  };
 
   const geometry = new THREE.BufferGeometry();
 
@@ -27,7 +45,12 @@ export default function createLEDs() {
     positions[ j + 1 ] = y;
     positions[ j + 2 ] = z;
 
-    const hue = i % 256;
+    // -33 to 33
+    const strip = Math.floor(i/216) - 33;
+
+    // abs(-256 to 256)
+    const hue = Math.abs(strip * (512/66));
+
     setHue(i, hue);
 
   };
@@ -71,6 +94,20 @@ export default function createLEDs() {
     colors[ j + 2 ] = b / 255;
   }
 
+
+  function setRGB(i, rgbArray){
+
+    const j = i * 3;
+
+    const [ r, g, b ] = rgbArray;
+
+    colors[ j ]     = r / 255;
+    colors[ j + 1 ] = g / 255;
+    colors[ j + 2 ] = b / 255;
+
+    geometry.attributes.color.needsUpdate = true;
+  }
+
   /** getHue */
   function getHue(i) {
 
@@ -90,18 +127,29 @@ export default function createLEDs() {
 
   function update() {
 
-    layout.forEach( ( led, i ) => {
-      const [ oldHue ] = getHue(i);
-      
-      // if (i === 0){
-      //   console.log("OLD HUE", oldHue);
-      // }
 
-      setHue(i, (oldHue + 10) % 256);
+    // layout.forEach( ( led, i ) => {
+    //   // const [ oldHue ] = getHue(i);
+    //   //
+    //   // // if (i === 0){
+    //   // //   console.log("OLD HUE", oldHue);
+    //   // // }
+    //   //
+    //   // setHue(i, (oldHue + 10) % 256);
+    //   //
+    //
+    //   const j = i * 3;
+    //
+    //   colors[ j ]     = Math.random();
+    //   colors[ j + 1 ] = Math.random();
+    //   colors[ j + 2 ] = Math.random();
+    //
+    //   geometry.attributes.color.needsUpdate = true;
+    //
+    //
+    //
+    // });
 
-      geometry.attributes.color.needsUpdate = true;
-
-    });
   }
 
   return {
