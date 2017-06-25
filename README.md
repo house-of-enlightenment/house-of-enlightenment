@@ -5,12 +5,19 @@ https://douglasruuska.com/tower-of-light/
 http://mikelambert.me/house-of-enlightenment
 
 ## Quick start
+### run web server
 ```
 npm install -g gulp-cli // installs gulp cli globally
 npm install             // installs projects dependancies
 gulp                    // compiles files and starts server
 ```
 open browser to `http://localhost:3000`
+
+### run light server
+from https://github.com/anthonyn/hoeTemp
+```
+./python/spireControllerWithAnimations.py -l ../house-of-enlightenment/app/layout/layout.json  -s 127.0.0.1:7890
+```
 
 ### Gulp
 See gulp [readme.md](./gulp/readme.md) for setup.
