@@ -9,9 +9,6 @@ const exec = require("child_process").exec;
 
 module.exports = function copyTask(config, env) {
 
-
-  console.log("root", config.root);
-
   quench.registerWatcher("layout", config.root + "/layout/generateLayout.js");
 
   gulp.task("layout", function(cb) {

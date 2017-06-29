@@ -63,6 +63,7 @@ module.exports = function(config, env){
 
     return nodemon({
       script: path.resolve(serverDir, "server.js"),
+      args: ["--layout", path.resolve(config.root, "./layout/layout.json")],
       watch: [ serverDir ]
     }).on("start", function () {
       // to avoid nodemon being started multiple times

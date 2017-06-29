@@ -6,6 +6,19 @@ const morgan    = require("morgan"); // express logger
 const net       = require("net");
 const WebSocket = require("ws");
 
+
+const yargs = require("yargs")
+  .options({
+    "layout": {
+      alias: "l",
+      describe: "path to layout file",
+      required: true
+    }
+  })
+  .help()
+  .argv;
+
+
 const createWebsocket = require("./createWebsocket.js");
 
 // initialize WebSocket
@@ -13,17 +26,22 @@ createWebsocket(server);
 
 
 const buildDirectory = path.resolve(__dirname, "../build");
+const layoutFile = path.resolve(__dirname, yargs.layout);
 
 app.use(morgan("dev"));     /* debugging: "default", "short", "tiny", "dev" */
 // app.use(express.json());  // for parsing json
 // app.use(express.favicon(__dirname + "/public/favicon.ico"));
 app.use(express.static(buildDirectory));
 
+app.get("/layout.json", function(req, res){
+  res.sendFile(layoutFile);
+});
 
 // forward all traffic to index.html
 app.get("*", function(req, res){
   res.sendFile(path.resolve(buildDirectory, "index.html"));
 });
+
 
 server.listen(3030, () => {
   console.log("Listening on port 3030...");

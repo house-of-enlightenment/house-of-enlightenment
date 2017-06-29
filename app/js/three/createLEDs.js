@@ -1,12 +1,21 @@
 import * as THREE from "three";
 import R from "ramda";
-import layout from "../../layout/layout.json";
 import chroma from "chroma-js";
 
 const forEachIndexed = R.addIndex(R.forEach);
 
-// view-source:https://threejs.org/examples/webgl_buffergeometry_points.html
 export default function createLEDs() {
+
+  // see server.js app.get("/layout.json")
+  // this is specified via command line --layout
+  return fetch("/layout.json")
+    .then(response => response.json())
+    .then(createGeometry);
+
+}
+
+// view-source:https://threejs.org/examples/webgl_buffergeometry_points.html
+function createGeometry(layout) {
 
   // listen to the server for OPC messages
   const socket = new WebSocket("ws://localhost:3030");

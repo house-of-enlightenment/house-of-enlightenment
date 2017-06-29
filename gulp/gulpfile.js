@@ -42,6 +42,21 @@ gulp.task("default", function(next){
 
 });
 
+/**
+ * watch without a server
+ */
+gulp.task("no-server", function(next){
+
+  const config = R.merge(defaults, {
+    env   : "development",
+    watch : true,
+    tasks: defaultTasks
+  });
+
+  quench.build(config, next);
+
+});
+
 
 /**
  * production task
@@ -50,7 +65,8 @@ gulp.task("prod", function(next){
 
   const config = R.merge(defaults, {
     env   : "production",
-    watch : false
+    watch : false,
+    tasks: defaultTasks
   });
 
   quench.build(config, next);
@@ -65,7 +81,8 @@ gulp.task("build", function(next){
 
   const config = R.merge(defaults, {
     env   : "development",
-    watch : false
+    watch : false,
+    tasks: defaultTasks
   });
 
   quench.build(config, next);
