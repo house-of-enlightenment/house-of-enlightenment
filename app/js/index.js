@@ -18,7 +18,7 @@ const renderer = createRenderer(store);
 const { camera, container } = createCamera(store);
 const light    = createLight(store);
 const ground   = createGround();
-const leds  = createLEDs();
+
 
 var stats = new Stats();
 stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
@@ -26,8 +26,14 @@ document.body.appendChild( stats.dom );
 
 
 const scene = createScene(store, [
-  container, ambientLight, ground, leds.points
+  container, ambientLight, ground
 ]);
+
+
+// load the layout and add the LEDs
+createLEDs().then(leds => {
+  scene.add(leds.points);
+});
 
 
 
@@ -36,17 +42,18 @@ function animate() {
 
   stats.begin();
 
-
-  // leds.update();
-
-
-
   renderer.render( scene, camera );
 
   stats.end();
 
   requestAnimationFrame( animate );
 }
+
+// setInterval(() => {
+//
+//   leds.update();
+//
+// }, 100);
 
 animate();
 
