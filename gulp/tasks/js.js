@@ -53,7 +53,7 @@ module.exports = function jsTask(config, env){
       },
       {
         gulpTaskId: "js-layout",
-        entry: `${config.root}/layout/test.js`,
+        entry: `${config.root}/layout/files/test.js`,
         filename: "layout.js",
         watch: [
           config.root + "/layout/**/*.js"

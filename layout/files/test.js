@@ -1,6 +1,6 @@
 // this file should be used in a browser
-import { generateLayoutFromCsvString } from "./generateHoeLayout.js";
-import multiplySpire from "./multiplySpire.js";
+import { generateLayoutFromCsvString } from "../scripts/generateHoeLayout.js";
+import multiplySpire from "../scripts/multiplySpire.js";
 
 
 fetch("/layout/spire.json")
@@ -9,7 +9,7 @@ fetch("/layout/spire.json")
 
 
 // load in data
-fetch("/layout/led-coordinates.csv")
+fetch("/layout/files/led-coordinates.csv")
   .then(res => res.text())
   .then(csvString => {
 

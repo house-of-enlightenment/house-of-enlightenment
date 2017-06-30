@@ -15,7 +15,7 @@ gulp simulator:build    // compile the simulator client files
 
 
 ## Run the simulator
-#### Run with default layout file (`hoeLayout.json`)
+### Run with default layout file (`hoeLayout.json`)
 From the root directory:
 `gulp` or `gulp simulator:server`
 
@@ -23,7 +23,7 @@ server will be running on http://localhost:3030
 
 browser-sync server will be running on http://localhost:3000
 
-#### To specify layout file
+### To specify layout file
 ```
 gulp --layout ./layout/spire-large.json
 ```
@@ -32,21 +32,21 @@ or
 gulp simulator:server --layout ./layout/spire-large.json
 ```
 
-#### To run simulator without gulp
+### To run simulator without gulp
 ```
 node ./simulator/server/server.js --layout layout/hoeLayout.json
 ```
 open browser to http://localhost:3030
 
 
-### Run OPC light server
+## Run OPC light server
 ```
 python ./python/spireControllerWithAnimations.py -l ./layout/hoeLayout.json -s 127.0.0.1:7890
 ```
 The above sends OPC socket messages to http://localhost:7890 (the simulator server is listening for OPC messages on port `7890`)
 
 
-### To develop the simulator
+## To develop the simulator
 ```
 gulp
 ```
