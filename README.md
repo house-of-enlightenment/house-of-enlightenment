@@ -1,36 +1,55 @@
-## House of Enlightenment
+# House of Enlightenment
 
 https://douglasruuska.com/tower-of-light/
 
 http://mikelambert.me/house-of-enlightenment
 
 
-### when you first install this repo
+## When you first install this repo
+Make sure you have the latest LTS of node from https://nodejs.org/en/ (currently `v6.11.0`)
 ```
 npm install -g gulp-cli // installs gulp cli globally
 npm install             // installs projects dependancies
-gulp build              // compile the simulator client files
+gulp simulator:build    // compile the simulator client files
 ```
 
-### run the simulator
+
+## Run the simulator
+#### Run with default layout file (`hoeLayout.json`)
+From the root directory:
+`gulp` or `gulp simulator:server`
+
+server will be running on http://localhost:3030
+
+browser-sync server will be running on http://localhost:3000
+
+#### To specify layout file
 ```
-node ./server/server.js --layout ./app/layout/layout.json
+gulp --layout ./layout/spire-large.json
+```
+or
+```
+gulp simulator:server --layout ./layout/spire-large.json
+```
+
+#### To run simulator without gulp
+```
+node ./simulator/server/server.js --layout layout/hoeLayout.json
 ```
 open browser to http://localhost:3030
 
 
-### run light server
-from https://github.com/anthonyn/hoeTemp
+### Run OPC light server
 ```
-./python/spireControllerWithAnimations.py -l ../house-of-enlightenment/app/layout/layout.json  -s 127.0.0.1:7890
+python ./python/spireControllerWithAnimations.py -l ./layout/hoeLayout.json -s 127.0.0.1:7890
 ```
-The above sends OPC socket messages to http://localhost:7890
+The above sends OPC socket messages to http://localhost:7890 (the simulator server is listening for OPC messages on port `7890`)
 
 
-### to develop the simulator
+### To develop the simulator
 ```
 gulp
 ```
-will start the simulator with default layout and compile simulator client code from `/app`.  This will also start watchers that will reload the browser when files in `/app` are saved.
+This will start the simulator with default layout and compile simulator client code from `/app`.  This will also start watchers that will reload the browser when files in `/app` are saved.
 
 Open browser to http://localhost:3000

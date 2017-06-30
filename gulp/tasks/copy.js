@@ -4,15 +4,17 @@ const debug  = require("gulp-debug");
 
 module.exports = function copyTask(config, env) {
 
+  const client = config.simulator + "/client";
+
   // copy files settings
   const copy = {
     src: [
-      config.root + "/index.html",
-      config.root + "/layout.html",
-      config.root + "/models/**",
-      config.root + "/layout/**" // need csv
+      `${client}/index.html`,
+      `${client}/layout.html`,
+      `${client}/models/**`,
+      `${client}/layout/**` // need csv
     ],
-    dest: config.dest
+    dest: config.simulatorDest
   };
 
   // register the watch
@@ -22,7 +24,7 @@ module.exports = function copyTask(config, env) {
   /* copy files */
   gulp.task("copy", function(next) {
 
-    return gulp.src(copy.src, { base: config.root })
+    return gulp.src(copy.src, { base: client })
       .pipe(quench.drano())
       .pipe(gulp.dest(copy.dest))
       .pipe(debug({ title: "copy:" }));

@@ -1,9 +1,11 @@
 // this file should be used in a browser
+import { generateLayoutFromCsvString } from "./generateHoeLayout.js";
+import multiplySpire from "./multiplySpire.js";
 
-import { generateLayoutFromCsvString } from "./generateLayout.js";
-import Papa from "papaparse";
 
-
+fetch("/layout/spire.json")
+  .then(res => res.json())
+  .then(multiplySpire);
 
 
 // load in data
@@ -13,7 +15,7 @@ fetch("/layout/led-coordinates.csv")
 
     return generateLayoutFromCsvString(csvString)
       .then(data => {
-        console.log(data);
+        // console.log(data);
       });
 
   })

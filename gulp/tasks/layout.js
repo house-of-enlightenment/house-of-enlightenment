@@ -13,15 +13,11 @@ module.exports = function copyTask(config, env) {
 
   gulp.task("layout", function(cb) {
 
-    function callback(err, stdout, stderr) {
-      console.log(stdout);
-      console.log(stderr);
-      cb(err);
-    }
-
+    // run the node script to generated hoeLayout.json
     exec("node nodeGenerateLayout.js", {
       cwd: config.root + "/layout"
-    }, callback);
+    }, cb);
+
   });
 
 }

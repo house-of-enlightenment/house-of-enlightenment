@@ -11,13 +11,16 @@ const babelify    = require("babelify");
 const through2    = require("through2");
 const vinylSource = require("vinyl-source-stream");
 const vinylBuffer = require("vinyl-buffer");
+const findup      = require("find-up");
 const R           = require("ramda");
 
 
 module.exports = function jsTask(config, env){
 
+  const client = `${config.simulator}/client`;
+
   const jsConfig = {
-    dest: config.dest + "/js",
+    dest: `${config.simulatorDest}/js`,
     // js uglify options.
     uglify: {},
     // browserify options
@@ -40,17 +43,17 @@ module.exports = function jsTask(config, env){
     files: [
       {
         gulpTaskId: "js-index",
-        entry: config.root + "/js/index.js",
+        entry: `${client}/js/index.js`,
         filename: "index.js",
         watch: [
-          config.root + "/js/**/*.js",
-          config.root + "/js/**/*.jsx",
-          config.root + "/layout/**/*.json"
+          `${client}/js/**/*.js`,
+          `${client}/js/**/*.jsx`,
+          `${config.root}/layout/**/*.json`
         ]
       },
       {
         gulpTaskId: "js-layout",
-        entry: config.root + "/layout/index.js",
+        entry: `${config.root}/layout/test.js`,
         filename: "layout.js",
         watch: [
           config.root + "/layout/**/*.js"
@@ -135,7 +138,7 @@ module.exports = function jsTask(config, env){
   /* 3. Create entry "js" gulp task to run them all */
 
   // if package.json changes, re-run all js tasks
-  quench.registerWatcher("js", [ quench.findPackageJson() ]);
+  quench.registerWatcher("js", [ findup.sync("package.json") ]);
 
   // a list of all the dynamic tasks we made above + js-libraries
   const allTasks = R.compose(

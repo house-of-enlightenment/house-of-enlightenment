@@ -19,6 +19,7 @@
     "eslint": "^3.4.0",
     "eslint-plugin-class-property": "^1.0.3",
     "eslint-plugin-react": "^6.2.0",
+    "findup": "^0.1.5",
     "gulp": "^3.9.1",
     "gulp-autoprefixer": "^3.1.1",
     "gulp-cached": "^1.1.0",

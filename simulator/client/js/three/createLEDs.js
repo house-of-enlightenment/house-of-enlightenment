@@ -161,10 +161,7 @@ function createGeometry(layout) {
 
   }
 
-  return {
-    update,
-    points
-  };
+  return points;
 
 }
 

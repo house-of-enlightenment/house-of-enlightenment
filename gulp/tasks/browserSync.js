@@ -13,7 +13,7 @@ module.exports = function(config, env){
   }
 
   // if not using proxy, use this as the server root
-  var serverRoot = path.resolve(config.dest);
+  var serverRoot = path.resolve(config.simulatorDest);
 
   // browserSync settings
   var settings = {
@@ -24,7 +24,7 @@ module.exports = function(config, env){
 
     // watch these files and reload the browser when they change
     files: [
-      config.dest + "/**",
+      config.simulatorDest + "/**",
       // prevent browser sync from reloading twice when the regular file (eg. index.js)
       // and the map file (eg. index.js.map) are generated
       "!**/*.map"
@@ -48,7 +48,7 @@ module.exports = function(config, env){
 
 
   /* start browser sync if we have the "watch" option */
-  gulp.task("server", ["nodemon"], function(){
+  gulp.task("browserSync", ["nodemon"], function(){
 
     quench.logYellow("watching", "browser-sync:", JSON.stringify(settings.files, null, 2));
     browserSync.init(settings);
@@ -59,11 +59,13 @@ module.exports = function(config, env){
 
     var started = false;
 
-    const serverDir = path.resolve(__dirname, "../../server/");
+    const serverDir = path.resolve(config.simulator, "./server/");
+
+    const layout = config.yargs.layout || path.resolve(config.root, "./layout/hoeLayout.json");
 
     return nodemon({
       script: path.resolve(serverDir, "server.js"),
-      args: ["--layout", path.resolve(config.root, "./layout/layout.json")],
+      args: ["--layout", layout],
       watch: [ serverDir ]
     }).on("start", function () {
       // to avoid nodemon being started multiple times

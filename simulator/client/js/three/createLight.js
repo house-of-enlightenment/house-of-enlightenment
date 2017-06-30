@@ -1,7 +1,7 @@
 import * as THREE from "three";
 
 
-export default function createLight(store) {
+export default function createLight() {
 
   // create a point light
   // const pointLight = new THREE.SpotLight(0xFFFFFF);

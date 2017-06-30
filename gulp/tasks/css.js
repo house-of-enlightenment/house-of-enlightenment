@@ -10,13 +10,15 @@ const sourcemaps   = require("gulp-sourcemaps");
 
 module.exports = function cssTask(config, env) {
 
+  const client = `${config.simulator}/client`;
+
   // css settings
   const cssConfig = {
     src: [
-      config.root + "/scss/**/*.scss",
-      config.root + "/js/**/*.scss"
+      `${client}/scss/**/*.scss`,
+      `${client}/js/**/*.scss`
     ],
-    dest: config.dest + "/css/",
+    dest: `${config.simulatorDest}/css/`,
 
     filename: "index.css",
 

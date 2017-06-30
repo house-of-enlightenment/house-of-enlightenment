@@ -1,6 +1,6 @@
 /**
  *    Quench: utilities for gulp builds
- *    v3.0.1
+ *    v3.1.0
  */
 const gulp         = require("gulp");
 const plumber      = require("gulp-plumber");
@@ -43,7 +43,6 @@ const environments = ["development", "production", "local"];
  *     logYellow
  *     logError
  *     singleTasks
- *     findPackageJson
  *     findAllNpmDependencies
  */
 
@@ -87,9 +86,46 @@ environments.forEach(function(environment) {
 });
 
 // --watch will be treated as a boolean
-// https://www.npmjs.com/package/yargs#and-if-you-really-want-to-get-all-descriptive-about-it
-const argv = require("yargs").boolean("watch").argv;
+// can do --no-watch to set it to false
+const yargOptions = {
+  "watch": {
+    default: undefined,
+    type: "boolean"
+  },
+  "env": {
+    default: undefined,
+    type: "string"
+  },
+  "layout": {
+    default: undefined,
+    type: "string"
+  }
+};
 
+const yargs = require("yargs").options(yargOptions).argv;
+
+
+/**
+ * @param  {Object} config config object
+ * @param  {Object} yargs  yargs object
+ * @return {Object} new config object with the appropriate values extracted from yargs
+ */
+function mergeYargs({ config, yargs }) {
+
+  // extract only the keys defined in yargOptions
+  const yargValues = R.pick(R.keys(yargOptions), yargs);
+
+  // yargValues explicitly sets undefined values,
+  // eg { watch: undefined } instead of just { }
+  // R.merge results in watch being undefined instead of the value of watch in config
+  // so we need a custom merge
+  const mergeSkipUndefined = (a, b) => (typeof(b) === "undefined") ? a : b;
+
+  return R.merge(
+    R.mergeWith(mergeSkipUndefined, config, yargValues),
+    { yargs }
+  );
+}
 
 /**
  * getTaskPath: Given a task name, get the require-able path to the javascript file
@@ -149,10 +185,11 @@ module.exports.registerWatcher = function registerWatch(watcherTask, watcherFile
  */
 const build = module.exports.build = function build(_config, callback) {
 
-  config = _config;
+  // add yargs to config
+  config = mergeYargs( { config: _config, yargs } );
 
-  if (!config || !config.root || !config.dest || !fileExists(config.root)) {
-    logError("config.root and config.dest are required!");
+  if (!config || !config.root || !fileExists(config.root)) {
+    logError("config.root is required!");
     console.log("config:", JSON.stringify(config, null, 2));
     process.exit();
   }
@@ -168,24 +205,21 @@ const build = module.exports.build = function build(_config, callback) {
     callback = function() {};
   }
 
-  // set the environment
-  const environment = argv.env || config.env;
-  if (environment) {
 
-    // make sure config.env is up to date (if argv.env was specified)
-    config.env = environment;
+  // set the environment
+  if (config.env) {
 
     // validate the env
-    if (environments.indexOf(environment) === -1) {
-      logError("Environment '" + environment + "' not found! Check your spelling or add a new environment in quench.js.");
+    if (environments.indexOf(config.env) === -1) {
+      logError("Environment '" + config.env + "' not found! Check your spelling or add a new environment in quench.js.");
       logError("Valid environments: " + environments.join(", "));
       process.exit();
     }
 
     // set NODE_ENV https://facebook.github.io/react/downloads.html#npm
-    process.env.NODE_ENV = environment;
+    process.env.NODE_ENV = config.env;
     // set gulp-environments
-    env.current(env[environment]);
+    env.current(env[config.env]);
 
     console.log(color.green("Building for '" + config.env + "' environment"));
   }
@@ -206,6 +240,7 @@ const build = module.exports.build = function build(_config, callback) {
     R.forEach(loadTask),
     R.flatten
   )(config.tasks);
+
 
   // start watchers if specified
   if (config.watch && config.watchers) {
@@ -293,26 +328,27 @@ const logError = module.exports.logError = function logError() {
  *         $ gulp css                  // will use the environment from config
  *         $ gulp css --env production // will use the production environment
  *         $ gulp css --watch          // will override the watch configuration
+ *         $ gulp css --no-watch       // will override the watch configuration
  *         $ gulp css js               // will run both css and js tasks
  */
 module.exports.singleTasks = function singleTasks(config) {
 
-  // argv._ are the non-hyphenated options passed to gulp
-  // eg: `gulp css js`, argv._ would be ["css", "js"]
-  if (argv._.length) {
+  // yargs._ are the non-hyphenated options passed to gulp
+  // eg: `gulp css js`, yargs._ would be ["css", "js"]
+  if (yargs._.length) {
 
     // filter out tasks that don't exist
-    const tasks = argv._.filter(function(task) {
+    const tasks = yargs._.filter(function(task) {
       // console.log(getTaskPath(task));
       return fileExists(getTaskPath(task));
     });
 
     if (tasks.length) {
 
-      const watch = (typeof argv.watch !== "undefined") ? { watch: argv.watch } : {};
+      const combinedConfig = mergeYargs({ config, yargs });
 
       // load and build those tasks
-      build(Object.assign({}, config, watch, { tasks: tasks }));
+      build(R.merge(combinedConfig, { tasks }));
     }
   }
 };
@@ -331,43 +367,6 @@ const fileExists = module.exports.fileExists = function fileExists(filepath) {
   catch(e) {
     return false;
   }
-};
-
-
-/**
- * findPackageJson: recursively walk up the directory ancestry to find package.json
- * @param  {String} dirname: optional, will use __dirname if missing
- * @return {String} the filepath of package.json in this directory,
- *                  or any parent directory
- */
-module.exports.findPackageJson = function findPackageJson(dirname) {
-
-  // use the current directory if dirname wasn't provided.
-  if (typeof(dirname) === "undefined") {
-    dirname = path.resolve(__dirname);
-  }
-
-  // use absolute path
-  dirname = path.resolve(dirname);
-
-  // create a filepath to package.json in this directory
-  const filepath = path.resolve(dirname, "package.json");
-
-  // check if it's there, if so, return the directory
-  if (fileExists(filepath)) {
-    return filepath;
-  }
-
-  // otherwise, check the parent
-  const parent = path.resolve(dirname, "..");
-
-  // if we've hit the root and haven't found it, return undefined
-  if (parent === dirname) {
-    return;
-  }
-
-  // otherwise, recurse into the parent
-  return findPackageJson(parent);
 };
 
 

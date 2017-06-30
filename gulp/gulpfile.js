@@ -16,9 +16,10 @@ const defaultTasks = ["copy", "js", "css", "layout"];
 // default configuration
 // For details, see "user supplied keys" in quench.js
 const defaults = {
-  root: path.resolve(__dirname, "../app"),
-  dest: path.resolve(__dirname, "../build"),
-  tasks: [defaultTasks, "server"],
+  root: path.resolve(__dirname, ".."),
+  simulator: path.resolve(__dirname, "../simulator"),
+  simulatorDest: path.resolve(__dirname, "../simulator/build"),
+  tasks: [defaultTasks, "browserSync"],
   env: "development", // "development", "production", "local"
   watch: false
 };
@@ -27,11 +28,12 @@ const defaults = {
 quench.singleTasks(defaults);
 
 
+gulp.task("default", ["simulator:server"]);
+
 /**
- * development task
- * Default Task (run when you run 'gulp').
+ * server task - to develop and/or run the simulator
  */
-gulp.task("default", function(next){
+gulp.task("simulator:server", function(next){
 
   const config = R.merge(defaults, {
     env   : "development",
@@ -42,26 +44,11 @@ gulp.task("default", function(next){
 
 });
 
-/**
- * watch without a server
- */
-gulp.task("no-server", function(next){
-
-  const config = R.merge(defaults, {
-    env   : "development",
-    watch : true,
-    tasks: defaultTasks
-  });
-
-  quench.build(config, next);
-
-});
-
 
 /**
  * production task
  */
-gulp.task("prod", function(next){
+gulp.task("simulator:prod", function(next){
 
   const config = R.merge(defaults, {
     env   : "production",
@@ -77,7 +64,7 @@ gulp.task("prod", function(next){
 /**
  * build for development without a watcher
  */
-gulp.task("build", function(next){
+gulp.task("simulator:build", function(next){
 
   const config = R.merge(defaults, {
     env   : "development",
