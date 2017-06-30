@@ -17,20 +17,17 @@ gulp simulator:build    // compile the simulator client files
 ## Run the simulator
 ### Run with default layout file (`hoeLayout.json`)
 From the root directory:
-`gulp` or `gulp simulator:server`
+```
+gulp simulator
+```
 
 server will be running on http://localhost:3030
 
-browser-sync server will be running on http://localhost:3000
-
 ### To specify layout file
 ```
-gulp --layout ./layout/spire-large.json
+gulp simulator --layout ./layout/spire-large.json
 ```
-or
-```
-gulp simulator:server --layout ./layout/spire-large.json
-```
+
 
 ### To run simulator without gulp
 ```

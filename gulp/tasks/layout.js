@@ -1,9 +1,7 @@
-const gulp   = require("gulp");
+const gulp = require("gulp");
 const quench = require("../quench.js");
-const debug  = require("gulp-debug");
-
-
 const exec = require("child_process").exec;
+
 
 module.exports = function copyTask(config, env) {
 

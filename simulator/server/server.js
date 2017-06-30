@@ -28,6 +28,7 @@ createWebsocket(server);
 const buildDirectory = path.resolve(__dirname, "../build");
 const layoutDirectory = path.resolve(__dirname, "../../layout");
 const layoutFile = path.resolve(process.cwd(), yargs.layout);
+const indexHtml = path.resolve(buildDirectory, "index.html");
 
 app.use(morgan("dev"));     /* debugging: "default", "short", "tiny", "dev" */
 // app.use(express.json());  // for parsing json
@@ -44,22 +45,28 @@ app.use("/layout", express.static(layoutDirectory));
 // forward all traffic to index.html
 app.get("/", function(req, res){
 
-  try {
-    // check to see if the layout file exists, will throw if not
-    fs.accessSync(layoutFile, fs.R_OK);
-    res.sendFile(path.resolve(buildDirectory, "index.html"));
+  // check if index.html is there
+  if (!fileExists(indexHtml)){
+    res.status(500).send("<h2>index.html doesn't exits!!</h2> did you run <code>gulp simulator:build</code>?");
+    return;
   }
-  catch (e) {
+
+  // check to see if the layout file exists
+  if (!fileExists(layoutFile)){
     res.status(500).send(`<h2>layout file doesn't exits!!</h2> <code>${layoutFile}</code>`);
+    return;
   }
+
+  // send index.html
+  res.sendFile(indexHtml);
+
 });
 
 app.use(express.static(buildDirectory));
 
 
-console.log("LAYOUT", layoutDirectory);
-
 server.listen(3030, () => {
+  // eslint-disable-next-line no-console
   console.log("Listening on port 3030...");
 });
 
@@ -86,5 +93,19 @@ net.createServer(function (socket) {
 
 
 
+/**
+ * fileExists
+ * @param  {String} filepath : path to the file
+ * @return {Boolean} true if the filepath exists and is readable
+ */
+function fileExists(filepath) {
+  try {
+    fs.accessSync(filepath, fs.R_OK);
+    return true;
+  }
+  catch(e) {
+    return false;
+  }
+};
 
 module.exports = app;

@@ -28,12 +28,11 @@ const defaults = {
 quench.singleTasks(defaults);
 
 
-gulp.task("default", ["simulator:server"]);
 
 /**
  * server task - to develop and/or run the simulator
  */
-gulp.task("simulator:server", function(next){
+gulp.task("default", function(next){
 
   const config = R.merge(defaults, {
     env   : "development",

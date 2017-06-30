@@ -230,8 +230,14 @@ const build = module.exports.build = function build(_config, callback) {
 
   // loadTask: given a task, require it, and pass params
   const loadTask = function(name) {
-    // console.log("loading task: ", name);
+    // console.log("loading task: ", getTaskPath(name));
     const taskFactory = require(getTaskPath(name));
+
+    if (typeof(taskFactory) !== "function"){
+      logError(`Failed to load ${getTaskPath(name)}!  Did you remember to export the factory function?\neg. module.exports = function (config, env) { ... }`);
+      return;
+    }
+
     taskFactory(config, env);
   };
 
