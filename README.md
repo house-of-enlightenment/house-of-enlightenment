@@ -4,7 +4,7 @@ https://douglasruuska.com/tower-of-light/
 
 http://mikelambert.me/house-of-enlightenment
 
-
+s
 ## When you first install this repo
 Make sure you have the latest LTS of node from https://nodejs.org/en/ (currently `v6.11.0`)
 ```
