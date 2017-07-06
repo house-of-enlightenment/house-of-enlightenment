@@ -15,12 +15,13 @@ module.exports = function layoutTask(config, env) {
       cwd: `${config.root}/javascript/layout-generator`
     }, cb);
 
-    generate.stdout.on("data", (data) => console.log(data.toString()));
+    generate.stdout.pipe(process.stdout);
 
-    generate.stderr.on("data", (data) => console.error(data.toString()));
+    generate.stderr.pipe(process.stderr)
 
-    generate.on("exit", (code) =>
-      console.log("server stopped with code " + code.toString()));
+    generate.on("exit", (code) => {
+      console.log("server stopped with code " + code.toString());
+    });
 
   });
 

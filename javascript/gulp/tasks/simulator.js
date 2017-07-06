@@ -15,12 +15,13 @@ module.exports = function simulatorTask(config, env) {
       { cwd: `${config.root}` }
     );
 
-    server.stdout.on("data", (data) => console.log(data.toString()));
+    server.stdout.pipe(process.stdout);
 
-    server.stderr.on("data", (data) => console.error(data.toString()));
+    server.stderr.pipe(process.stderr);
 
-    server.on("exit", (code) =>
-      console.log("server stopped with code " + code.toString()));
+    server.on("exit", (code) => {
+      console.log("server stopped with code " + code.toString());
+    })
 
   });
 
