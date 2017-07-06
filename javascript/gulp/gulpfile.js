@@ -16,7 +16,7 @@ const defaultTasks = ["copy", "js", "css", "layout"];
 // default configuration
 // For details, see "user supplied keys" in quench.js
 const defaults = {
-  root: path.resolve(__dirname, ".."),
+  root: path.resolve(__dirname, "../.."),
   simulator: path.resolve(__dirname, "../simulator"),
   simulatorDest: path.resolve(__dirname, "../simulator/build"),
   tasks: [defaultTasks, "browserSync"],

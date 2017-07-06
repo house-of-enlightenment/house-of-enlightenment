@@ -26,7 +26,7 @@ createWebsocket(server);
 
 
 const buildDirectory = path.resolve(__dirname, "../build");
-const layoutDirectory = path.resolve(__dirname, "../../layout");
+const layoutDirectory = path.resolve(__dirname, "../../../layout");
 const layoutFile = path.resolve(process.cwd(), yargs.layout);
 const indexHtml = path.resolve(buildDirectory, "index.html");
 

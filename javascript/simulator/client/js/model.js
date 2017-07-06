@@ -27,7 +27,7 @@ const camera =
 
 const scene = new THREE.Scene();
 
-console.log(scene);
+
 
 // Add the camera to the scene.
 scene.add(camera);

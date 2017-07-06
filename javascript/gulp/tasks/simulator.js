@@ -11,7 +11,7 @@ module.exports = function simulatorTask(config, env) {
     // run the node server
     // https://stackoverflow.com/questions/10232192/exec-display-stdout-live
     const server = spawn("node",
-      ["simulator/server/server.js", "--layout", layout],
+      ["javascript/simulator/server/server.js", "--layout", layout],
       { cwd: `${config.root}` }
     );
 

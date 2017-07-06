@@ -1,6 +1,6 @@
 // this file should be used in a browser
-import { generateLayoutFromCsvString } from "../scripts/generateHoeLayout.js";
-import multiplySpire from "../scripts/multiplySpire.js";
+import { generateLayoutFromCsvString } from "./generateHoeLayout.js";
+import multiplySpire from "./multiplySpire.js";
 
 
 fetch("/layout/spire.json")
