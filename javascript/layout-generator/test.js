@@ -3,7 +3,7 @@ import { generateLayoutFromCsvString } from "./generateHoeLayout.js";
 import multiplySpire from "./multiplySpire.js";
 
 
-fetch("/layout/spire.json")
+fetch("/layout/files/spire.json")
   .then(res => res.json())
   .then(multiplySpire);
 
@@ -15,7 +15,7 @@ fetch("/layout/files/led-coordinates.csv")
 
     return generateLayoutFromCsvString(csvString)
       .then(data => {
-        // console.log(data);
+        console.log(data);
       });
 
   })

@@ -7,8 +7,8 @@ http://mikelambert.me/house-of-enlightenment
 ## When you first install this repo
 Make sure you have the latest LTS of node from https://nodejs.org/en/ (currently `v6.11.0`)
 ```
-npm install -g gulp-cli // installs gulp cli globally
 cd javascript
+npm install -g gulp-cli // installs gulp cli globally (only needed once per computer)
 npm install             // installs projects dependancies
 gulp simulator:build    // compile the simulator client files
 ```

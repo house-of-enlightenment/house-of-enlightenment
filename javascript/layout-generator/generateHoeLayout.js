@@ -1,12 +1,13 @@
 const R = require("ramda");
 const { PI: π, sin, cos } = Math;
 const Papa = require("papaparse");
+const mapIndexed = R.addIndex(R.map);
 
 
 /**
  *
  * @param {Array} data javascript array of { X, Y }
- * @return
+ * @return see readme.md in /layout/readme.md
  */
 const generateLayout = exports.generateLayout = function generateLayout(data) {
 
@@ -15,70 +16,99 @@ const generateLayout = exports.generateLayout = function generateLayout(data) {
   // We need the top strip to have 90 pixels,
   // and we need the bottom string to be ordered top > bottom intead of bottom > top
 
-  // the x/y coordinates for all 216 LEDs in a strip
+
+  // the x/y coordinates for all 216 LEDs in the top/bottom strips
   // at 0 radians (z will be 0)
-  const slice = R.compose(
+  const sliceAt0 = R.compose(
 
     ([ top, bottom ]) => {
 
       // in real life, the top strip will have 90 leds
       const newTop = R.take(90, top);
 
-      // top > bottom
+      // the order in the csv is bottom > top
+      // we want top > bottom
       const newBottom = R.reverse(bottom);
 
-      return R.concat(newTop, newBottom);
+      return { top: newTop, bottom: newBottom };
     },
 
     // split the top and bottom strips
     R.splitAt(92),
 
     R.map(R.map(Number)) // for each point, then for X/Y, convert to Number
+
     // R.map(R.pick(["X", "Y"])) // we just need X and Y
   )(data);
+
 
   // 66 strips going around the center
   const strips = R.compose(
 
     R.flatten,
 
-    R.map(i => {
-      const angle = (i/66) * 2*π;
-
-      const points = calculateSlicePoints(slice, angle);
-
-      return R.map((xyz) => {
-        return { point: R.values(xyz) };
-      }, points);
-
-    })
+    R.map(processSlice(sliceAt0))
 
   )(R.range(0, 66));
 
-
   return strips;
-
 };
 
 
+/**
+ * @param sliceAt0 {Object} { top: [], bottom: [] }
+ * @param sliceIndex {Number} 0 - 65
+ * @return {Array} [{ point: {}, topOrBottom: "top" }, ... ]
+ */
+const processSlice = R.curry((sliceAt0, sliceIndex) => {
 
-function calculateSlicePoints(slice, angle) {
+  const angle = (sliceIndex/66) * 2*π;
 
-  // for each point in the slice
-  return R.map(point => {
-
+  // point { X, Y } (from csv)
+  const calculateXYZ = point => {
     const radius = point.X;
-
-    const xyz = {
+    return  {
       x: cos(angle) * radius,
       y: point.Y,
       z: sin(angle) * radius
     };
+  }
 
-    return xyz;
 
-  })(slice);
-}
+  // for each strip top/bottom
+  const topAndBottomPoints = R.mapObjIndexed(
+    (strip, topOrBottom) => {
+      // for each point in the strip
+      return mapIndexed((point, i) => {
+
+        // figure out the row (top > bottom). 0 based
+        const row = (topOrBottom === "top")
+          ? 89 - i
+          : i + 90;
+
+        const section = Math.floor(sliceIndex / 11);
+// 
+        return {
+          angle,
+          point: R.values(calculateXYZ(point)),
+          row,
+          section,
+          slice: sliceIndex,
+          strip: topOrBottom === "top" ? sliceIndex * 2 : sliceIndex * 2 + 1,
+          stripIndex: i,
+          topOrBottom
+        }
+      })(strip)
+    }
+  )(sliceAt0);
+
+  // merge top/bottom together
+  return R.compose(
+    R.flatten,
+    R.values
+  )(topAndBottomPoints)
+});
+
 
 
 

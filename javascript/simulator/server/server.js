@@ -35,14 +35,17 @@ app.use(morgan("dev"));     /* debugging: "default", "short", "tiny", "dev" */
 // app.use(express.favicon(__dirname + "/public/favicon.ico"));
 
 
+// special url for the given layout.json file via --layout
 app.get("/layout.json", function(req, res){
   res.sendFile(layoutFile);
 });
 
-// server the layout directory
+
+// serve the layout directory
 app.use("/layout", express.static(layoutDirectory));
 
-// forward all traffic to index.html
+
+// index.html
 app.get("/", function(req, res){
 
   // check if index.html is there
@@ -61,6 +64,7 @@ app.get("/", function(req, res){
   res.sendFile(indexHtml);
 
 });
+
 
 app.use(express.static(buildDirectory));
 

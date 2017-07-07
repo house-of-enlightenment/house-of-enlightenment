@@ -5,7 +5,9 @@ const spawn = require("child_process").spawn;
 
 module.exports = function layoutTask(config, env) {
 
-  quench.registerWatcher("layout", `${config.root}/layout/scripts/generateLayout.js`);
+  quench.registerWatcher("layout", [
+      `${config.root}/layout-generator/**`
+  ]);
 
   // genreate hoeLayout.json
   gulp.task("layout", function(cb) {
@@ -13,14 +15,15 @@ module.exports = function layoutTask(config, env) {
     // run the node script to generated hoeLayout.json
     const generate = spawn("node", ["nodeGenerateLayout.js"], {
       cwd: `${config.root}/javascript/layout-generator`
-    }, cb);
+    });
 
     generate.stdout.pipe(process.stdout);
 
     generate.stderr.pipe(process.stderr)
 
+    // when the script is done
     generate.on("exit", (code) => {
-      console.log("server stopped with code " + code.toString());
+      cb();
     });
 
   });
