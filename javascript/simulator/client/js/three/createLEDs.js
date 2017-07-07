@@ -54,6 +54,18 @@ function createGeometry(layout) {
     positions[ j + 1 ] = y;
     positions[ j + 2 ] = z;
 
+    setRainbowHueForLED(i);
+
+    // if (led.row < 3){
+    //   setHue(i, 0);
+    // }
+    // else {
+    //   setRGB(i, [0,50,0]);
+    // }
+
+  };
+
+  function setRainbowHueForLED(i){
     // -33 to 33
     const strip = Math.floor(i/216) - 33;
 
@@ -61,8 +73,7 @@ function createGeometry(layout) {
     const hue = Math.abs(strip * (512/66));
 
     setHue(i, hue);
-
-  };
+  }
 
 
 
@@ -114,7 +125,6 @@ function createGeometry(layout) {
     colors[ j + 1 ] = g / 255;
     colors[ j + 2 ] = b / 255;
 
-    geometry.attributes.color.needsUpdate = true;
   }
 
   /** getHue */

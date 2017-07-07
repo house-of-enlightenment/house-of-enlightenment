@@ -27,8 +27,8 @@ x, y, z positions
 The point in physical space in inches from the center on the ground.
 
 #### row : `Number`
-Index from 0-215. top > bottom.  
-eg. the top pixel in a slice is 0, the bottom is 215.  This is independent of how the LEDs are wired.
+Index from 0-215. bottom > top.  
+eg. the bottom pixel in a slice is 0, the top is 215.  This is independent of how the LEDs are wired.
 
 #### section : `Number`
 0-5.  Which of the 6 sections this LED is in.

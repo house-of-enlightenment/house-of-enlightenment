@@ -78,16 +78,17 @@ const processSlice = R.curry((sliceAt0, sliceIndex) => {
   // for each strip top/bottom
   const topAndBottomPoints = R.mapObjIndexed(
     (strip, topOrBottom) => {
+
       // for each point in the strip
       return mapIndexed((point, i) => {
 
         // figure out the row (top > bottom). 0 based
         const row = (topOrBottom === "top")
-          ? 89 - i
-          : i + 90;
+          ? i + 126
+          : 125 - i;
 
         const section = Math.floor(sliceIndex / 11);
-// 
+
         return {
           angle,
           point: R.values(calculateXYZ(point)),
