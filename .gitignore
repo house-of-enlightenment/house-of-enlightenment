@@ -2,5 +2,5 @@ javascript/simulator/build*
 node_modules
 .DS_Store
 python/*.pyc
-python/*.pyc
+python/*.pyo
 python/.idea
