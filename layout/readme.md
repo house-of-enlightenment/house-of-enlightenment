@@ -51,7 +51,6 @@ This will be 0-89 for the top LED strip and 0-125 for the bottom LED strip.
 
 ## To generate hoeLayout.json
 ```
-cd javascript
 gulp layout
 ```
 
