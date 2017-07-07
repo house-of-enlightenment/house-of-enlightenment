@@ -34,10 +34,17 @@ Recommended use:
 """
 
 import socket
+import struct
+
+kinet_data = [0x0401dc4a, 0x0100, 0x0101, 0x00000000, 0x00, 0x00, 0x0000, 0xffffffff, 0x00]
+kinet_header = struct.pack(">IHHIBBHIB", *kinet_data)
+kinet_maxpixels = 170
+opc_maxpixels = 120 * 48
+max_channels = 16
 
 class Client(object):
 
-    def __init__(self, server_ip_port, long_connection=True, verbose=False):
+    def __init__(self, server_ip_port, long_connection=True, verbose=False, protocol="opc"):
         """Create an OPC client object which sends pixels to an OPC server.
 
         server_ip_port should be an ip:port or hostname:port as a single string.
@@ -60,7 +67,8 @@ class Client(object):
 
         """
         self.verbose = verbose
-
+        self.address = server_ip_port
+        
         self._long_connection = long_connection
 
         self._ip, self._port = server_ip_port.split(':')
@@ -68,9 +76,20 @@ class Client(object):
 
         self._socket = None  # will be None when we're not connected
 
+        self.protocol = protocol
+        self.socket_type = socket.SOCK_STREAM if self.protocol == "opc" else socket.SOCK_DGRAM
+        self.header = bytearray(4) if self.protocol == "opc" else kinet_header
+        self.message = bytearray()
+        self.channelPixels = []
+
+        for i in range(0, max_channels):
+            pixels = [(0,0,0)] * (opc_maxpixels if self.protocol == "opc" else kinet_maxpixels)
+            self.channelPixels.append(pixels)
+
+
     def _debug(self, m):
         if self.verbose:
-            print('    %s' % str(m))
+            print '    %s' % str(m)
 
     def _ensure_connected(self):
         """Set up a connection if one doesn't already exist.
@@ -83,9 +102,9 @@ class Client(object):
             return True
 
         try:
-            self._debug('_ensure_connected: trying to connect...')
-            self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self._socket.settimeout(1)
+            self._debug('_ensure_connected: trying to connect to ' + self._ip + ' using protocol ' + self.protocol + '...')
+            self._socket = socket.socket(socket.AF_INET, self.socket_type)
+            self._socket.settimeout(0.5)
             self._socket.connect((self._ip, self._port))
             self._debug('_ensure_connected:    ...success')
             return True
@@ -144,24 +163,31 @@ class Client(object):
             self._debug('put_pixels: not connected.  ignoring these pixels.')
             return False
 
+        if (len(self.message) != len(pixels) * 3 + len(self.header)):
+            self.message = bytearray(len(pixels) * 3 + len(self.header))
+
         # build OPC message
-        len_hi_byte = int(len(pixels)*3 / 256)
-        len_lo_byte = (len(pixels)*3) % 256
-        header = chr(channel) + chr(0) + chr(len_hi_byte) + chr(len_lo_byte)
-        pieces = [header]
-        for r, g, b in pixels:
-            r = min(255, max(0, int(r)))
-            g = min(255, max(0, int(g)))
-            b = min(255, max(0, int(b)))
-            pieces.append(chr(r) + chr(g) + chr(b))
-        if bytes is str:
-            message = ''.join(pieces)
-        else:
-            message = bytes(map(ord, ''.join(pieces)))
+        if (self.protocol == "opc"):
+            len_hi_byte = int(len(pixels)*3 / 256)
+            len_lo_byte = (len(pixels)*3) % 256
+            self.header = struct.pack('BBBB', channel, 0, len_hi_byte, len_lo_byte)
+
+        self.headerl = len(self.header)
+
+        for index, b in enumerate(self.header):
+            self.message[index] = b
+        
+        for index, (r, g, b) in enumerate(pixels):
+            r = int(r)
+            g = int(g)
+            b = int(b)
+            self.message[self.headerl + index * 3 + 0] = 255 if r > 255 else (0 if r < 0 else r)
+            self.message[self.headerl + index * 3 + 1] = 255 if g > 255 else (0 if g < 0 else g)
+            self.message[self.headerl + index * 3 + 2] = 255 if b > 255 else (0 if b < 0 else b)
 
         self._debug('put_pixels: sending pixels to server')
         try:
-            self._socket.send(message)
+            self._socket.send(self.message)
         except socket.error:
             self._debug('put_pixels: connection lost.  could not send pixels.')
             self._socket = None
