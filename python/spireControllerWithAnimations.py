@@ -215,9 +215,9 @@ def spatial_stripes(t, coord, ii, n_pixels):
     """
     # make moving stripes for x, y, and z
     x, y, z = coord
-    r = color_utils.cos(x, offset=t / 4, period=1, minn=0, maxx=0.7)
-    g = color_utils.cos(y, offset=t / 4, period=1, minn=0, maxx=0.7)
-    b = color_utils.cos(z, offset=t / 4, period=1, minn=0, maxx=0.7)
+    r = color_utils.scaled_cos(x, offset=t / 4, period=1, minn=0, maxx=0.7)
+    g = color_utils.scaled_cos(y, offset=t / 4, period=1, minn=0, maxx=0.7)
+    b = color_utils.scaled_cos(z, offset=t / 4, period=1, minn=0, maxx=0.7)
     r, g, b = color_utils.contrast((r, g, b), 0.5, 2)
 
     # make a moving white dot showing the order of the pixels in the layout file
