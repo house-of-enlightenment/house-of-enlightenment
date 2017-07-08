@@ -93,7 +93,9 @@ net.createServer(function (socket) {
 
   });
 
-}).listen(7890);
+}).listen(7890, () => {
+      console.log("Forwarding OPC input from port 7890 to 3030");
+});
 
 
 

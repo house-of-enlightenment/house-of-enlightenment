@@ -124,6 +124,7 @@ function createGeometry(layout) {
     colors[ j ]     = r / 255;
     colors[ j + 1 ] = g / 255;
     colors[ j + 2 ] = b / 255;
+    geometry.attributes.color.needsUpdate = true;
 
   }
 
