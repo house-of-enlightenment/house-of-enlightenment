@@ -3,17 +3,7 @@
 """A demo client for Open Pixel Control
 http://github.com/zestyping/openpixelcontrol
 
-Sends red, green, and blue to the first 3 LEDs.
-
-To run:
-First start the gl simulator using, for example, the included "wall" layout
-
-    make
-    bin/gl_server layouts/wall.json
-
-Then run this script in another shell to send colors to the simulator
-
-    example_clients/example.py
+Sends all pixels as red to the address
 
 """
 
@@ -22,6 +12,11 @@ import random
 import opc
 
 ADDRESS = '127.0.0.1:7890'
+num_strips=66
+pixels_per_strip=216
+
+
+numPixels = num_strips*pixels_per_strip
 
 # Create a client object
 client = opc.Client(ADDRESS)
@@ -37,14 +32,13 @@ else:
 
 #my_pixels = [(255,0,0)] +([(0,0,0)] * 113)
 
-numPixels = 30 * 16 * 48
 
 my_pixels = [(255,0,0)] * numPixels
 
 # Send pixels forever
 while True:
     if client.put_pixels(my_pixels, channel=0):
-        print 'sent', a
+        print 'sent'
     else:
         print 'not connected'
     time.sleep(1)
