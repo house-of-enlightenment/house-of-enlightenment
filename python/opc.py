@@ -80,12 +80,6 @@ class Client(object):
         self.socket_type = socket.SOCK_STREAM if self.protocol == "opc" else socket.SOCK_DGRAM
         self.header = bytearray(4) if self.protocol == "opc" else kinet_header
         self.message = bytearray()
-        self.channelPixels = []
-
-        for i in range(0, max_channels):
-            pixels = [(0,0,0)] * (opc_maxpixels if self.protocol == "opc" else kinet_maxpixels)
-            self.channelPixels.append(pixels)
-
 
     def _debug(self, m):
         if self.verbose:
