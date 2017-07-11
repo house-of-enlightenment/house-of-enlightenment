@@ -36,10 +36,13 @@ class SceneManager(object):
             if not pkgName.startswith("_"):
                 try:
                     effectDict = importlib.import_module(pkgName)
-                    for effectName in effectDict.__all__:
-                        print "Registering %s" % effectName
-                        #TODO clean this up
-                        self.scenes.append([effectDict,effectName])
+                    for scene in effectDict.__all__:
+                        if(isinstance(scene, SceneDefinition)):
+                            print "Registering %s" % scene
+                            #TODO clean this up
+                            self.scenes.append([effectDict,scene])
+                        else:
+                            print "Got scene %s not of type SceneDefinition" % scene
                         """
                         effectFunc = getattr(effectDict, effectName)
                         args, varargs, keywords, defaults = inspect.getargspec(effectFunc)
@@ -66,9 +69,9 @@ class SceneManager(object):
         """
 
     def init_scene(self):
-        scene_names = self.scenes[self.sceneIndex]
+        scene_info = self.scenes[self.sceneIndex]
         #TODO: Clean this up
-        self.curr_scene=getattr(scene_names[0], scene_names[1])()
+        self.curr_scene=scene_info[1].init_scene(scene_info[0])
         pass
 
     def serve_forever(self):
@@ -100,3 +103,44 @@ class SceneManager(object):
     	if args[0] > 0:
     		self.next_scene(args)
 
+#TODO: do the python way
+def get_first_non_empty(pixels):
+    for pix in pixels:
+        if pix is not None:
+            return pix
+
+class SceneDefinition(object):
+    def __init__(self, background, *foregrounds):
+        self.background_class=background
+        self.foreground_classes = [] if foregrounds is None else list(foregrounds)
+        self.instances = []
+
+
+    def __str__(self):
+        #TODO: Include foregrounds
+        #TODO: What's the python way of doing this?
+        return "Scene: %s" % self.background_class
+
+
+    def init_scene(self, package):
+        """Initialize a scene"""
+        #TODO: init instances
+        #TODO: cleanup
+
+        """
+        #Debugging:
+        print "Foreground:", self.foreground_classes, type(self.foreground_classes)
+        print "Background:", self.background_class
+        print "Foreground and background", self.foreground_classes + [self.background_class]
+        print "Package: ", package
+        """
+        self.instances = [getattr(package, clazz)() for clazz in self.foreground_classes + [self.background_class]]
+        return self
+
+
+    def next_frame(self, layout, time, n_pixels):
+        #Now get all the pixels, ordering from the first foreground to the last foreground to the background
+        all_pixels = [layer.next_frame(layout, time, n_pixels) for layer in self.instances]
+        #Smush them together, taking the first non-None pixel available
+        pixels = [get_first_non_empty(pixs) for pixs in zip(*all_pixels)]
+        return pixels

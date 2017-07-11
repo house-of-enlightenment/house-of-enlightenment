@@ -32,7 +32,7 @@ except ImportError:
 
 import opc
 import osc_utils
-import sceneManager
+import scene_manager
 from threading import Thread
 
 #TODO: remove these
@@ -97,7 +97,7 @@ def start_opc(server):
 
 
 def start_scene_manager(osc, opc, config):
-    mgr = sceneManager.SceneManager(osc, opc, config.layout, config.fps)
+    mgr = scene_manager.SceneManager(osc, opc, config.layout, config.fps)
     #Run scene manager in the background
     thread = Thread(target=mgr.serve_forever)
     thread.setName("SceneManager")

@@ -1,16 +1,23 @@
 import sys
 sys.path.append('..')
 import color_utils
+from scene_manager import SceneDefinition
 
-__all__= ["AllRed", "SpatialStripes", "GentleGlow"]
+__all__= [
+    SceneDefinition("DadJokes"),
+    SceneDefinition("SpatialStripesBackground"),
+    SceneDefinition("DadJokes", "MovingDot"),
+    SceneDefinition("SpatialStripesBackground", "MovingDot"),
+    SceneDefinition("GentleGlow")
+]
 
 #TODO: base class
-class AllRed(object):
+class DadJokes(object):
     """Always return red"""
     def next_frame(self, layout, time, n_pixels):
         return [(255,0,0) for ii, coord in enumerate(layout)] #TODO: faster with proper python array usage
 
-class SpatialStripes(object):
+class SpatialStripesBackground(object):
 
     def next_frame(self, layout, time, n_pixels):
         return [self.spatial_stripes(time, coord, ii, n_pixels) for ii, coord in enumerate(layout)]
@@ -34,26 +41,23 @@ class SpatialStripes(object):
         g = color_utils.scaled_cos(y, offset=t / 4, period=1, minn=0, maxx=0.7)
         b = color_utils.scaled_cos(z, offset=t / 4, period=1, minn=0, maxx=0.7)
         r, g, b = color_utils.contrast((r, g, b), 0.5, 2)
+        return (r*256, g*256, b*256)
 
+class MovingDot(object):
+    def next_frame(self, layout, time, n_pixels):
+        return [self.moving_dot(time, coord, ii, n_pixels) for ii, coord in enumerate(layout)]
+
+    def moving_dot(self, t, coord, ii, n_pixels):
         # make a moving white dot showing the order of the pixels in the layout file
         spark_ii = (t*80) % n_pixels
         spark_rad = 8
         spark_val = max(0, (spark_rad - color_utils.mod_dist(ii, spark_ii, n_pixels)) / spark_rad)
+        if(spark_val==0):
+            return None
         spark_val = min(1, spark_val*2)
-        r += spark_val
-        g += spark_val
-        b += spark_val
 
-        # apply gamma curve
-        # only do this on live leds, not in the simulator
-        #r, g, b = color_utils.gamma((r, g, b), 2.2)
-
-        return (r*256, g*256, b*256)
-
-
-    def clear_pixels(pixels, n_pixels):
-        pixels=[(0,0,0)] * n_pixels
-        return pixels
+        spark_val*=256
+        return (spark_val, spark_val, spark_val)
 
 class GentleGlow(object):
 
@@ -84,3 +88,9 @@ class GentleGlow(object):
     # def singlePixelSelector(xPos, yPos, color):
     #     pixels=[(0,0,0,)] * n_pixels
     #     pixels[(yPos * 30) + xPos] = color
+
+
+#TODO move me
+def clear_pixels(pixels, n_pixels):
+    pixels=[(0,0,0)] * n_pixels
+    return pixels
