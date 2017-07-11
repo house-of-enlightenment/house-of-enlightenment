@@ -4,12 +4,13 @@
 # Manager for scene selection
 
 import sys, time
-from osc import Controller
+from threading import Thread
 from opc import Client
+import atexit
 
 class SceneManager(object):
     def __init__(self, osc, opc, layout, fps):
-        self.osc = osc
+        self.osc_server = osc
         self.opc = opc
         self.layout=layout
         self.fps=fps
@@ -18,7 +19,6 @@ class SceneManager(object):
         self.scenes = []
         self.init_scenes()
         self.curr_scene = self.scenes[self.sceneIndex]
-
 
 
     def init_scenes(self):
@@ -65,23 +65,19 @@ class SceneManager(object):
             p = reduce(lambda a, b: a + b, map(lambda c: [c] * 16, p))
         """
 
-    def init_handlers(self):
-        self.server.addMsgHandler("/nextEffect", self.next_scene_handler)
-        #TODO: Buttons, Lidar from file
-
     def init_scene(self):
         scene_names = self.scenes[self.sceneIndex]
+        #TODO: Clean this up
         self.curr_scene=getattr(scene_names[0], scene_names[1])()
         pass
 
-    def start(self):
+    def serve_forever(self):
         self.init_scene()
-
         n_pixels = len(self.layout)
         pixels = [(0, 0, 0,)] * n_pixels
         start_time = time.time()
 
-        print '    sending pixels forever (control-c to exit)...'
+        print '    sending pixels forever (quit or control-c to exit)...'
         print
 
         while True:
@@ -94,9 +90,13 @@ class SceneManager(object):
     def next_scene(self, args):
         #TODO: concurrency issues
         self.sceneIndex = (self.sceneIndex + 1) % len(self.scenes)
+        print '    New scene has index %s. Initializing now' % self.sceneIndex
+        self.init_scene()
+        print '    Scene changed'
 
 #----- Handlers -----
     def next_scene_handler(self, path, tags, args, source):
         #TODO: Call specific scenes
     	if args[0] > 0:
     		self.next_scene(args)
+

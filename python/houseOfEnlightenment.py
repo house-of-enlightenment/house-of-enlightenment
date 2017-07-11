@@ -23,29 +23,26 @@ from __future__ import division
 import time
 import sys
 import optparse
+from time import sleep
+
 try:
     import json
 except ImportError:
     import simplejson as json
 
 import opc
-import osc
+import osc_utils
 import sceneManager
-import color_utils
+from threading import Thread
 
 #TODO: remove these
-globalParams = {}
-globalParams["effectCount"] = 5
-globalParams["effectIndex"] = 0
-globalParams["xPos"] = 0
-globalParams["yPos"] = 0
-globalParams["colorR"] = 0
-globalParams["colorG"] = 0
-globalParams["colorB"] = 0
+#globalParams = {}
+#globalParams["effectCount"] = 5
+#globalParams["effectIndex"] = 0
 
 #-------------------------------------------------------------------------------
 # command line
-def parseCommandLine():
+def parse_command_line():
     parser = optparse.OptionParser()
     parser.add_option('-l', '--layout', dest='raw_layout',
                         action='store', type='string',
@@ -66,14 +63,14 @@ def parseCommandLine():
         print
         sys.exit(1)
 
-    options.layout = parseLayout(options.raw_layout)
+    options.layout = parse_layout(options.raw_layout)
 
     return options
 
 #-------------------------------------------------------------------------------
 # parse layout file.
 # TODO: groups, strips, clients, channels
-def parseLayout(layout):
+def parse_layout(layout):
     print
     print '    parsing layout file'
     print
@@ -85,17 +82,10 @@ def parseLayout(layout):
 
     return coordinates
 
-#-------------------------------------------------------------------------------
-def initOSC(server):
-    controller = osc.Controller()
-    controller.connect()
-    #TODO: registration
-    return controller
-
 
 #-------------------------------------------------------------------------------
 # connect to OPC server
-def initOPC(server):
+def start_opc(server):
     client = opc.Client(server)
     if client.can_connect():
         print '    connected to %s' % server
@@ -105,112 +95,39 @@ def initOPC(server):
     print
     return client
 
-def initSceneManager(osc, opc, config):
-    return sceneManager.SceneManager(osc, opc, config.layout, config.fps)
+
+def start_scene_manager(osc, opc, config):
+    mgr = sceneManager.SceneManager(osc, opc, config.layout, config.fps)
+    #Run scene manager in the background
+    thread = Thread(target=mgr.serve_forever)
+    thread.setName("SceneManager")
+    thread.setDaemon(True)
+    thread.start()
+    print "Started scene manager"
+    return mgr
 
 
 #-------------------------------------------------------------------------------
 def launch():
-    config = parseCommandLine()
-    osc = initOSC
-    opc = initOPC(config.server)
-    scene = initSceneManager(osc, opc, config)
-    scene.start() #run forever
+    config = parse_command_line()
+    osc_server = osc_utils.create_osc_server()
+
+    opc = start_opc(config.server)
+    scene = start_scene_manager(osc_utils, opc, config)
+   # scene.start() #run forever
+
+    osc_server.addMsgHandler("/handleKeyboard", osc_utils.keyboard_handler)
+    osc_server.addMsgHandler("/nextScene", scene.next_scene_handler)
+
+    from OSC import OSCMessage
+    osc_client = osc_utils.get_osc_client()
+    while True:
+        key = raw_input("Send a keyboard command: ")
+        if(key.lower() in ["next","nextscene"]):
+            osc_utils.send_simple_message(osc_client, "/nextScene")
+        else:
+            osc_utils.send_simple_message(osc_client, "/handleKeyboard", key)
+        sleep(.1)
 
 if __name__=='__main__':
     launch();
-
-#-------------------------------------------------------------------------------
-# handlers for OSC
-
-#TODO: marked for removal
-def nextEffect(args):
-    print "next effect message received"
-    if globalParams["effectIndex"] >= globalParams["effectCount"]:
-        globalParams["effectIndex"] = 0
-    else:
-        globalParams["effectIndex"] += 1
-    print "effect index is ", globalParams["effectIndex"]
-
-def toggleHandler(args):
-    print "toggle " + args
-
-def buttonHandler(addr, args):
-	print "Button pressed", addr
-
-def faderHandler(addr, args):
-    if addr[0] == "xy":
-        globalParams["xPos"] = args[0] * 30
-        globalParams["yPos"] = args[1] * 16
-    if addr[0] == "fader1":
-        globalParams["colorR"] = args[0]
-    if addr[0] == "fader2":
-        globalParams["colorG"] = args[0]
-    if addr[0] == "fader3":
-        globalParams["colorB"] = args[0]
-
-    print "fader", addr, args
-
-# globalParams["xPos"]
-# globalParams["xPos"]
-# globalParams["color"]
-
-
-def user_callback(path, tags, args, source):
-    # which user will be determined by path:e
-    # we just throw away all slashes and join together what's left
-    user = ''.join(path.split("/"))
-    # tags will contain 'fff'
-    # args is a OSCMessage with data
-    # source is where the message came from (in case you need to reply)
-    print ("Now do something with", user,args[2],args[0],1-args[1])
-
-"""
-#-------------------------------------------------------------------------------
-# Create OSC listener for timeline/effects control
-if osc_support:
-
-    def default_handler(path, tags, args, source):
-        #print path, tags, args, source
-        addr = path.split("/")
-        #print "address 1 is" , addr[1]
-        if addr[1] == "button":
-            addr2 = addr[2:]
-            buttonHandler(addr2, args)
-            return
-        if addr[1] =="fader":
-            addr2 = addr[2:]
-            faderHandler(addr2, args)
-
-        #print "address is ", addr
-        print path, tags, args, source
-
-
-    def next_effect_handler(path, tags, args, source):
-    	if args[0] > 0:
-    		nextEffect(args)
-
-    def toggle_handler(path, tags, args, source):
-        toggleHandler(args)
-
-    def button_handler(path, tags, args, source):
-    	if args[0] > 0:
-    		print "This is the button handler"
-        print path, tags, args, source
-        return
-
-    server = ThreadingOSCServer( ("0.0.0.0", 7000) )
-
-    server.addMsgHandler("/nextEffect", next_effect_handler)
-    #server.addMsgHandler("/toggle", toggle_handler)
-    #server.addMsgHandler("/button", button_handler)
-    server.addMsgHandler("default", default_handler)
-
-
-
-
-    thread = Thread(target=server.serve_forever)
-    thread.setDaemon(True)
-    thread.start()
-    print "Listening for OSC messages on port 7000"
-"""
