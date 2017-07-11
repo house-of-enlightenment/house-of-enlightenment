@@ -42,8 +42,8 @@ kinet_maxpixels = 170
 opc_maxpixels = 120 * 48
 max_channels = 16
 
-class Client(object):
 
+class Client(object):
     def __init__(self, server_ip_port, long_connection=True, verbose=False, protocol="opc"):
         """Create an OPC client object which sends pixels to an OPC server.
 
@@ -68,7 +68,7 @@ class Client(object):
         """
         self.verbose = verbose
         self.address = server_ip_port
-        
+
         self._long_connection = long_connection
 
         self._ip, self._port = server_ip_port.split(':')
@@ -80,12 +80,6 @@ class Client(object):
         self.socket_type = socket.SOCK_STREAM if self.protocol == "opc" else socket.SOCK_DGRAM
         self.header = bytearray(4) if self.protocol == "opc" else kinet_header
         self.message = bytearray()
-        self.channelPixels = []
-
-        for i in range(0, max_channels):
-            pixels = [(0,0,0)] * (opc_maxpixels if self.protocol == "opc" else kinet_maxpixels)
-            self.channelPixels.append(pixels)
-
 
     def _debug(self, m):
         if self.verbose:
@@ -142,7 +136,7 @@ class Client(object):
             0 is a special value which means "all channels".
 
         pixels: A list of 3-tuples representing rgb colors.
-            Each value in the tuple should be in the range 0-255 inclusive. 
+            Each value in the tuple should be in the range 0-255 inclusive.
             For example: [(255, 255, 255), (0, 0, 0), (127, 0, 0)]
             Floats will be rounded down to integers.
             Values outside the legal range will be clamped.
@@ -157,34 +151,53 @@ class Client(object):
         LED at a time (unless it's the first one).
 
         """
+        # ledscape OPC ignores the channel parameter
+        # https://github.com/Yona-Appletree/LEDscape/blob/master/opc-server.c#L1996
+        assert channel == 0
         self._debug('put_pixels: connecting')
         is_connected = self._ensure_connected()
         if not is_connected:
             self._debug('put_pixels: not connected.  ignoring these pixels.')
             return False
 
+        self.allocate_message(pixels)
+        # build OPC message
+        if (self.protocol == "opc"):
+            self.header = self.get_opc_header(channel, pixels)
+        self.headerl = len(self.header)
+        self.copy_header_into_message()
+        self.copy_pixels_into_message(pixels)
+        if not self._send_message():
+            return False
+        if not self._long_connection:
+            self._debug('put_pixels: disconnecting')
+            self.disconnect()
+        return True
+
+    def allocate_message(self, pixels):
         if (len(self.message) != len(pixels) * 3 + len(self.header)):
             self.message = bytearray(len(pixels) * 3 + len(self.header))
 
-        # build OPC message
-        if (self.protocol == "opc"):
-            len_hi_byte = int(len(pixels)*3 / 256)
-            len_lo_byte = (len(pixels)*3) % 256
-            self.header = struct.pack('BBBB', channel, 0, len_hi_byte, len_lo_byte)
+    def get_opc_header(self, channel, pixels):
+        data_size = len(pixels) * 3
+        len_hi_byte = data_size // 256
+        len_lo_byte = data_size % 256
+        return struct.pack('BBBB', channel, 0, len_hi_byte, len_lo_byte)
 
-        self.headerl = len(self.header)
-
+    def copy_header_into_message(self):
         for index, b in enumerate(self.header):
             self.message[index] = b
-        
-        for index, (r, g, b) in enumerate(pixels):
-            r = int(r)
-            g = int(g)
-            b = int(b)
-            self.message[self.headerl + index * 3 + 0] = 255 if r > 255 else (0 if r < 0 else r)
-            self.message[self.headerl + index * 3 + 1] = 255 if g > 255 else (0 if g < 0 else g)
-            self.message[self.headerl + index * 3 + 2] = 255 if b > 255 else (0 if b < 0 else b)
 
+    def copy_pixels_into_message(self, pixels):
+        for index, pixel in enumerate(pixels):
+            self.set_pixel(index, pixel)
+
+    def set_pixel(self, index, pixel):
+        assert len(pixel) == 3
+        for i, color_value in enumerate(pixel):
+            self.message[self.headerl + index * 3 + i] = to_byte(color_value)
+
+    def _send_message(self):
         self._debug('put_pixels: sending pixels to server')
         try:
             self._socket.send(self.message)
@@ -193,10 +206,6 @@ class Client(object):
             self._socket = None
             return False
 
-        if not self._long_connection:
-            self._debug('put_pixels: disconnecting')
-            self.disconnect()
 
-        return True
-
-
+def to_byte(num):
+    return int(min(255, max(0, num)))
