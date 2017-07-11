@@ -13,9 +13,9 @@ We will be sending the lidar information as OSC messages to the animation progra
 
 An example message will look like the following:
 posistion, height, width
-...
+'''
 [(x,y), 
-...
+'''
 
 # Hardware
 - Intel NUC NUC7i7BNH 16 gb ram 250 GB ssd
