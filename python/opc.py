@@ -42,8 +42,8 @@ kinet_maxpixels = 170
 opc_maxpixels = 120 * 48
 max_channels = 16
 
-class Client(object):
 
+class Client(object):
     def __init__(self, server_ip_port, long_connection=True, verbose=False, protocol="opc"):
         """Create an OPC client object which sends pixels to an OPC server.
 
@@ -68,7 +68,7 @@ class Client(object):
         """
         self.verbose = verbose
         self.address = server_ip_port
-        
+
         self._long_connection = long_connection
 
         self._ip, self._port = server_ip_port.split(':')
@@ -142,7 +142,7 @@ class Client(object):
             0 is a special value which means "all channels".
 
         pixels: A list of 3-tuples representing rgb colors.
-            Each value in the tuple should be in the range 0-255 inclusive. 
+            Each value in the tuple should be in the range 0-255 inclusive.
             For example: [(255, 255, 255), (0, 0, 0), (127, 0, 0)]
             Floats will be rounded down to integers.
             Values outside the legal range will be clamped.
