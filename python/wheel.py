@@ -66,7 +66,7 @@ import importlib
 import inspect
 
 pwd = dirname(__file__)
-effectsDir = pwd + '/effects'
+effectsDir = pwd + '/wheelEffects'
 sys.path.append(effectsDir)
 for x in glob(join(effectsDir, '*.py')):
     pkgName = basename(x)[:-3]
