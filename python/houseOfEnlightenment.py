@@ -67,14 +67,18 @@ def parse_command_line():
     return options
 
 #-------------------------------------------------------------------------------
-groups = {}
-group_strips = {}
-clients = {}
+
 
 
 # parse layout file.
 # TODO: groups, strips, clients, channels
 def parse_layout(layout):
+
+	groups = {}
+	group_strips = {}
+	clients = {}
+
+
     print
     print '    parsing layout file'
     print
