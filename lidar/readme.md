@@ -11,6 +11,12 @@ The lidar works with an object as close as 3 feet and as far as 90 feet.  When a
 # Lidar output format
 We will be sending the lidar information as OSC messages to the animation program.  The messages will contain the center point of a box and its deminsions.  This will generalize the size of a person, group of people or larger object like a car.  
 
+An example message will look like the following:
+posistion, height, width
+...
+[(x,y), 
+...
+
 # Hardware
 - Intel NUC NUC7i7BNH 16 gb ram 250 GB ssd
 - LIDAR INFO HERE!>!>!>!
