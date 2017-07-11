@@ -2,9 +2,15 @@ import sys
 sys.path.append('..')
 import color_utils
 
-__all__= ["MyAnimation"]
+__all__= ["AllRed", "SpatialStripes", "GentleGlow"]
 
-class MyAnimation:
+#TODO: base class
+class AllRed(object):
+    """Always return red"""
+    def next_frame(self, layout, time, n_pixels):
+        return [(255,0,0) for ii, coord in enumerate(layout)] #TODO: faster with proper python array usage
+
+class SpatialStripes(object):
 
     def next_frame(self, layout, time, n_pixels):
         return [self.spatial_stripes(time, coord, ii, n_pixels) for ii, coord in enumerate(layout)]
@@ -49,13 +55,19 @@ class MyAnimation:
         pixels=[(0,0,0)] * n_pixels
         return pixels
 
+class GentleGlow(object):
 
-    def gentle_glow(t, coord, ii, n_pixels):
+    def next_frame(self, layout, time, n_pixels):
+        return [self.gentle_glow(time, coord, ii, n_pixels) for ii, coord in enumerate(layout)]
+
+
+    def gentle_glow(self, t, coord, ii, n_pixels):
         x, y, z = coord
         g = 0
         b = 0
-        r = min(1, (1 - z) + color_utils.cos(x, offset=t / 5, period=2, minn=0, maxx=0.3))
+        r = min(1, (1 - z) + color_utils.scaled_cos(x, offset=t / 5, period=2, minn=0, maxx=0.3))
 
+        #For some reason, this is zeroing out some pixels. Needs tuning
         return (r*256, g*256, b*256)
 
     """
