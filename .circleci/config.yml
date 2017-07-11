@@ -1,0 +1,9 @@
+version: 2
+jobs:
+   build:
+     working_directory: ~/house-of-enlightenment
+     docker:
+       - image: circleci/python:2.7
+     steps:
+       - checkout
+       - run: echo "hello world"
