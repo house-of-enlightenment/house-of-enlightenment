@@ -16,12 +16,11 @@ gulp simulator:build    // compile the simulator client files
 ## Run the simulator
 ### Run with default layout file (`hoeLayout.json`)
 ```
-gulp simulator
+gulp simulator:server
 ```
-
 server will be running on http://localhost:3030
 
-### To specify layout file
+### To specify a layout file
 ```
 gulp simulator --layout ./layout/spire-large.json
 ```
@@ -33,6 +32,11 @@ node ./javascript/simulator/server/server.js --layout layout/hoeLayout.json
 ```
 open browser to http://localhost:3030
 
+## Run controls page
+```
+gulp controls:server
+```
+server will be running on http://localhost:3032
 
 ## Run OPC light server
 ```

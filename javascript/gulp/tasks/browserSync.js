@@ -1,8 +1,8 @@
 const gulp        = require("gulp");
 const quench      = require("../quench.js");
-const path        = require("path");
+const R           = require("ramda");
 const browserSync = require("browser-sync").create();
-const nodemon     = require("nodemon");
+
 
 module.exports = function(config, env){
 
@@ -12,75 +12,44 @@ module.exports = function(config, env){
     return;
   }
 
-  // if not using proxy, use this as the server root
-  var serverRoot = path.resolve(config.simulatorDest);
 
   // browserSync settings
-  var settings = {
+  var settings = R.merge({
     port: config.local.browserSyncPort || 3000,
     open: false, // false or  "external"
     notify: false,
     ghostMode: false,
 
+    serverRoot: config.browserSync.root,
+    // proxy: 
+
     // watch these files and reload the browser when they change
     files: [
-      config.simulatorDest + "/**",
+      config.browserSync.root + "/**",
       // prevent browser sync from reloading twice when the regular file (eg. index.js)
       // and the map file (eg. index.js.map) are generated
       "!**/*.map"
     ]
-  };
+  }, config.browserSync);
 
 
-  // the node server
-  const hostname = "http://localhost:3030";
 
-  // set the server root, or proxy if it's set in local.js
-  // use proxy if you have a server running the site already (eg, IIS)
-  if (hostname) {
-    // http://www.browsersync.io/docs/options/#option-proxy
-    settings.proxy = hostname;
-  }
-  else {
+  // if proxy wasn't specified, use the server root
+  // use proxy if you have a server running the site already (eg, node server)
+  // http://www.browsersync.io/docs/options/#option-proxy
+  if (!settings.proxy) {
     // http://www.browsersync.io/docs/options/#option-server
-    settings.server = serverRoot;
+    settings.server = settings.serverRoot;
   }
 
 
   /* start browser sync if we have the "watch" option */
-  gulp.task("browserSync", ["nodemon"], function(){
+  gulp.task("browserSync", function(){
 
     quench.logYellow("watching", "browser-sync:", JSON.stringify(settings.files, null, 2));
     browserSync.init(settings);
 
   });
 
-  gulp.task("nodemon", function (cb) {
 
-    var started = false;
-
-    const serverDir = path.resolve(config.simulator, "./server/");
-
-    const layout = config.yargs.layout || path.resolve(config.root, "./layout/hoeLayout.json");
-
-    return nodemon({
-      script: path.resolve(serverDir, "server.js"),
-      args: ["--layout", layout],
-      watch: [ serverDir ]
-    }).on("start", function () {
-      // to avoid nodemon being started multiple times
-      // thanks @matthisk
-      if (!started) {
-        cb();
-        started = true;
-      }
-    })
-    .on("restart", function () {
-      console.log("restarted!");
-    })
-    .on("crash", function() {
-      console.error("server.js crashed!\n");
-      // stream.emit("restart", 10)  // restart the server in 10 seconds
-    });
-  });
 };

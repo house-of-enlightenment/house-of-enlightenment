@@ -19,27 +19,25 @@ module.exports = function jsTask(config, env){
 
   const client = `${config.simulator}/client`;
 
-  const jsConfig = {
-    dest: `${config.simulatorDest}/js`,
-    // js uglify options.
+  const jsConfig = R.merge({
+
     uglify: {},
-    // browserify options
+
     browserify: {
-      // enable sourcemaps for development
-      debug: env.development()
+      debug: env.development() // enable sourcemaps for development
     },
 
     /**
-      * Add new entry javascript files here
-      * keys:
-      *   gulpTaskId  : unique name for the gulp task
-      *   entry       : path to this file
-      *   dest        : *optional, directory to write the file, if different from jsConfig.dest
-      *   filename    : name for the generated file (without -generated)
-      *   standalone  : *optional, Boolean, whether or not to include npm packages in libraries-generated.js.
-      *                 - don't include files that have "standalone: true"
-      *   watch       : rerun this files's task when these files change (can be an array of globs)
-    **/
+       * Add new entry javascript files here
+       * keys:
+       *   gulpTaskId  : unique name for the gulp task
+       *   entry       : path to this file
+       *   dest        : *optional, directory to write the file, if different from jsConfig.dest
+       *   filename    : name for the generated file (without -generated)
+       *   standalone  : *optional, Boolean, whether or not to include npm packages in libraries-generated.js.
+       *                 - don't include files that have "standalone: true"
+       *   watch       : rerun this files's task when these files change (can be an array of globs)
+     **/
     files: [
       {
         gulpTaskId: "js-index",
@@ -58,13 +56,23 @@ module.exports = function jsTask(config, env){
         watch: [
           `${config.root}/javascript/layout-generator/**/*.js`
         ]
+      },
+      {
+        gulpTaskId: "js-controls",
+        entry: `${config.root}/javascript/controls/client/js/index.js`,
+        filename: "controls.js",
+        watch: [
+          `${config.root}/javascript/controls/client/**/*.js`
+        ]
       }
     ]
-  };
+  }, config.js);
+
 
 
   // a function to look in all the files to find what npm packages are being used
   const getNpmPackages = createNpmPackagesGetter(jsConfig.files);
+
 
 
   /* 1. Create a gulp task and watcher for each file in the files array */
@@ -154,8 +162,8 @@ module.exports = function jsTask(config, env){
 
 /**
   * factory function to return "getNpmPackages"
-  * eg. const getNpmPackages = createNpmPackagesGetter(jsConfig.files);
-  * @param  {Array} files Array of file objects (see jsConfig.files) (object with .entry field)
+  * eg. const getNpmPackages = createNpmPackagesGetter(jsConfig.tasks);
+  * @param  {Array} files Array of file objects (see jsConfig.tasks) (object with .entry field)
   * @return {Function} see below
   */
 function createNpmPackagesGetter(files){
