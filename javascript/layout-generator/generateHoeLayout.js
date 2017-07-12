@@ -74,6 +74,21 @@ const processSlice = R.curry((sliceAt0, sliceIndex) => {
     };
   }
 
+  // https://github.com/house-of-enlightenment/house-of-enlightenment/issues/5
+  const getAddress = (strip) => {
+
+    if (strip < 48){
+      return "10.0.0.32";
+    }
+    else if (strip < 96){
+      return "10.0.0.33";
+    }
+    else {
+      return "10.0.0.34";
+    }
+
+  }
+
 
   // for each strip top/bottom
   const topAndBottomPoints = R.mapObjIndexed(
@@ -87,15 +102,20 @@ const processSlice = R.curry((sliceAt0, sliceIndex) => {
           ? i + 126
           : 125 - i;
 
+        const strip = topOrBottom === "top" ? sliceIndex * 2 : sliceIndex * 2 + 1;
+
+        const address = getAddress(strip);
+
         const section = Math.floor(sliceIndex / 11);
 
         return {
+          address,
           angle,
           point: R.values(calculateXYZ(point)),
           row,
           section,
           slice: sliceIndex,
-          strip: topOrBottom === "top" ? sliceIndex * 2 : sliceIndex * 2 + 1,
+          strip,
           stripIndex: i,
           topOrBottom
         }

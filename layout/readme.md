@@ -5,16 +5,22 @@ A json file that contains an array of 14,256 points.  (66 slices x 216 LEDs per 
 Each point is an object shaped like this:
 ```
 {
-	angle : 0,
-	point : [ 0, 0, 0 ],
-	row: 0,
-	section: 0,
-	slice: 0,
-	strip: 0,
-	stripIndex: 0,
-	topOrBottom : "top"
+  address: "10.0.0.32",
+  angle : 0,
+  point : [ 0, 0, 0 ],
+  row: 0,
+  section: 0,
+  slice: 0,
+  strip: 0,
+  stripIndex: 0,
+  topOrBottom : "top"
 }
 ```
+
+#### address : `String`
+`10.0.0.32` - first 48 strips  
+`10.0.0.33` - next 48 strips  
+`10.0.0.34` - final 36 strips  
 
 #### angle : `Number`
 (is this useful?)  
@@ -55,4 +61,4 @@ gulp layout
 ```
 
 ## To change hoeLayout.json
-The file that generates `hoeLayout.json` is `/javascript/layout-generator/ggenerateHoeLayout.js`
+The file that generates `hoeLayout.json` is `/javascript/layout-generator/generateHoeLayout.js`
