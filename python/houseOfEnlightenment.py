@@ -84,13 +84,6 @@ def parse_layout(layout):
     for item in json.load(open(layout)):
         if 'point' in item:
             coordinates.append(tuple(item['point']))
-<<<<<<< HEAD
-        
-        #if 'angle' in item:
-        #	coordinates.append()
-
-=======
->>>>>>> making layout parser work
 
     return coordinates
 

@@ -25,6 +25,7 @@ def get_osc_client(host=defaults['address'], port=defaults['port']):
     client.connect((host, port))
     return client
 
+
 def send_simple_message(client, path, data="", timeout=None):
     msg = OSCMessage(path)
     msg.append(data)
