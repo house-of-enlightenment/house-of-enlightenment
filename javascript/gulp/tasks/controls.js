@@ -132,13 +132,16 @@ module.exports = function controlsTask(config, env) {
    */
   gulp.task("controls:prod", function(next){
 
-    const controlsConfig = R.merge(config, {
-      env   : "production",
-      watch : false,
-      tasks: controlsTasks
-    });
+    const buildConfig = R.mergeAll([
+      {
+        env   : "production",
+        watch : false,
+        tasks: controlsTasks
+      },
+      controlsConfig
+    ]);
 
-    quench.build(controlsConfig, next);
+    quench.build(buildConfig, next);
 
   });
 
@@ -148,13 +151,16 @@ module.exports = function controlsTask(config, env) {
    */
   gulp.task("controls:build", function(next){
 
-    const controlsConfig = R.merge(config, {
-      env   : "development",
-      watch : false,
-      tasks: controlsTasks
-    });
+    const buildConfig = R.mergeAll([
+      {
+        env   : "development",
+        watch : false,
+        tasks: controlsTasks
+      },
+      controlsConfig
+    ]);
 
-    quench.build(controlsConfig, next);
+    quench.build(buildConfig, next);
 
   });
 

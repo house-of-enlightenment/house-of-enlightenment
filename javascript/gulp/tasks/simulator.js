@@ -142,13 +142,16 @@ module.exports = function simulatorTask(config, env) {
    */
   gulp.task("simulator:prod", function(next){
 
-    const simulatorConfig = R.merge(config, {
-      env   : "production",
-      watch : false,
-      tasks: simulatorTasks
-    });
+    const buildConfig = R.mergeAll([
+      {
+        env   : "production",
+        watch : false,
+        tasks: simulatorTasks
+      },
+      simulatorConfig
+    ]);
 
-    quench.build(simulatorConfig, next);
+    quench.build(buildConfig, next);
 
   });
 
@@ -158,13 +161,16 @@ module.exports = function simulatorTask(config, env) {
    */
   gulp.task("simulator:build", function(next){
 
-    const simulatorConfig = R.merge(config, {
-      env   : "development",
-      watch : false,
-      tasks: simulatorTasks
-    });
+    const buildConfig = R.mergeAll([
+      {
+        env   : "development",
+        watch : false,
+        tasks: simulatorTasks
+      },
+      simulatorConfig
+    ]);
 
-    quench.build(simulatorConfig, next);
+    quench.build(buildConfig, next);
 
   });
 
