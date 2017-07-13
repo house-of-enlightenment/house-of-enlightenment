@@ -20,7 +20,6 @@ Then run this script in another shell to send colors to the simulator
 """
 
 from __future__ import division
-import time
 import sys
 import optparse
 from time import sleep
@@ -83,10 +82,10 @@ def parse_layout(layout):
     coordinates = []
     for item in json.load(open(layout)):
         if 'point' in item:
-            coordinates.append(item, item['point'])
+            coordinates.append(tuple(item['point']))
         
-        if 'angle' in item:
-        	coordinates.append()
+        #if 'angle' in item:
+        #	coordinates.append()
 
 
     return coordinates
@@ -113,7 +112,7 @@ def start_scene_manager(osc, opc, config):
     thread.setDaemon(True)
     thread.start()
     print "Started scene manager"
-    return mgr
+    return mgr, thread
 
 
 #-------------------------------------------------------------------------------
@@ -122,20 +121,34 @@ def launch():
     osc_server = osc_utils.create_osc_server()
 
     opc = start_opc(config.server)
-    scene = start_scene_manager(osc_utils, opc, config)
+    scene, scene_thread = start_scene_manager(osc_utils, opc, config)
    # scene.start() #run forever
 
-    osc_server.addMsgHandler("/handleKeyboard", osc_utils.keyboard_handler)
+    #TODO: Not ready osc_server.addMsgHandler("/handleKeyboard", osc_utils.keyboard_handler)
     osc_server.addMsgHandler("/nextScene", scene.next_scene_handler)
 
     from OSC import OSCMessage
     osc_client = osc_utils.get_osc_client()
-    while True:
+    keep_running=True
+    while keep_running:
         key = raw_input("Send a keyboard command: ")
         if(key.lower() in ["next","nextscene"]):
             osc_utils.send_simple_message(osc_client, "/nextScene")
+        elif ("quit" == key.lower()):
+            #TODO: We should really use atexit for all this. This is a short-term fix to not take down the simulator with us
+            print "Received shutdown command. Exiting now"
+            scene.shutdown()
+            print "Waiting up to 10s for scene thread to shutdown"
+            scene_thread.join(10000)
+            #osc_server.shutdown()
+            #TODO: This was deadlocking!
+            print "Skipped OSC Server Shutdown"
+            opc.disconnect()
+            print "OPC Connector Terminated"
+            keep_running=False
         else:
-            osc_utils.send_simple_message(osc_client, "/handleKeyboard", key)
+            print "Received unknown key command"
+
         sleep(.1)
 
 if __name__=='__main__':

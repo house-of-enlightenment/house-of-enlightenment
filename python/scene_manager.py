@@ -19,6 +19,8 @@ class SceneManager(object):
         self.scenes = []
         self.init_scenes()
         self.curr_scene = self.scenes[self.sceneIndex]
+        self.serve=False
+        self.is_running=False
 
 
     def init_scenes(self):
@@ -75,6 +77,8 @@ class SceneManager(object):
         pass
 
     def serve_forever(self):
+        self.serve=True
+        self.is_running=True
         self.init_scene()
         n_pixels = len(self.layout)
         pixels = [(0, 0, 0,)] * n_pixels
@@ -83,12 +87,15 @@ class SceneManager(object):
         print '    sending pixels forever (quit or control-c to exit)...'
         print
 
-        while True:
+        while self.serve:
             t = time.time() - start_time
 
             pixels = self.curr_scene.next_frame(self.layout, t, n_pixels)
             self.opc.put_pixels(pixels, channel=0) #TODO: channel?
             time.sleep(1/self.fps)
+
+        self.is_running=False
+        print "Scene Manager Exited"
 
     def next_scene(self, args):
         #TODO: concurrency issues
@@ -96,6 +103,9 @@ class SceneManager(object):
         print '    New scene has index %s. Initializing now' % self.sceneIndex
         self.init_scene()
         print '    Scene changed'
+
+    def shutdown(self):
+        self.serve=False
 
 #----- Handlers -----
     def next_scene_handler(self, path, tags, args, source):
