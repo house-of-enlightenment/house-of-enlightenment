@@ -132,9 +132,8 @@ def launch():
     keep_running=True
     while keep_running:
         key = raw_input("Send a keyboard command: ")
-        if(key.lower() in ["next","nextscene"]):
-            osc_utils.send_simple_message(osc_client, "/nextScene")
-        elif ("quit" == key.lower()):
+        key_lower=key.lower()
+        if ("quit" == key_lower):
             #TODO: We should really use atexit for all this. This is a short-term fix to not take down the simulator with us
             print "Received shutdown command. Exiting now"
             scene.shutdown()
@@ -146,8 +145,14 @@ def launch():
             opc.disconnect()
             print "OPC Connector Terminated"
             keep_running=False
+        if (key_lower in ["next"]):
+            osc_utils.send_simple_message(osc_client, "/nextScene")
         else:
-            print "Received unknown key command"
+            args=key.split(" ",1)
+            if(len(args)==1):
+                osc_utils.send_simple_message(osc_client, args[0])
+            elif(len(args)==2):
+                osc_utils.send_simple_message(osc_client, args[0], args[1])
 
         sleep(.1)
 
