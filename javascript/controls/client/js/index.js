@@ -15,7 +15,7 @@ oscPort.on("ready", function () {
   console.log('Websocket connected, rendering app');
 
   ReactDom.render(
-    "<App osc=oscPort />",
+    <App />,
     document.querySelector(".js-app-mount")
   );
 });
