@@ -3,9 +3,27 @@ import R from "ramda";
 
 import Controls from "./Controls/Controls.jsx";
 
-const App = () => {
+const propTypes = {
+  osc: func.isRequired,
+};
+
+
+const App = ({ osc }) => {
 
   const onButtonClick = R.curry((controlsId, leftOrRight) => {
+    osc.send({
+        address: "/button",
+        args: [
+	    {
+		type: "i",
+		value: controlsId
+	    },	    
+            {
+                type: "s",
+                value: leftOrRight
+            },
+        ]
+    });
     console.log(controlsId, leftOrRight)
   });
 
@@ -22,5 +40,7 @@ const App = () => {
   );
 
 };
+
+App.propTypes = propTypes
 
 export default App;
