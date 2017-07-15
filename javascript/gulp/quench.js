@@ -188,11 +188,11 @@ const build = module.exports.build = function build(_config, callback) {
   // add yargs to config
   config = mergeYargs( { config: _config, yargs } );
 
-  if (!config || !config.root || !fileExists(config.root)) {
-    logError("config.root is required!");
-    console.log("config:", JSON.stringify(config, null, 2));
-    process.exit();
-  }
+  // if (!config || !config.root || !fileExists(config.root)) {
+  //   logError("config.root is required!");
+  //   console.log("config:", JSON.stringify(config, null, 2));
+  //   process.exit();
+  // }
 
   if (!config.tasks || config.tasks.length === 0) {
     logError("No tasks loaded! Make sure you pass config.tasks as an array of task names to quench.build(config)!");
@@ -343,11 +343,20 @@ module.exports.singleTasks = function singleTasks(config) {
   // eg: `gulp css js`, yargs._ would be ["css", "js"]
   if (yargs._.length) {
 
+    // match the root of a task that has : in it
+    // eg. simulator:watch will match simulator
+    const getTaskRoot = R.compose(
+      R.nth(0),
+      R.split(":")
+    );
+
     // filter out tasks that don't exist
-    const tasks = yargs._.filter(function(task) {
-      // console.log(getTaskPath(task));
-      return fileExists(getTaskPath(task));
-    });
+    const tasks = yargs._
+      .filter(function(task) {
+        // console.log(getTaskPath(task));
+        return fileExists(getTaskPath(getTaskRoot(task)));
+      })
+      .map(getTaskRoot);
 
     if (tasks.length) {
 

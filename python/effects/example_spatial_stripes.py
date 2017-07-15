@@ -2,22 +2,18 @@ import sys
 sys.path.append('..')
 import color_utils
 from scene_manager import SceneDefinition
+from scene_manager import EffectDefinition
+from scene_manager import Effect
+from pydoc import locate
 
-__all__= [
-    SceneDefinition("DadJokes"),
-    SceneDefinition("SpatialStripesBackground"),
-    SceneDefinition("DadJokes", "MovingDot"),
-    SceneDefinition("SpatialStripesBackground", "MovingDot"),
-    SceneDefinition("GentleGlow")
-]
 
 #TODO: base class
-class DadJokes(object):
+class DadJokes(Effect):
     """Always return red"""
     def next_frame(self, layout, time, n_pixels):
         return [(255,0,0) for ii, coord in enumerate(layout)] #TODO: faster with proper python array usage
 
-class SpatialStripesBackground(object):
+class SpatialStripesBackground(Effect):
 
     def next_frame(self, layout, time, n_pixels):
         return [self.spatial_stripes(time, coord, ii, n_pixels) for ii, coord in enumerate(layout)]
@@ -43,7 +39,7 @@ class SpatialStripesBackground(object):
         r, g, b = color_utils.contrast((r, g, b), 0.5, 2)
         return (r*256, g*256, b*256)
 
-class MovingDot(object):
+class MovingDot(Effect):
     def next_frame(self, layout, time, n_pixels):
         return [self.moving_dot(time, coord, ii, n_pixels) for ii, coord in enumerate(layout)]
 
@@ -59,7 +55,7 @@ class MovingDot(object):
         spark_val*=256
         return (spark_val, spark_val, spark_val)
 
-class GentleGlow(object):
+class GentleGlow(Effect):
 
     def next_frame(self, layout, time, n_pixels):
         return [self.gentle_glow(time, coord, ii, n_pixels) for ii, coord in enumerate(layout)]
@@ -94,3 +90,15 @@ class GentleGlow(object):
 def clear_pixels(pixels, n_pixels):
     pixels=[(0,0,0)] * n_pixels
     return pixels
+
+
+red_effect=EffectDefinition("all red", DadJokes)
+spatial_background=EffectDefinition("spatial background", SpatialStripesBackground)
+moving_dot = EffectDefinition("moving dot", MovingDot)
+
+__all__= [
+    SceneDefinition("red scene", red_effect),
+    SceneDefinition("spatial scene", spatial_background),
+    SceneDefinition("red scene with dot", moving_dot, red_effect),
+    SceneDefinition("spatial scene with dot", moving_dot, spatial_background)
+]

@@ -119,32 +119,47 @@ def get_first_non_empty(pixels):
         if pix is not None:
             return pix
 
+
+class Effect(object):
+    def next_frame(self, layout, time, n_pixels):
+        raise NotImplementedError("All effects must implement next_frame")
+        #TODO: Use abc
+
+class EffectDefinition(object):
+    def __init__(self, name, clazz): #TODO inputs
+        # str, class -> None
+        self.clazz=clazz
+        self.name=name
+
+    def __str__(self):
+        #TODO: What's the python way of doing this?
+        return "EffectDefinition(%s)" % self.name
+
+
+    def create_effect(self):
+        # None -> Effect
+        print "Creating instance of effect %s" % self
+        #TODO: pass args
+        return self.clazz()
+
 class SceneDefinition(object):
-    def __init__(self, background, *foregrounds):
-        self.background_class=background
-        self.foreground_classes = [] if foregrounds is None else list(foregrounds)
+    def __init__(self, name, *layers):
+        # str, List[EffectDefinition] -> None
+        self.name = name
+        self.layer_definitions = layers
         self.instances = []
 
 
     def __str__(self):
-        #TODO: Include foregrounds
         #TODO: What's the python way of doing this?
-        return "Scene: %s" % self.background_class
+        return "Scene(%s)" % self.name
 
 
     def init_scene(self, package):
         """Initialize a scene"""
         #TODO: init instances
         #TODO: cleanup
-
-        """
-        #Debugging:
-        print "Foreground:", self.foreground_classes, type(self.foreground_classes)
-        print "Background:", self.background_class
-        print "Foreground and background", self.foreground_classes + [self.background_class]
-        print "Package: ", package
-        """
-        self.instances = [getattr(package, clazz)() for clazz in self.foreground_classes + [self.background_class]]
+        self.instances = [layer_def.create_effect() for layer_def in self.layer_definitions]
         return self
 
 

@@ -18,7 +18,7 @@ const renderer = createRenderer(store);
 const { camera, container } = createCamera(store);
 const ground   = createGround();
 
-const scene = new THREE.Scene()
+const scene = new THREE.Scene();
 
 
 scene.add(container);

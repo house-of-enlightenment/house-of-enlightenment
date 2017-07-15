@@ -1,4 +1,4 @@
-javascript/simulator/build*
+build*
 node_modules
 .DS_Store
 **/*.pyo

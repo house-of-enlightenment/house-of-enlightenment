@@ -4,43 +4,43 @@ const R = require("ramda");
 const path = require("path");
 const quench = require("../quench.js");
 
-// task to read the layout file and run the simulator server with that file
-module.exports = function simulatorTask(config, env) {
+// task to read the layout file and run the controls server with that file
+module.exports = function controlsTask(config, env) {
 
-  const simulatorRoot = path.resolve(config.root, "./javascript/simulator/");
-  const simulatorDest = path.resolve(config.root, "./javascript/simulator/build/");
+  const controlsRoot = path.resolve(config.root, "./javascript/controls/");
+  const controlsDest = path.resolve(config.root, "./javascript/controls/build/");
   const projectRoot = config.root;
 
-  const simulatorTasks = ["copy", "js", "css"];
+  const controlsTasks = ["copy", "js", "css"];
 
-  const simulatorConfig = {
+  const controlsConfig = {
     "css": {
       watch: [
-        `${simulatorRoot}/client/scss/**/*.scss`,
-        `${simulatorRoot}/client/js/**/*.scss`
+        `${controlsRoot}/client/scss/**/*.scss`,
+        `${controlsRoot}/client/js/**/*.scss`
       ],
       stylesheets: [
         {
-          gulpTaskId: "css-simulator",
+          gulpTaskId: "css-controls",
           src: [
-            `${simulatorRoot}/client/scss/**/*.scss`,
-            `${simulatorRoot}/client/js/**/*.scss`
+            `${controlsRoot}/client/scss/**/*.scss`,
+            `${controlsRoot}/client/js/**/*.scss`
           ],
-          dest: `${simulatorDest}/css/`,
+          dest: `${controlsDest}/css/`,
           filename: "index.css"
         }
       ]
     },
     "js": {
-      dest: `${simulatorDest}/js/`,
+      dest: `${controlsDest}/js/`,
       files: [
         {
           gulpTaskId: "js-index",
-          entry: `${simulatorRoot}/client/js/index.js`,
+          entry: `${controlsRoot}/client/js/index.js`,
           filename: "index.js",
           watch: [
-            `${simulatorRoot}/client/js/**/*.js`,
-            `${simulatorRoot}/client/js/**/*.jsx`,
+            `${controlsRoot}/client/js/**/*.js`,
+            `${controlsRoot}/client/js/**/*.jsx`,
             `${projectRoot}/layout/**/*.json`
           ]
         },
@@ -55,17 +55,17 @@ module.exports = function simulatorTask(config, env) {
       ]
     },
     "copy": {
-      base: `${simulatorRoot}/client/`,
+      base: `${controlsRoot}/client/`,
       tasks: [
         {
-          gulpTaskId: "copy-simulator",
+          gulpTaskId: "copy-controls",
           src: [
-            `${simulatorRoot}/client/index.html`,
-            `${simulatorRoot}/client/layout.html`,
-            `${simulatorRoot}/client/models/**`,
-            `${simulatorRoot}/client/layout/**` // need csv
+            `${controlsRoot}/client/index.html`,
+            `${controlsRoot}/client/layout.html`,
+            `${controlsRoot}/client/models/**`,
+            `${controlsRoot}/client/layout/**` // need csv
           ],
-          dest: simulatorDest
+          dest: controlsDest
         }
       ]
     }
@@ -73,19 +73,19 @@ module.exports = function simulatorTask(config, env) {
 
 
   // HACK to make gulp happy
-  gulp.task("simulator", function(cb){ cb(); });
+  gulp.task("controls", function(cb){ cb(); });
 
   /**
-   * run the simulator server
+   * run the controls server
    */
-  gulp.task("simulator:server", function(cb){
+  gulp.task("controls:server", function(cb){
 
     const layout = R.path(["yargs", "layout"], config) || "layout/hoeLayout.json";
 
     // run the node server
     // https://stackoverflow.com/questions/10232192/exec-display-stdout-live
     const server = spawn("node",
-      ["javascript/simulator/server/server.js", "--layout", layout],
+      ["javascript/controls/server/server.js", "--layout", layout],
       { cwd: `${projectRoot}` }
     );
 
@@ -100,37 +100,27 @@ module.exports = function simulatorTask(config, env) {
   });
 
   /**
-   * simulator server with watcher (to develop)
+   * controls server with watcher (to develop)
    */
-  gulp.task("simulator:watch", function(next){
+  gulp.task("controls:watch", function(next){
 
-    const yargs = require("yargs").options({
-      "layout": {
-        default: undefined,
-        type: "string"
-      }
-    }).argv;
-
-    const serverDir = path.resolve(simulatorRoot, "./server/");
-    const layout = yargs.layout || path.resolve(projectRoot, "./layout/hoeLayout.json");
-
+    const serverDir = path.resolve(controlsRoot, "./server/");
 
     const buildConfig = R.mergeAll([
       {
         env   : "development",
         watch : true,
-        tasks: [simulatorTasks, "nodemon", "browserSync"],
+        tasks: [controlsTasks, "nodemon", "browserSync"],
         browserSync: {
-          root: simulatorDest,
-          proxy: "http://localhost:3030"
+          root: controlsDest,
+          proxy: "http://localhost:3032"
         },
         nodemon: {
           script: path.resolve(serverDir, "server.js"),
-          args: ["--layout", layout],
           watch: [ serverDir ]
         }
       },
-      simulatorConfig
+      controlsConfig
     ]);
 
     quench.build(buildConfig, next);
@@ -140,15 +130,15 @@ module.exports = function simulatorTask(config, env) {
   /**
    * build for production
    */
-  gulp.task("simulator:prod", function(next){
+  gulp.task("controls:prod", function(next){
 
     const buildConfig = R.mergeAll([
       {
         env   : "production",
         watch : false,
-        tasks: simulatorTasks
+        tasks: controlsTasks
       },
-      simulatorConfig
+      controlsConfig
     ]);
 
     quench.build(buildConfig, next);
@@ -159,15 +149,15 @@ module.exports = function simulatorTask(config, env) {
   /**
    * build for development without a watcher
    */
-  gulp.task("simulator:build", function(next){
+  gulp.task("controls:build", function(next){
 
     const buildConfig = R.mergeAll([
       {
         env   : "development",
         watch : false,
-        tasks: simulatorTasks
+        tasks: controlsTasks
       },
-      simulatorConfig
+      controlsConfig
     ]);
 
     quench.build(buildConfig, next);

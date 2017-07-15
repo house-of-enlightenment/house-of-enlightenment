@@ -72,7 +72,7 @@ const processSlice = R.curry((sliceAt0, sliceIndex) => {
       y: point.Y,
       z: sin(angle) * radius
     };
-  }
+  };
 
   // https://github.com/house-of-enlightenment/house-of-enlightenment/issues/5
   const getAddress = (strip) => {
@@ -118,8 +118,8 @@ const processSlice = R.curry((sliceAt0, sliceIndex) => {
           strip,
           stripIndex: i,
           topOrBottom
-        }
-      })(strip)
+        };
+      })(strip);
     }
   )(sliceAt0);
 
@@ -127,7 +127,7 @@ const processSlice = R.curry((sliceAt0, sliceIndex) => {
   return R.compose(
     R.flatten,
     R.values
-  )(topAndBottomPoints)
+  )(topAndBottomPoints);
 });
 
 

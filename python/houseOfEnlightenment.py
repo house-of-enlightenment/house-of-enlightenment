@@ -67,26 +67,23 @@ def parse_command_line():
     return options
 
 #-------------------------------------------------------------------------------
-groups = {}
-group_strips = {}
-clients = {}
+
 
 
 # parse layout file.
 # TODO: groups, strips, clients, channels
 def parse_layout(layout):
+
+    coordinates = []
+
     print
     print '    parsing layout file'
     print
 
-    coordinates = []
+
     for item in json.load(open(layout)):
         if 'point' in item:
             coordinates.append(tuple(item['point']))
-        
-        #if 'angle' in item:
-        #	coordinates.append()
-
 
     return coordinates
 
