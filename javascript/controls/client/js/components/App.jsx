@@ -4,10 +4,11 @@ import R from "ramda";
 import Controls from "./Controls/Controls.jsx";
 
 
-const App = () => {
+const App = ({ ws }) => {
 
   const onButtonClick = R.curry((controlsId, leftOrRight) => {
     console.log(controlsId, leftOrRight)
+    ws.send(JSON.stringify({controlsId: controlsId, leftOrRight: leftOrRight}));
   });
 
 
@@ -23,5 +24,6 @@ const App = () => {
   );
 
 };
+
 
 export default App;
