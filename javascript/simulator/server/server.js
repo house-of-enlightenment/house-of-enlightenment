@@ -100,24 +100,6 @@ net.createServer(function (socket) {
 });
 
 
-/* websocket to socket! */
-// create a websocket connection to listen to the OSC data
-// it's a buffer, forward to the python OSC server (port 7000)
-const ws = new WebSocket("ws://localhost:3031", { });
-
-ws.on("open", function open() {
-  const socket = dgram.createSocket('udp4');
-  // forward socket messages from web client to the python server
-  ws.on("message", function (event) {
-    socket.send(event.data, 7000, function (err) {
-      console.log('Forwarding OSC input');
-    });
-  });
-});
-
-
-
-
 /**
  * fileExists
  * @param  {String} filepath : path to the file

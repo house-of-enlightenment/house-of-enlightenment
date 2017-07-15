@@ -10,6 +10,7 @@ const osc       = require("osc");
 const buildDirectory = path.resolve(__dirname, "../build");
 const indexHtml = path.resolve(buildDirectory, "index.html");
 
+
 function forwardWebsocketMsgOverOsc(udpPort) {
   const wss = new WebSocket.Server({ port: 4040 });
   wss.on('connection', function connection(ws) {
@@ -20,6 +21,7 @@ function forwardWebsocketMsgOverOsc(udpPort) {
     });
   })
 }
+
 
 function parseAndSend(message, udpPort) {
   var data = JSON.parse(message)
@@ -59,7 +61,7 @@ app.use(express.static(buildDirectory));
 // Create an osc.js UDP Port listening on port 57121.
 // We never send data back, so this doesn't matter
 var udpPort = new osc.UDPPort({
-  localAddress: "0.0.0.0",
+  localAddress: "127.0.0.1",
   localPort: 57121,
   metadata: true
 });
