@@ -10,12 +10,12 @@ from pydoc import locate
 #TODO: base class
 class DadJokes(Effect):
     """Always return red"""
-    def next_frame(self, layout, time, n_pixels):
+    def next_frame(self, layout, time, n_pixels, osc_data):
         return [(255,0,0) for ii, coord in enumerate(layout)] #TODO: faster with proper python array usage
 
 class SpatialStripesBackground(Effect):
 
-    def next_frame(self, layout, time, n_pixels):
+    def next_frame(self, layout, time, n_pixels, osc_data):
         return [self.spatial_stripes(time, coord, ii, n_pixels) for ii, coord in enumerate(layout)]
 
     #-------------------------------------------------------------------------------
@@ -40,7 +40,7 @@ class SpatialStripesBackground(Effect):
         return (r*256, g*256, b*256)
 
 class MovingDot(Effect):
-    def next_frame(self, layout, time, n_pixels):
+    def next_frame(self, layout, time, n_pixels, osc_data):
         return [self.moving_dot(time, coord, ii, n_pixels) for ii, coord in enumerate(layout)]
 
     def moving_dot(self, t, coord, ii, n_pixels):
@@ -57,7 +57,7 @@ class MovingDot(Effect):
 
 class GentleGlow(Effect):
 
-    def next_frame(self, layout, time, n_pixels):
+    def next_frame(self, layout, time, n_pixels, osc_data):
         return [self.gentle_glow(time, coord, ii, n_pixels) for ii, coord in enumerate(layout)]
 
 
@@ -85,6 +85,13 @@ class GentleGlow(Effect):
     #     pixels=[(0,0,0,)] * n_pixels
     #     pixels[(yPos * 30) + xPos] = color
 
+class PrintOSC(Effect):
+    """A effect layer that just prints OSC info when it changes"""
+    def next_frame(self, layout, time, n_pixels, osc_data):
+        if osc_data.contains_change:
+            print "Frame's osc_data is", osc_data
+
+        return [None] * n_pixels
 
 #TODO move me
 def clear_pixels(pixels, n_pixels):
@@ -95,9 +102,10 @@ def clear_pixels(pixels, n_pixels):
 red_effect=EffectDefinition("all red", DadJokes)
 spatial_background=EffectDefinition("spatial background", SpatialStripesBackground)
 moving_dot = EffectDefinition("moving dot", MovingDot)
+osc_printing_effect = EffectDefinition("print osc", PrintOSC)
 
 __all__= [
-    SceneDefinition("red scene", red_effect),
+    SceneDefinition("red printing scene", osc_printing_effect, red_effect),
     SceneDefinition("spatial scene", spatial_background),
     SceneDefinition("red scene with dot", moving_dot, red_effect),
     SceneDefinition("spatial scene with dot", moving_dot, spatial_background)

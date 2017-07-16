@@ -6,10 +6,13 @@
 import sys, time
 from threading import Thread
 from opc import Client
+from OSC import OSCServer
 import atexit
+
 
 class SceneManager(object):
     def __init__(self, osc, opc, layout, fps):
+        # OSCServer, Client, dict, int -> None
         self.osc_server = osc
         self.opc = opc
         self.layout=layout
@@ -21,6 +24,8 @@ class SceneManager(object):
         self.curr_scene = self.scenes[self.sceneIndex]
         self.serve=False
         self.is_running=False
+
+        self.osc_data = StoredOSCData()
 
 
     def init_scenes(self):
@@ -72,9 +77,14 @@ class SceneManager(object):
 
     def init_scene(self):
         scene_info = self.scenes[self.sceneIndex]
-        #TODO: Clean this up
+        # TODO: Clean this up
         self.curr_scene=scene_info[1].init_scene(scene_info[0])
         pass
+
+    def get_osc_frame(self, clear=True):
+        last_frame=self.osc_data
+        self.osc_data = StoredOSCData(last_frame)
+        return last_frame
 
     def serve_forever(self):
         self.serve=True
@@ -90,8 +100,9 @@ class SceneManager(object):
         while self.serve:
             t = time.time() - start_time
 
-            pixels = self.curr_scene.next_frame(self.layout, t, n_pixels)
-            self.opc.put_pixels(pixels, channel=0) #TODO: channel?
+            pixels = self.curr_scene.next_frame(self.layout, t, n_pixels, self.get_osc_frame())
+            self.opc.put_pixels(pixels, channel=0)
+            # TODO: channel?
             time.sleep(1/self.fps)
 
         self.is_running=False
@@ -113,6 +124,33 @@ class SceneManager(object):
     	if args[0] > 0:
     		self.next_scene(args)
 
+    def handle_button(self, path, tags, args, source):
+        print "Got button path=[%s], tags=[%s], args=[%s], source=[%s]" % (path, tags, args, source)
+        button_name = str.split(path, '/')[-1]
+        #TODO: handle wildcards (ie: input/button/*)
+        #button_name=path
+        self.osc_data.buttons[button_name]= 1
+        self.osc_data.contains_change=True
+
+    def handle_fader(self, path, tags, args, source):
+        print "Got fader path=[%s], tags=[%s], args=[%s], source=[%s]" % (path, tags, args, source)
+        fader_name = str.split(path, '/')[-1]
+        #fader_name=path
+        fader_value=args[0]
+        self.osc_data.faders[fader_name] = fader_value
+        self.osc_data.contains_change=True
+
+    def add_button(self, name):
+        print "Registering button at /input/button/%s" % name
+        self.osc_server.addMsgHandler("/input/button/%s" % name, self.handle_button)
+        pass
+
+    def add_fader(self, name):
+        print "Adding fader at /input/fader/%s" % name
+        self.osc_server.addMsgHandler("/input/fader/%s" % name, self.handle_fader)
+        pass
+
+
 #TODO: do the python way
 def get_first_non_empty(pixels):
     for pix in pixels:
@@ -120,10 +158,26 @@ def get_first_non_empty(pixels):
             return pix
 
 
+class StoredOSCData(object):
+    def __init__(self, last_data=None):
+        self.buttons={}
+        if last_data is None:
+            self.faders = {}
+        else:
+            # TODO is this a memory leak?
+            self.faders=last_data.faders
+        self.contains_change=False
+
+
+    def __str__(self):
+        return "{%s,%s}" % (str(self.buttons), str(self.faders))
+
+
 class Effect(object):
-    def next_frame(self, layout, time, n_pixels):
+    def next_frame(self, layout, time, n_pixels, osc_data):
         raise NotImplementedError("All effects must implement next_frame")
-        #TODO: Use abc
+        # TODO: Use abc
+
 
 class EffectDefinition(object):
     def __init__(self, name, clazz): #TODO inputs
@@ -135,12 +189,12 @@ class EffectDefinition(object):
         #TODO: What's the python way of doing this?
         return "EffectDefinition(%s)" % self.name
 
-
     def create_effect(self):
         # None -> Effect
         print "Creating instance of effect %s" % self
         #TODO: pass args
         return self.clazz()
+
 
 class SceneDefinition(object):
     def __init__(self, name, *layers):
@@ -163,9 +217,10 @@ class SceneDefinition(object):
         return self
 
 
-    def next_frame(self, layout, time, n_pixels):
-        #Now get all the pixels, ordering from the first foreground to the last foreground to the background
-        all_pixels = [layer.next_frame(layout, time, n_pixels) for layer in self.instances]
+    def next_frame(self, layout, time, n_pixels, osc_data):
+        # Now get all the pixels, ordering from the first foreground to the last foreground to the background
+        # TODO We mixed the model and implementation. This is the first thing to go when separating them
+        all_pixels = [layer.next_frame(layout, time, n_pixels, osc_data) for layer in self.instances]
         #Smush them together, taking the first non-None pixel available
         pixels = [get_first_non_empty(pixs) for pixs in zip(*all_pixels)]
         return pixels

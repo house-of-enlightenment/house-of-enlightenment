@@ -101,8 +101,8 @@ def start_opc(server):
     return client
 
 
-def start_scene_manager(osc, opc, config):
-    mgr = scene_manager.SceneManager(osc, opc, config.layout, config.fps)
+def start_scene_manager(osc_server, opc_client, config):
+    mgr = scene_manager.SceneManager(osc_server, opc_client, config.layout, config.fps)
     #Run scene manager in the background
     thread = Thread(target=mgr.serve_forever)
     thread.setName("SceneManager")
@@ -112,17 +112,30 @@ def start_scene_manager(osc, opc, config):
     return mgr, thread
 
 
+def init_osc_inputs(scene):
+    # SceneManager -> None
+    """
+    DEVELOPERS - Add inputs you need for testing. They will be finalized later
+    """
+    scene.add_button("b1")
+    scene.add_fader("f1")
+    scene.add_fader("f2")
+    scene.add_button("b2")
+    scene.add_button("b3")
+
+
 #-------------------------------------------------------------------------------
 def launch():
     config = parse_command_line()
     osc_server = osc_utils.create_osc_server()
 
     opc = start_opc(config.server)
-    scene, scene_thread = start_scene_manager(osc_utils, opc, config)
+    scene, scene_thread = start_scene_manager(osc_server, opc, config)
    # scene.start() #run forever
 
     #TODO: Not ready osc_server.addMsgHandler("/handleKeyboard", osc_utils.keyboard_handler)
     osc_server.addMsgHandler("/nextScene", scene.next_scene_handler)
+    init_osc_inputs(scene)
 
     from OSC import OSCMessage
     osc_client = osc_utils.get_osc_client()
