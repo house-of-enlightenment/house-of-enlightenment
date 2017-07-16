@@ -80,13 +80,17 @@ def parse_layout(layout):
     print '    parsing layout file'
     print
 
-
+    """
+    Old:
     for item in json.load(open(layout)):
         if 'point' in item:
             coordinates.append(tuple(item['point']))
 
     return coordinates
+    """
 
+    # Just use a dictionary as loaded
+    return json.load(open(layout))
 
 #-------------------------------------------------------------------------------
 # connect to OPC server
@@ -122,6 +126,10 @@ def init_osc_inputs(scene):
     scene.add_fader("f2")
     scene.add_button("b2")
     scene.add_button("b3")
+    scene.add_fader("bottom_fill", 25)
+    scene.add_fader("r", 50)
+    scene.add_fader("g", 50)
+    scene.add_fader("b", 255)
 
 
 #-------------------------------------------------------------------------------

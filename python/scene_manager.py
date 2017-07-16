@@ -145,9 +145,10 @@ class SceneManager(object):
         self.osc_server.addMsgHandler("/input/button/%s" % name, self.handle_button)
         pass
 
-    def add_fader(self, name):
+    def add_fader(self, name, default=""):
         print "Adding fader at /input/fader/%s" % name
         self.osc_server.addMsgHandler("/input/fader/%s" % name, self.handle_fader)
+        self.osc_data.faders[name]=default
         pass
 
 
@@ -194,6 +195,7 @@ class EffectDefinition(object):
         print "Creating instance of effect %s" % self
         #TODO: pass args
         return self.clazz()
+        #return [child.create_effect() for child in self.children] + [self.clazz()]
 
 
 class SceneDefinition(object):
