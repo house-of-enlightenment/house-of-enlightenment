@@ -63,7 +63,7 @@ class AdjustableFillFromBottom(Effect):
 
     def fill(self, time, coord, ii, n_pixels, osc_data):
         if("bottom_fill" in osc_data.faders and int(osc_data.faders["bottom_fill"]) > int(coord["row"])):
-            return (osc_data.faders['r'], osc_data.faders['g'], osc_data.faders['b'])
+            return tuple([int(osc_data.faders[key]) for key in ['r','g','b']])
 
         return None
 

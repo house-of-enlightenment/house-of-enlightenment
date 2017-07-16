@@ -7,6 +7,7 @@ import sys, time
 from threading import Thread
 from opc import Client
 from OSC import OSCServer
+from functools import partial
 import atexit
 
 
@@ -124,31 +125,28 @@ class SceneManager(object):
     	if args[0] > 0:
     		self.next_scene(args)
 
-    def handle_button(self, path, tags, args, source):
-        print "Got button path=[%s], tags=[%s], args=[%s], source=[%s]" % (path, tags, args, source)
-        button_name = str.split(path, '/')[-1]
-        #TODO: handle wildcards (ie: input/button/*)
-        #button_name=path
-        self.osc_data.buttons[button_name]= 1
-        self.osc_data.contains_change=True
+    def add_button(self, button_name):
+        print "Registering button at /input/button/%s" % button_name
 
-    def handle_fader(self, path, tags, args, source):
-        print "Got fader path=[%s], tags=[%s], args=[%s], source=[%s]" % (path, tags, args, source)
-        fader_name = str.split(path, '/')[-1]
-        #fader_name=path
-        fader_value=args[0]
-        self.osc_data.faders[fader_name] = fader_value
-        self.osc_data.contains_change=True
+        def handle_button(path, tags, args, source):
+            print "Button [%s] received message: path=[%s], tags=[%s], args=[%s], source=[%s]" % (button_name, path, tags, args, source)
+            self.osc_data.buttons[button_name] = 1
+            self.osc_data.contains_change = True
 
-    def add_button(self, name):
-        print "Registering button at /input/button/%s" % name
-        self.osc_server.addMsgHandler("/input/button/%s" % name, self.handle_button)
+        self.osc_server.addMsgHandler("/input/button/%s" % button_name, handle_button)
         pass
 
-    def add_fader(self, name, default=""):
-        print "Adding fader at /input/fader/%s" % name
-        self.osc_server.addMsgHandler("/input/fader/%s" % name, self.handle_fader)
-        self.osc_data.faders[name]=default
+    def add_fader(self, handler_name, default=""):
+        print "Adding fader at /input/fader/%s" % handler_name
+
+        def handle_fader(path, tags, args, source):
+            print "Fader [%s] received message: path=[%s], tags=[%s], args=[%s], source=[%s], name=[%s]" % (handler_name, path, tags, args, source, handler_name)
+            fader_value = args[0]
+            self.osc_data.faders[handler_name] = fader_value
+            self.osc_data.contains_change = True
+
+        self.osc_server.addMsgHandler("/input/fader/%s" % handler_name, handle_fader)
+        self.osc_data.faders[handler_name]=default
         pass
 
 
@@ -165,13 +163,13 @@ class StoredOSCData(object):
         if last_data is None:
             self.faders = {}
         else:
-            # TODO is this a memory leak?
+            # TODO Check with python folks. Is this a memory leak?
             self.faders=last_data.faders
         self.contains_change=False
 
 
     def __str__(self):
-        return "{%s,%s}" % (str(self.buttons), str(self.faders))
+        return "{%s,%s, changed=}" % (str(self.buttons), str(self.faders), self.contains_change)
 
 
 class Effect(object):
