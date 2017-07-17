@@ -1,9 +1,9 @@
 import sys
 sys.path.append('..')
-import color_utils
-from scene_manager import SceneDefinition
-from scene_manager import EffectDefinition
-from scene_manager import Effect
+from hoe import color_utils
+from hoe.scene_manager import SceneDefinition
+from hoe.scene_manager import EffectDefinition
+from hoe.scene_manager import Effect
 from pydoc import locate
 
 

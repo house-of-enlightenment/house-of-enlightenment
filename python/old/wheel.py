@@ -5,18 +5,16 @@
 # 7/18/2014
 
 from __future__ import division
-import time
-import sys
+
 import optparse
+import pprint
 import random
 import select
-import socket
-
+import sys
+import time
+from itertools import chain
 from math import pi, sqrt, cos, sin, atan2
 
-from itertools import chain, islice, imap, starmap, product
-
-import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
 try:
@@ -25,7 +23,6 @@ except ImportError:
     import simplejson as json
 
 import opc
-import color_utils
 
 # remember to
 # $ sudo pip install colormath
@@ -60,7 +57,7 @@ except ImportError:
 
 effects = {}
 
-from os.path import dirname, join, isdir, abspath, basename
+from os.path import dirname, join, basename
 from glob import glob
 import importlib
 import inspect

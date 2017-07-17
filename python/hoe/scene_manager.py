@@ -30,7 +30,7 @@ class SceneManager(object):
         self.osc_data = StoredOSCData()
 
     @staticmethod
-    def load_scenes():
+    def load_scenes(effects_dir=None):
         # None -> [SceneDefinition]
 
         from os.path import dirname, join, isdir, abspath, basename
@@ -38,8 +38,9 @@ class SceneManager(object):
         import importlib
         import inspect
 
-        pwd = dirname(__file__)
-        effects_dir = pwd+'./effects/'
+        if not effects_dir:
+            pwd = dirname(__file__)
+            effects_dir = pwd+'/../effects/'
         sys.path.append(effects_dir)
         scenes = []
         for f in glob(join(effects_dir, '*.py')):
@@ -57,7 +58,7 @@ class SceneManager(object):
                 except ImportError:
                     print "WARNING: could not load effect %s" % pkg_name
 
-        print "Loaded %s scenes from /effects directory\n" % len(scenes)
+        print "Loaded %s scenes from %s directory\n" % (len(scenes), effects_dir)
 
         return scenes
 
