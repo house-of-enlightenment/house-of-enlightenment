@@ -43,7 +43,7 @@ from threading import Thread
 # command line
 def parse_command_line():
     parser = optparse.OptionParser()
-    parser.add_option('-l', '--layout', dest='raw_layout',
+    parser.add_option('-l', '--layout', dest='raw_layout', default='../layout/hoeLayout.json',
                         action='store', type='string',
                         help='layout file')
     parser.add_option('-s', '--server', dest='server', default='127.0.0.1:7890',
@@ -121,16 +121,18 @@ def init_osc_inputs(scene):
     """
     DEVELOPERS - Add inputs you need for testing. They will be finalized later
     """
-    scene.add_button("b1")
-    scene.add_fader("f1")
-    scene.add_fader("f2")
-    scene.add_button("b2")
-    scene.add_button("b3")
-    scene.add_fader("bottom_fill", 25)
+
+    # Good and easy faders for sharing across testing
     scene.add_fader("r", 50)
     scene.add_fader("g", 50)
     scene.add_fader("b", 255)
 
+    # Add some generic buttons
+    for i in range(6):
+        scene.add_button("b%s"%i)
+
+    # A fader for example_spatial_stripes.AdjustableFillFromBottom
+    scene.add_fader("bottom_fill", 25)
 
 #-------------------------------------------------------------------------------
 def launch():
