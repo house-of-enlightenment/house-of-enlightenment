@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 """Python Client library for Open Pixel Control
 http://github.com/zestyping/openpixelcontrol
 
@@ -96,7 +95,8 @@ class Client(object):
             return True
 
         try:
-            self._debug('_ensure_connected: trying to connect to ' + self._ip + ' using protocol ' + self.protocol + '...')
+            self._debug('_ensure_connected: trying to connect to ' + self._ip + ' using protocol ' +
+                        self.protocol + '...')
             self._socket = socket.socket(socket.AF_INET, self.socket_type)
             self._socket.settimeout(0.5)
             self._socket.connect((self._ip, self._port))
