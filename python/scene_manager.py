@@ -19,17 +19,19 @@ class SceneManager(object):
         self.layout=layout
         self.fps=fps
 
-        self.sceneIndex=0
-        self.scenes = []
-        self.init_scenes()
-        self.curr_scene = self.scenes[self.sceneIndex]
+        # Load all scenes from effects package. Then set initial index and load it up
+        self.scenes = SceneManager.load_scenes()
+        self.scene_index = 0
+        self.init_scene()
+
         self.serve=False
         self.is_running=False
 
         self.osc_data = StoredOSCData()
 
-
-    def init_scenes(self):
+    @staticmethod
+    def load_scenes():
+        # None -> [SceneDefinition]
 
         from os.path import dirname, join, isdir, abspath, basename
         from glob import glob
@@ -37,32 +39,27 @@ class SceneManager(object):
         import inspect
 
         pwd = dirname(__file__)
-        effectsDir = pwd+'./effects/'
-        sys.path.append(effectsDir)
-        for f in glob(join(effectsDir, '*.py')):
-            pkgName = basename(f)[:-3]
-            if not pkgName.startswith("_"):
+        effects_dir = pwd+'./effects/'
+        sys.path.append(effects_dir)
+        scenes = []
+        for f in glob(join(effects_dir, '*.py')):
+            pkg_name = basename(f)[:-3]
+            if not pkg_name.startswith("_"):
                 try:
-                    effectDict = importlib.import_module(pkgName)
-                    for scene in effectDict.__all__:
+                    effect_dict = importlib.import_module(pkg_name)
+                    for scene in effect_dict.__all__:
                         if(isinstance(scene, SceneDefinition)):
                             print "Registering %s" % scene
                             #TODO clean this up
-                            self.scenes.append([effectDict,scene])
+                            scenes.append([effect_dict,scene])
                         else:
                             print "Got scene %s not of type SceneDefinition" % scene
-                        """
-                        effectFunc = getattr(effectDict, effectName)
-                        args, varargs, keywords, defaults = inspect.getargspec(effectFunc)
-                        params = {} if defaults == None or args == None else dict(
-                            zip(reversed(args), reversed(defaults)))
-                        self.scenes[pkgName + "-" + effectName] = {
-                            'action': effectFunc,
-                            'opacity': 0.0,
-                            'params': params
-                        }"""
                 except ImportError:
-                    print "WARNING: could not load effect %s" % pkgName
+                    print "WARNING: could not load effect %s" % pkg_name
+
+        print "Loaded %s scenes from /effects directory\n" % len(scenes)
+
+        return scenes
 
     def load_palettes(self, rootDir):
         #TODO: palettes existed in wheel. (1) Are they needed here and (2) what is the palettes module to import?
@@ -77,26 +74,39 @@ class SceneManager(object):
         """
 
     def init_scene(self):
-        scene_info = self.scenes[self.sceneIndex]
+        scene_info = self.scenes[self.scene_index]
         # TODO: Clean this up
+        print '\tInitializing scene %s' % scene_info[1]
         self.curr_scene=scene_info[1].init_scene(scene_info[0])
-        pass
+        print '\tScene %s initialized\n' % self.curr_scene
 
     def get_osc_frame(self, clear=True):
         last_frame=self.osc_data
         self.osc_data = StoredOSCData(last_frame)
         return last_frame
 
+    def serve_in_background(self):
+        # [function] -> Thread
+
+        # Run scene manager in the background
+        thread = Thread(target=self.serve_forever)
+        thread.setName("SceneManager")
+        thread.setDaemon(True)
+        thread.start()
+        return thread
+
     def serve_forever(self):
+        # [function] -> None
+
         self.serve=True
-        self.is_running=True
-        self.init_scene()
+
         n_pixels = len(self.layout)
         pixels = [(0, 0, 0,)] * n_pixels
+
         start_time = time.time()
 
-        print '    sending pixels forever (quit or control-c to exit)...'
-        print
+        print '\tsending pixels forever (quit or control-c to exit)...'
+        self.is_running=True
 
         while self.serve:
             t = time.time() - start_time
@@ -111,10 +121,9 @@ class SceneManager(object):
 
     def next_scene(self, args):
         #TODO: concurrency issues
-        self.sceneIndex = (self.sceneIndex + 1) % len(self.scenes)
-        print '    New scene has index %s. Initializing now' % self.sceneIndex
+        self.scene_index = (self.scene_index + 1) % len(self.scenes)
+        print '\tChanged scene to index %s. Initializing now' % (self.scene_index)
         self.init_scene()
-        print '    Scene changed'
 
     def shutdown(self):
         self.serve=False
@@ -137,7 +146,7 @@ class SceneManager(object):
         pass
 
     def add_fader(self, handler_name, default=""):
-        print "Adding fader at /input/fader/%s" % handler_name
+        print "Registering fader at /input/fader/%s" % handler_name
 
         def handle_fader(path, tags, args, source):
             print "Fader [%s] received message: path=[%s], tags=[%s], args=[%s], source=[%s], name=[%s]" % (handler_name, path, tags, args, source, handler_name)
@@ -169,7 +178,7 @@ class StoredOSCData(object):
 
 
     def __str__(self):
-        return "{%s,%s, changed=}" % (str(self.buttons), str(self.faders), self.contains_change)
+        return "StoredOSCData{buttons=%s, faders=%s, changed=%s}" % (str(self.buttons), str(self.faders), str(self.contains_change))
 
 
 class Effect(object):
@@ -190,7 +199,7 @@ class EffectDefinition(object):
 
     def create_effect(self):
         # None -> Effect
-        print "Creating instance of effect %s" % self
+        print "\tCreating instance of effect %s" % self
         #TODO: pass args
         return self.clazz()
         #return [child.create_effect() for child in self.children] + [self.clazz()]
@@ -211,7 +220,7 @@ class SceneDefinition(object):
 
     def init_scene(self, package):
         """Initialize a scene"""
-        #TODO: init instances
+        #TODO: init child instances
         #TODO: cleanup
         self.instances = [layer_def.create_effect() for layer_def in self.layer_definitions]
         return self

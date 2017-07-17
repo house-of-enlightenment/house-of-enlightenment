@@ -12,6 +12,8 @@ defaults['port']=7000
 
 
 def create_osc_server(host=defaults['address'], port=defaults['port']):
+    # String, int -> OSCServer
+
     server = ThreadingOSCServer((host, port))
     thread = Thread(target=server.serve_forever)
     thread.setDaemon(True)
@@ -20,23 +22,15 @@ def create_osc_server(host=defaults['address'], port=defaults['port']):
     return server
 
 def get_osc_client(host=defaults['address'], port=defaults['port']):
-    from OSC import OSCClient
+    # String, int -> OSCClient
+
     client = OSCClient()
     client.connect((host, port))
     return client
 
 
 def send_simple_message(client, path, data="", timeout=None):
+    # OSCClient, String, String, int -> None
     msg = OSCMessage(path)
     msg.append(data)
     client.send(msg, timeout)
-
-
-def keyboard_handler(path, tags, args, source):
-    print "Got keyboard via osc", path, tags, args, source
-    #TODO: null checks on args?
-    text = args[0]
-    if("quit"==text.lower()):
-        #TODO: cleaner quit
-        quit(0)
-    pass

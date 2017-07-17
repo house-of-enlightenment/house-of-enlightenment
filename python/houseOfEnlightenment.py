@@ -58,7 +58,7 @@ def parse_command_line():
     if not options.raw_layout:
         parser.print_help()
         print
-        print 'ERROR: you must specify a layout file using --layout'
+        print 'ERROR: you must specify a layout file using --layout or use default (../layout/hoeLayout.json)'
         print
         sys.exit(1)
 
@@ -74,14 +74,13 @@ def parse_command_line():
 # TODO: groups, strips, clients, channels
 def parse_layout(layout):
 
-    coordinates = []
-
     print
     print '    parsing layout file'
     print
 
     """
     Old:
+    coordinates = []
     for item in json.load(open(layout)):
         if 'point' in item:
             coordinates.append(tuple(item['point']))
@@ -106,33 +105,33 @@ def start_opc(server):
 
 
 def start_scene_manager(osc_server, opc_client, config):
+    # OSCServer, Client, dict -> SceneManager, Thread
     mgr = scene_manager.SceneManager(osc_server, opc_client, config.layout, config.fps)
-    #Run scene manager in the background
-    thread = Thread(target=mgr.serve_forever)
-    thread.setName("SceneManager")
-    thread.setDaemon(True)
-    thread.start()
-    print "Started scene manager"
+    init_osc_inputs(mgr)
+    thread = mgr.serve_in_background()
+
     return mgr, thread
 
 
-def init_osc_inputs(scene):
+def init_osc_inputs(mgr):
     # SceneManager -> None
     """
     DEVELOPERS - Add inputs you need for testing. They will be finalized later
     """
 
     # Good and easy faders for sharing across testing
-    scene.add_fader("r", 50)
-    scene.add_fader("g", 50)
-    scene.add_fader("b", 255)
+    mgr.add_fader("r", 50)
+    mgr.add_fader("g", 50)
+    mgr.add_fader("b", 255)
 
     # Add some generic buttons
     for i in range(6):
-        scene.add_button("b%s"%i)
+        mgr.add_button("b%s" % i)
 
     # A fader for example_spatial_stripes.AdjustableFillFromBottom
-    scene.add_fader("bottom_fill", 25)
+    mgr.add_fader("bottom_fill", 25)
+
+    print 'Registered OSC Inputs\n'
 
 #-------------------------------------------------------------------------------
 def launch():
@@ -143,15 +142,18 @@ def launch():
     scene, scene_thread = start_scene_manager(osc_server, opc, config)
    # scene.start() #run forever
 
-    #TODO: Not ready osc_server.addMsgHandler("/handleKeyboard", osc_utils.keyboard_handler)
     osc_server.addMsgHandler("/nextScene", scene.next_scene_handler)
-    init_osc_inputs(scene)
+
+    while not scene.is_running:
+        sleep(.1)
 
     from OSC import OSCMessage
     osc_client = osc_utils.get_osc_client()
     keep_running=True
     while keep_running:
         key = raw_input("Send a keyboard command: ")
+        if not key:
+            continue
         key_lower=key.lower()
         if ("quit" == key_lower):
             #TODO: We should really use atexit for all this. This is a short-term fix to not take down the simulator with us
