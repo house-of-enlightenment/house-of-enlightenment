@@ -4,11 +4,9 @@ from OSC import OSCMessage
 from threading import Thread
 import atexit
 
-
-
 defaults = {}
-defaults['address']='127.0.0.1'
-defaults['port']=7000
+defaults['address'] = '127.0.0.1'
+defaults['port'] = 7000
 
 
 def create_osc_server(host=defaults['address'], port=defaults['port']):
@@ -20,6 +18,7 @@ def create_osc_server(host=defaults['address'], port=defaults['port']):
     thread.start()
     # TODO: atexit.register(self.disconnect())
     return server
+
 
 def get_osc_client(host=defaults['address'], port=defaults['port']):
     # String, int -> OSCClient
