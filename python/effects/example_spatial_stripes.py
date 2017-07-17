@@ -3,100 +3,96 @@ sys.path.append('..')
 import color_utils
 from scene_manager import SceneDefinition
 from scene_manager import EffectDefinition
-from scene_manager import Effect
+#from scene_manager import Effect
 from pydoc import locate
 
 
-#TODO: base class
-class DadJokes(Effect):
+def dad_jokes(layout, time, n_pixels, osc_data):
     """Always return red"""
-    def next_frame(self, layout, time, n_pixels, osc_data):
-        return [(255,0,0) for ii, coord in enumerate(layout)] #TODO: faster with proper python array usage
-
-class SpatialStripesBackground(Effect):
-
-    def next_frame(self, layout, time, n_pixels, osc_data):
-        return [self.spatial_stripes(time, coord, ii, n_pixels) for ii, coord in enumerate(layout)]
-
-    #-------------------------------------------------------------------------------
-    # color function
-    def spatial_stripes(self, t, coord, ii, n_pixels):
-        """Compute the color of a given pixel.
-
-        t: time in seconds since the program started.
-        ii: which pixel this is, starting at 0
-        coord: the (x, y, z) position of the pixel as a tuple
-        n_pixels: the total number of pixels
-
-        Returns an (r, g, b) tuple in the range 0-255
-
-        """
-        # make moving stripes for x, y, and z
-        x, y, z = coord["point"]
-        r = color_utils.scaled_cos(x, offset=t / 4, period=1, minn=0, maxx=0.7)
-        g = color_utils.scaled_cos(y, offset=t / 4, period=1, minn=0, maxx=0.7)
-        b = color_utils.scaled_cos(z, offset=t / 4, period=1, minn=0, maxx=0.7)
-        r, g, b = color_utils.contrast((r, g, b), 0.5, 2)
-        return (r*256, g*256, b*256)
+    return [(255,0,0) for ii, coord in enumerate(layout)] #TODO: faster with proper python array usage
 
 
-class MovingDot(Effect):
-    def next_frame(self, layout, time, n_pixels, osc_data):
-        return [self.moving_dot(time, coord, ii, n_pixels) for ii, coord in enumerate(layout)]
+def spatial_stripes_background_frame(layout, time, n_pixels, osc_data):
+    return [spatial_stripes_pixel(time, coord, ii, n_pixels) for ii, coord in enumerate(layout)]
 
-    def moving_dot(self, t, coord, ii, n_pixels):
-        # make a moving white dot showing the order of the pixels in the layout file
-        spark_ii = (t*80) % n_pixels
-        spark_rad = 8
-        spark_val = max(0, (spark_rad - color_utils.mod_dist(ii, spark_ii, n_pixels)) / spark_rad)
-        if(spark_val==0):
-            return None
-        spark_val = min(1, spark_val*2)
+#-------------------------------------------------------------------------------
+# color function
+def spatial_stripes_pixel(t, coord, ii, n_pixels):
+    """Compute the color of a given pixel.
 
-        spark_val*=256
-        return (spark_val, spark_val, spark_val)
+    t: time in seconds since the program started.
+    ii: which pixel this is, starting at 0
+    coord: the (x, y, z) position of the pixel as a tuple
+    n_pixels: the total number of pixels
+
+    Returns an (r, g, b) tuple in the range 0-255
+
+    """
+    # make moving stripes for x, y, and z
+    x, y, z = coord["point"]
+    r = color_utils.scaled_cos(x, offset=t / 4, period=1, minn=0, maxx=0.7)
+    g = color_utils.scaled_cos(y, offset=t / 4, period=1, minn=0, maxx=0.7)
+    b = color_utils.scaled_cos(z, offset=t / 4, period=1, minn=0, maxx=0.7)
+    r, g, b = color_utils.contrast((r, g, b), 0.5, 2)
+    return (r*256, g*256, b*256)
 
 
-class AdjustableFillFromBottom(Effect):
-    def next_frame(self, layout, time, n_pixels, osc_data):
-        return [self.fill(time, coord, ii, n_pixels, osc_data) for ii,coord in enumerate(layout)]
 
-    def fill(self, time, coord, ii, n_pixels, osc_data):
-        if("bottom_fill" in osc_data.faders and int(osc_data.faders["bottom_fill"]) > int(coord["row"])):
-            return tuple([int(osc_data.faders[key]) for key in ['r','g','b']])
+def moving_dot_frame(layout, time, n_pixels, osc_data):
+    return [moving_dot_pixel(time, coord, ii, n_pixels) for ii, coord in enumerate(layout)]
 
+def moving_dot_pixel(t, coord, ii, n_pixels):
+    # make a moving white dot showing the order of the pixels in the layout file
+    spark_ii = (t*80) % n_pixels
+    spark_rad = 8
+    spark_val = max(0, (spark_rad - color_utils.mod_dist(ii, spark_ii, n_pixels)) / spark_rad)
+    if spark_val==0 :
+        #Spark does not draw here so skip it and fallback to next layer
         return None
+    spark_val = min(1, spark_val*2)
+
+    spark_val*=256
+    return (spark_val, spark_val, spark_val)
 
 
-class GentleGlow(Effect):
-
-    def next_frame(self, layout, time, n_pixels, osc_data):
-        return [self.gentle_glow(time, coord, ii, n_pixels) for ii, coord in enumerate(layout)]
-
-    def gentle_glow(self, t, coord, ii, n_pixels):
-        x, y, z = coord
-        g = 0
-        b = 0
-        r = min(1, (1 - z) + color_utils.scaled_cos(x, offset=t / 5, period=2, minn=0, maxx=0.3))
-
-        #For some reason, this is zeroing out some pixels. Needs debugging
-        return (r*256, g*256, b*256)
+def adjustable_fill_from_bottom_frame(layout, time, n_pixels, osc_data):
+    row_limit = 0 if "bottom_fill" not in osc_data.faders else int(osc_data.faders["bottom_fill"])
+    pixel_color = tuple([int(osc_data.faders[key]) for key in ['r','g','b']])
+    # TODO: Slice and return None more easily
+    return [adjustable_fill_pixel(time, coord, ii, n_pixels, row_limit, pixel_color) for ii,coord in enumerate(layout)]
 
 
-class PrintOSC(Effect):
+def adjustable_fill_pixel(time, coord, ii, n_pixels, row_limit, pixel_color):
+    return pixel_color if row_limit > int(coord["row"]) else None
+
+
+def gentle_glow_frame(layout, time, n_pixels, osc_data):
+    return [gentle_glow_pixel(time, coord, ii, n_pixels) for ii, coord in enumerate(layout)]
+
+
+def gentle_glow_pixel(t, coord, ii, n_pixels):
+    x, y, z = tuple(coord["points"])
+    g = 0
+    b = 0
+    r = min(1, (1 - z) + color_utils.scaled_cos(x, offset=t / 5, period=2, minn=0, maxx=0.3))
+
+    #For some reason, this is zeroing out some pixels. Needs debugging
+    return (r*256, g*256, b*256)
+
+
+def print_osc_if_changed_frame(layout, time, n_pixels, osc_data):
     """A effect layer that just prints OSC info when it changes"""
-    def next_frame(self, layout, time, n_pixels, osc_data):
-        if osc_data.contains_change:
-            print "Frame's osc_data is", osc_data
+    if osc_data.contains_change:
+        print "Frame's osc_data is", osc_data
 
-        return [None] * n_pixels
+    return [None] * n_pixels
 
 
-osc_printing_effect = EffectDefinition("print osc", PrintOSC)
-red_effect=EffectDefinition("all red", DadJokes)
-spatial_background=EffectDefinition("spatial background", SpatialStripesBackground)
-moving_dot = EffectDefinition("moving dot", MovingDot)
-green_fill = EffectDefinition("green fill", AdjustableFillFromBottom)
+osc_printing_effect = EffectDefinition("print osc", print_osc_if_changed_frame)
+red_effect=EffectDefinition("all red", dad_jokes)
+spatial_background=EffectDefinition("spatial background", spatial_stripes_background_frame)
+moving_dot = EffectDefinition("moving dot", moving_dot_frame)
+green_fill = EffectDefinition("green fill", adjustable_fill_from_bottom_frame)
 
 __all__= [
     SceneDefinition("red printing scene", osc_printing_effect, red_effect),

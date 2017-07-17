@@ -54,8 +54,9 @@ class SceneManager(object):
                             scenes.append([effect_dict,scene])
                         else:
                             print "Got scene %s not of type SceneDefinition" % scene
-                except ImportError:
-                    print "WARNING: could not load effect %s" % pkg_name
+                except ImportError as ie:
+                    print "WARNING: could not load effect %s." % pkg_name
+                    raise ie
 
         print "Loaded %s scenes from /effects directory\n" % len(scenes)
 
@@ -181,16 +182,10 @@ class StoredOSCData(object):
         return "StoredOSCData{buttons=%s, faders=%s, changed=%s}" % (str(self.buttons), str(self.faders), str(self.contains_change))
 
 
-class Effect(object):
-    def next_frame(self, layout, time, n_pixels, osc_data):
-        raise NotImplementedError("All effects must implement next_frame")
-        # TODO: Use abc
-
-
 class EffectDefinition(object):
-    def __init__(self, name, clazz): #TODO inputs
+    def __init__(self, name, frame_method): #TODO inputs
         # str, class -> None
-        self.clazz=clazz
+        self.frame_method=frame_method
         self.name=name
 
     def __str__(self):
@@ -201,35 +196,34 @@ class EffectDefinition(object):
         # None -> Effect
         print "\tCreating instance of effect %s" % self
         #TODO: pass args
-        return self.clazz()
+        return self.frame_method
         #return [child.create_effect() for child in self.children] + [self.clazz()]
 
 
 class SceneDefinition(object):
     def __init__(self, name, *layers):
         # str, List[EffectDefinition] -> None
+
         self.name = name
         self.layer_definitions = layers
         self.instances = []
-
 
     def __str__(self):
         #TODO: What's the python way of doing this?
         return "Scene(%s)" % self.name
 
-
     def init_scene(self, package):
         """Initialize a scene"""
         #TODO: init child instances
         #TODO: cleanup
-        self.instances = [layer_def.create_effect() for layer_def in self.layer_definitions]
+        #self.instances = [layer_def.create_effect() for layer_def in self.layer_definitions]
         return self
 
 
     def next_frame(self, layout, time, n_pixels, osc_data):
         # Now get all the pixels, ordering from the first foreground to the last foreground to the background
         # TODO We mixed the model and implementation. This is the first thing to go when separating them
-        all_pixels = [layer.next_frame(layout, time, n_pixels, osc_data) for layer in self.instances]
+        all_pixels = [layer.frame_method(layout, time, n_pixels, osc_data) for layer in self.layer_definitions]
         #Smush them together, taking the first non-None pixel available
         pixels = [get_first_non_empty(pixs) for pixs in zip(*all_pixels)]
         return pixels
