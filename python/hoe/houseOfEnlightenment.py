@@ -1,38 +1,17 @@
 #!/usr/bin/env python
 
-"""A demo client for Open Pixel Control
-http://github.com/zestyping/openpixelcontrol
-
-Creates moving stripes visualizing the x, y, and z coordinates
-mapped to r, g, and b, respectively.  Also draws a moving white
-spot which shows the order of the pixels in the layout file.
-
-To run:
-First start the gl simulator using, for example, the included "wall" layout
-
-    make
-    bin/gl_server layouts/wall.json
-
-Then run this script in another shell to send colors to the simulator
-
-    python_clients/example_spatial_stripes.py --layout layouts/wall.json
-
-"""
-
 from __future__ import division
-import sys
+import json
 import optparse
+import sys
+from threading import Thread
 from time import sleep
 
-try:
-    import json
-except ImportError:
-    import simplejson as json
 
-import opc
-import osc_utils
-import scene_manager
-from threading import Thread
+from hoe import opc
+from hoe import osc_utils
+from hoe import scene_manager
+
 
 #TODO: remove these
 #globalParams = {}
