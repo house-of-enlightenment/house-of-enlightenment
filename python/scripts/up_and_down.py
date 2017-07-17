@@ -50,6 +50,5 @@ def walk_rows_down(max_row):
     return range(max_row + 1, 0, -1)
 
 
-
 if __name__ == '__main__':
     sys.exit(main())

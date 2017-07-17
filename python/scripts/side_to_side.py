@@ -50,6 +50,5 @@ def walk_down(max_slice):
     return range(max_slice + 1, 0, -1)
 
 
-
 if __name__ == '__main__':
     sys.exit(main())

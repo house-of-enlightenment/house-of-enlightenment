@@ -42,6 +42,5 @@ def random_rgb():
     return tuple(random.randint(0, 255) for _ in range(3))
 
 
-
 if __name__ == '__main__':
     sys.exit(main())
