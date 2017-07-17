@@ -6,6 +6,8 @@ const morgan    = require("morgan"); // express logger
 const net       = require("net");
 const WebSocket = require("ws");
 const fs        = require("fs");
+const dgram     = require('dgram');
+
 
 const yargs = require("yargs")
   .options({
@@ -96,7 +98,6 @@ net.createServer(function (socket) {
 }).listen(7890, () => {
       console.log("Forwarding OPC input from port 7890 to 3030");
 });
-
 
 
 /**
