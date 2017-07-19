@@ -52,7 +52,7 @@ def contrast(color, center, mult):
 
 def clip_black_by_luminance(color, threshold):
     """If the color's luminance is less than threshold, replace it with black.
-    
+
     color: an (r, g, b) tuple
     threshold: a float
 
