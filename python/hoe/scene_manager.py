@@ -41,7 +41,7 @@ class SceneManager(object):
 
         if not effects_dir:
             pwd = dirname(__file__)
-            effects_dir = pwd+'/../effects/'
+            effects_dir = pwd + '/../effects/'
         sys.path.append(effects_dir)
 
         scenes = []
@@ -100,17 +100,22 @@ class SceneManager(object):
         pixels = [(0, 0, 0, )] * n_pixels
 
         start_time = time.time()
-
+        fps_frame_time = 1 / self.fps
         print '\tsending pixels forever (quit or control-c to exit)...'
         self.is_running = True
 
         while self.serve:
-            t = time.time() - start_time
+            # TODO : Does this create lots of GC?
+            frame_start_time = time.time()
+            t = frame_start_time - start_time
+            target_frame_end_time = frame_start_time + fps_frame_time
 
             pixels = self.curr_scene.next_frame(self.layout, t, n_pixels, self.get_osc_frame())
             self.opc.put_pixels(pixels, channel=0)
+
+            # Crude way of trying to hit target fps
+            time.sleep(max(0, target_frame_end_time - time.time()))
             # TODO: channel?
-            time.sleep(1 / self.fps)
 
         self.is_running = False
         print "Scene Manager Exited"
@@ -147,10 +152,9 @@ class SceneManager(object):
         print "Registering fader at /input/fader/%s" % handler_name
 
         def handle_fader(path, tags, args, source):
-            print (
-                "Fader [{}] received message: "
-                "path=[{}], tags=[{}], args=[{}], source=[{}], name=[{}]"
-            ).format(handler_name, path, tags, args, source, handler_name)
+            print("Fader [{}] received message: "
+                  "path=[{}], tags=[{}], args=[{}], source=[{}], name=[{}]").format(
+                      handler_name, path, tags, args, source, handler_name)
             fader_value = args[0]
             self.osc_data.faders[handler_name] = fader_value
             self.osc_data.contains_change = True
