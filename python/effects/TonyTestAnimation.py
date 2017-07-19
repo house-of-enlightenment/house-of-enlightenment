@@ -12,5 +12,5 @@ class TonyEffect(Effect):
         return [(0,255,0) for ii, coord in enumerate(layout)] #TODO: faster with proper python array usage
 
 __all__= [
-    SceneDefinition("tony's scene", EffectDefinition("Tony's Effect", TonyEffect))
+    #SceneDefinition("tony's scene", EffectDefinition("Tony's Effect", TonyEffect))
  ]

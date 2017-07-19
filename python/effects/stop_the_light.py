@@ -26,7 +26,7 @@ YELLOW = (255, 255, 0)
 BLACK = (0, 0, 0)
 
 class StopTheLight(Effect):
-    def __init__(self, strip_bottom=0, strip_top=15):
+    def __init__(self, strip_bottom=5, strip_top=20):
         self.target_location = 15 # Moved to not deal with wrap-around case at 2am
         # self.rotation_speed = .5 # rotation / second
         self.sprite_location=20
@@ -38,23 +38,10 @@ class StopTheLight(Effect):
         self.strip_bottom=strip_bottom
         self.strip_top=strip_top
 
-    def next_frame(self, layout, time, n_pixels, osc_data):
+    def next_frame(self, pixels, layout, time, n_pixels, osc_data):
         hoe_layout = Layout(layout)
         bottom_rows = set(reduce(lambda a,b: a+b, [hoe_layout.row[i] for i in range(self.strip_bottom, self.strip_top)]))
         target_idx = bottom_rows & set(hoe_layout.slice[self.target_location])
-
-        # Initialize the list of pixels.
-        # TODO: Use None to allow this to be a foreground layer
-        pixels = [WHITE] * len(hoe_layout.pixels)
-
-        # Since this will be a foreground layer, we can't fall back to other pix in the bottoms rows
-        for idx in bottom_rows:
-            pixels[idx] = BLACK
-
-        # Set the target to red.
-        # Do this before drawing the moving object so we can overwrite it later if needed
-        for idx in target_idx:
-            pixels[idx] = RED
 
         max_slice = max(hoe_layout.slice)
 
@@ -89,11 +76,26 @@ class StopTheLight(Effect):
                 ])
         )
 
-        for idx in sprite_idx:
-            pixels[idx] = self.sprite_color
+        # Now we are ready to color things in:
 
-        return pixels
+        # Since this will be a foreground layer, we can't fall back to other pix in the bottoms rows
+        for idx in bottom_rows:
+            pixels[idx] = pixels[idx] if pixels[idx] else \
+                self.sprite_color if idx in sprite_idx else \
+                    RED if idx in target_idx else \
+                        BLACK
+
+
+class SolidColor(Effect):
+    def __init__(self, color=(100, 100, 100)):
+        self.color = color
+
+    """Always return color"""
+    def next_frame(self, pixels, layout, t, n_pixels, osc_data):
+        for ii in range(n_pixels):
+            pixels[ii] = pixels[ii] if pixels[ii] else self.color
+
 
 __all__ = [
-    SceneDefinition("stoplight", EffectDefinition("stoplight", StopTheLight))
+    SceneDefinition("stoplight", EffectDefinition("stoplight", StopTheLight), EffectDefinition("solid background", SolidColor))
 ]

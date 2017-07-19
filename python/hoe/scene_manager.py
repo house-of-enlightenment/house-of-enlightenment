@@ -97,7 +97,7 @@ class SceneManager(object):
         self.serve = True
 
         n_pixels = len(self.layout)
-        pixels = [(0, 0, 0, )] * n_pixels
+        print "n_pixels", n_pixels
 
         start_time = time.time()
         fps_frame_time = 1 / self.fps
@@ -110,7 +110,10 @@ class SceneManager(object):
             t = frame_start_time - start_time
             target_frame_end_time = frame_start_time + fps_frame_time
 
-            pixels = self.curr_scene.next_frame(self.layout, t, n_pixels, self.get_osc_frame())
+            # Create the pixels, set all, then put
+            pixels = [None] * n_pixels
+            self.curr_scene.next_frame(pixels, self.layout, t, n_pixels, self.get_osc_frame())
+            # TODO: Check for None and replace with (0, 0, 0)
             self.opc.put_pixels(pixels, channel=0)
 
             # Crude way of trying to hit target fps
@@ -188,7 +191,7 @@ class StoredOSCData(object):
 
 
 class Effect(object):
-    def next_frame(self, layout, time, n_pixels, osc_data):
+    def next_frame(self, pixels, layout, t, n_pixels, osc_data):
         raise NotImplementedError("All effects must implement next_frame")
         # TODO: Use abc
 
@@ -229,14 +232,12 @@ class SceneDefinition(object):
         self.instances = [layer_def.create_effect() for layer_def in self.layer_definitions]
         return self
 
-    def next_frame(self, layout, time, n_pixels, osc_data):
+    def next_frame(self, pixels, layout, t, n_pixels, osc_data):
         # Now get all the pixels, ordering from the first foreground
         # to the last foreground to the background TODO We mixed the
         # model and implementation. This is the first thing to go when
         # separating them
-        all_pixels = [
-            layer.next_frame(layout, time, n_pixels, osc_data) for layer in self.instances
-        ]
-        # Smush them together, taking the first non-None pixel available
-        pixels = [get_first_non_empty(pixs) for pixs in zip(*all_pixels)]
+        for layer in self.instances:
+            layer.next_frame(pixels, layout, t, n_pixels, osc_data)
+
         return pixels
