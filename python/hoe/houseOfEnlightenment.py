@@ -40,10 +40,8 @@ def parse_command_line():
     if not options.raw_layout:
         parser.print_help()
         print
-        print (
-            'ERROR: you must specify a layout file using '
-            '--layout or use default (../layout/hoeLayout.json)'
-        )
+        print('ERROR: you must specify a layout file using '
+              '--layout or use default (../layout/hoeLayout.json)')
         print
         sys.exit(1)
 
@@ -96,6 +94,7 @@ def init_scene_manager(osc_server, opc_client, config):
     mgr = scene_manager.SceneManager(osc_server, opc_client, config.layout, config.fps)
     init_osc_inputs(mgr)
     return mgr
+
 
 def init_osc_inputs(mgr):
     # SceneManager -> None
@@ -154,7 +153,8 @@ def launch():
 
     osc_server.addMsgHandler("/nextScene", scene.next_scene_handler)
 
-    keyboard_thread = Thread(target=listen_for_keyboard, args=(scene,), name="KeyboardListeningThread")
+    keyboard_thread = Thread(
+        target=listen_for_keyboard, args=(scene, ), name="KeyboardListeningThread")
     keyboard_thread.setDaemon(True)
     keyboard_thread.start()
 
@@ -164,7 +164,6 @@ def launch():
     # osc_server.shutdown()
 
     opc.disconnect()
-
 
 
 if __name__ == '__main__':
