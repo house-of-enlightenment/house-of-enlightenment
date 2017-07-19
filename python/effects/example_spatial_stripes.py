@@ -13,8 +13,8 @@ class DadJokes(Effect):
     def next_frame(self, layout, time, n_pixels, osc_data):
         return [(255,0,0) for ii, coord in enumerate(layout)] #TODO: faster with proper python array usage
 
-class SpatialStripesBackground(Effect):
 
+class SpatialStripesBackground(Effect):
     def next_frame(self, layout, time, n_pixels, osc_data):
         return [self.spatial_stripes(time, coord, ii, n_pixels) for ii, coord in enumerate(layout)]
 
@@ -41,19 +41,20 @@ class SpatialStripesBackground(Effect):
 
 
 class MovingDot(Effect):
+    def __init__(self, spark_rad=8):
+        self.spark_rad = spark_rad
+
     def next_frame(self, layout, time, n_pixels, osc_data):
-        return [self.moving_dot(time, coord, ii, n_pixels) for ii, coord in enumerate(layout)]
+        spark_ii = (time*80) % n_pixels
 
-    def moving_dot(self, t, coord, ii, n_pixels):
+        return [self.moving_dot(ii, spark_ii, n_pixels) for ii, coord in enumerate(layout)]
+
+    def moving_dot(self, ii, spark_ii, n_pixels):
         # make a moving white dot showing the order of the pixels in the layout file
-        spark_ii = (t*80) % n_pixels
-        spark_rad = 8
-        spark_val = max(0, (spark_rad - color_utils.mod_dist(ii, spark_ii, n_pixels)) / spark_rad)
-        if(spark_val==0):
+        spark_val = max(0, (self.spark_rad - color_utils.mod_dist(ii, spark_ii, n_pixels)) / self.spark_rad)
+        if spark_val==0:
             return None
-        spark_val = min(1, spark_val*2)
-
-        spark_val*=256
+        spark_val = min(1, spark_val*2)*256
         return (spark_val, spark_val, spark_val)
 
 
