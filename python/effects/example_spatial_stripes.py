@@ -7,20 +7,21 @@ from hoe.scene_manager import Effect
 from pydoc import locate
 
 
-#TODO: base class
 class DadJokes(Effect):
     """Always return red"""
-    def next_frame(self, pixels, layout, t, n_pixels, osc_data):
-        for ii in range(n_pixels):
+    def next_frame(self, pixels, t, osc_data):
+        for ii in range(self.n_pixels):
             pixels[ii] = pixels[ii] if pixels[ii] else (255, 0, 0)
 
+
 class SpatialStripesBackground(Effect):
-    def next_frame(self, pixels, layout, t, n_pixels, osc_data):
-        return [self.spatial_stripes(pixels,t, coord, ii, n_pixels) for ii, coord in enumerate(layout)]
+    def next_frame(self, pixels, t, osc_data):
+        for ii, coord in enumerate(self.layout):
+            self.spatial_stripes(pixels,t, coord, ii)
 
     #-------------------------------------------------------------------------------
     # color function
-    def spatial_stripes(self, pixels, t, coord, ii, n_pixels):
+    def spatial_stripes(self, pixels, t, coord, ii):
         """Compute the color of a given pixel.
 
         t: time in seconds since the program started.
@@ -44,13 +45,15 @@ class SpatialStripesBackground(Effect):
 
 
 class MovingDot(Effect):
-    def __init__(self, spark_rad=8):
+    def __init__(self, layout, n_pixels, spark_rad=8):
+        Effect.__init__(self, layout, n_pixels)
         self.spark_rad = spark_rad
 
-    def next_frame(self, pixels, layout, t, n_pixels, osc_data):
-        spark_ii = (t*80) % n_pixels
+    def next_frame(self, pixels, t, osc_data):
+        spark_ii = (t*80) % self.n_pixels
 
-        return [self.moving_dot(pixels, ii, spark_ii, n_pixels) for ii, coord in enumerate(layout)]
+        for ii in range(self.n_pixels):
+            self.moving_dot(pixels, ii, spark_ii, self.n_pixels)
 
     def moving_dot(self, pixels, ii, spark_ii, n_pixels):
         """ make a moving white dot showing the order of the pixels in the layout file """
@@ -66,17 +69,18 @@ class MovingDot(Effect):
 
 
 class AdjustableFillFromBottom(Effect):
-    def next_frame(self, pixels, layout, t, n_pixels, osc_data):
-        return [self.fill(pixels, t, coord, ii, n_pixels, osc_data) for ii,coord in enumerate(layout)]
+    def next_frame(self, pixels, t, osc_data):
+        for ii, coord in enumerate(self.layout):
+            self.fill(pixels, t, coord, ii, osc_data)
 
-    def fill(self, pixels, time, coord, ii, n_pixels, osc_data):
-        if(not pixels[ii] and "bottom_fill" in osc_data.faders and int(osc_data.faders["bottom_fill"]) > int(coord["row"])):
+    def fill(self, pixels, time, coord, ii, osc_data):
+        if (not pixels[ii]) and "bottom_fill" in osc_data.faders and int(osc_data.faders["bottom_fill"]) > int(coord["row"]):
             pixels[ii] = tuple([int(osc_data.faders[key]) for key in ['r','g','b']])
 
 
 class PrintOSC(Effect):
     """A effect layer that just prints OSC info when it changes"""
-    def next_frame(self, pixels, layout, t, n_pixels, osc_data):
+    def next_frame(self, pixels, t, osc_data):
         if osc_data.contains_change:
             print "Frame's osc_data is", osc_data
 

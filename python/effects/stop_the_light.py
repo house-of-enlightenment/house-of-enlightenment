@@ -26,7 +26,8 @@ YELLOW = (255, 255, 0)
 BLACK = (0, 0, 0)
 
 class StopTheLight(Effect):
-    def __init__(self, strip_bottom=5, strip_top=20):
+    def __init__(self, layout, n_pixels, strip_bottom=5, strip_top=20):
+        Effect.__init__(self, layout, n_pixels)
         self.target_location = 15 # Moved to not deal with wrap-around case at 2am
         # self.rotation_speed = .5 # rotation / second
         self.sprite_location=20
@@ -38,12 +39,13 @@ class StopTheLight(Effect):
         self.strip_bottom=strip_bottom
         self.strip_top=strip_top
 
-    def next_frame(self, pixels, layout, time, n_pixels, osc_data):
-        hoe_layout = Layout(layout)
-        bottom_rows = set(reduce(lambda a,b: a+b, [hoe_layout.row[i] for i in range(self.strip_bottom, self.strip_top)]))
-        target_idx = bottom_rows & set(hoe_layout.slice[self.target_location])
+        self.hoe_layout = Layout(self.layout)
+        self.bottom_rows = set(reduce(lambda a,b: a+b, [self.hoe_layout.row[i] for i in range(self.strip_bottom, self.strip_top)]))
+        self.target_idx = self.bottom_rows & set(self.hoe_layout.slice[self.target_location])
 
-        max_slice = max(hoe_layout.slice)
+        self.max_slice = max(self.hoe_layout.slice)
+
+    def next_frame(self, pixels, t, osc_data):
 
         if self.hit_countdown:
             # Already hit, waiting to start moving again
@@ -63,14 +65,14 @@ class StopTheLight(Effect):
                     self.hit_countdown = 15
                     self.sprite_color = YELLOW
             else:  # No button pressed, so move and set the color back to blue (in case this is first frame back)
-                self.sprite_location = (self.sprite_location + self.direction) % max_slice
+                self.sprite_location = (self.sprite_location + self.direction) % self.max_slice
                 self.sprite_color = BLUE
 
         sprite_idx = (
-            bottom_rows &
+            self.bottom_rows &
             set.union(
                 *[
-                    set(hoe_layout.slice[i % (max_slice + 1)])
+                    set(self.hoe_layout.slice[i % (self.max_slice + 1)])
                     for i in
                     (self.sprite_location - 1, self.sprite_location, self.sprite_location + 1)
                 ])
@@ -79,20 +81,21 @@ class StopTheLight(Effect):
         # Now we are ready to color things in:
 
         # Since this will be a foreground layer, we can't fall back to other pix in the bottoms rows
-        for idx in bottom_rows:
+        for idx in self.bottom_rows:
             pixels[idx] = pixels[idx] if pixels[idx] else \
                 self.sprite_color if idx in sprite_idx else \
-                    RED if idx in target_idx else \
+                    RED if idx in self.target_idx else \
                         BLACK
 
 
 class SolidColor(Effect):
-    def __init__(self, color=(100, 100, 100)):
+    def __init__(self, layout, n_pixels, color=(100, 100, 100)):
+        Effect.__init__(self, layout, n_pixels)
         self.color = color
 
     """Always return color"""
-    def next_frame(self, pixels, layout, t, n_pixels, osc_data):
-        for ii in range(n_pixels):
+    def next_frame(self, pixels, t, osc_data):
+        for ii in range(self.n_pixels):
             pixels[ii] = pixels[ii] if pixels[ii] else self.color
 
 
