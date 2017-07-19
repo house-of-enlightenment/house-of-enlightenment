@@ -91,14 +91,11 @@ def start_opc(server):
     return client
 
 
-def start_scene_manager(osc_server, opc_client, config):
+def init_scene_manager(osc_server, opc_client, config):
     # OSCServer, Client, dict -> SceneManager, Thread
     mgr = scene_manager.SceneManager(osc_server, opc_client, config.layout, config.fps)
     init_osc_inputs(mgr)
-    thread = mgr.serve_in_background()
-
-    return mgr, thread
-
+    return mgr
 
 def init_osc_inputs(mgr):
     # SceneManager -> None
@@ -121,23 +118,8 @@ def init_osc_inputs(mgr):
     print 'Registered OSC Inputs\n'
 
 
-# -------------------------------------------------------------------------------
-
-
-def launch():
-    config = parse_command_line()
-    osc_server = osc_utils.create_osc_server()
-
-    opc = start_opc(config.server)
-    scene, scene_thread = start_scene_manager(osc_server, opc, config)
-    # scene.start() #run forever
-
-    osc_server.addMsgHandler("/nextScene", scene.next_scene_handler)
-
-    while not scene.is_running:
-        sleep(.1)
-
-    from OSC import OSCMessage
+def listen_for_keyboard(scene):
+    # SceneManager -> None
     osc_client = osc_utils.get_osc_client()
     keep_running = True
     while keep_running:
@@ -150,15 +132,8 @@ def launch():
             # a short-term fix to not take down the simulator with us
             print "Received shutdown command. Exiting now"
             scene.shutdown()
-            print "Waiting up to 10s for scene thread to shutdown"
-            scene_thread.join(10000)
-            # osc_server.shutdown()
-            # TODO: This was deadlocking!
-            print "Skipped OSC Server Shutdown"
-            opc.disconnect()
-            print "OPC Connector Terminated"
             keep_running = False
-        if (key_lower in ["next"]):
+        elif (key_lower in ["next"]):
             osc_utils.send_simple_message(osc_client, "/nextScene")
         else:
             args = key.split(" ", 1)
@@ -168,6 +143,28 @@ def launch():
                 osc_utils.send_simple_message(osc_client, args[0], args[1])
 
         sleep(.1)
+
+
+def launch():
+    config = parse_command_line()
+    osc_server = osc_utils.create_osc_server()
+
+    opc = start_opc(config.server)
+    scene = init_scene_manager(osc_server, opc, config)
+
+    osc_server.addMsgHandler("/nextScene", scene.next_scene_handler)
+
+    keyboard_thread = Thread(target=listen_for_keyboard, args=(scene,), name="KeyboardListeningThread")
+    keyboard_thread.setDaemon(True)
+    keyboard_thread.start()
+
+    scene.serve_forever()
+
+    # TODO: This was deadlocking
+    # osc_server.shutdown()
+
+    opc.disconnect()
+
 
 
 if __name__ == '__main__':
