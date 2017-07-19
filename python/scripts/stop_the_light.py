@@ -45,7 +45,7 @@ def main():
     client.put_pixels(pixels)
 
     max_slice = max(hoe_layout.slice)
-    rotation_speed = .5 # rotation / second
+    rotation_speed = .5  # rotation / second
     fps = 30
     start = time.time()
     location = 0
