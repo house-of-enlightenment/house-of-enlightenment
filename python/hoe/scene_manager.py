@@ -74,7 +74,7 @@ class SceneManager(object):
         scene_info = self.scenes[self.scene_index]
         # TODO: Clean this up
         print '\tInitializing scene %s' % scene_info[1]
-        self.curr_scene = scene_info[1].init_scene(scene_info[0], self.layout, self.n_pixels)
+        self.curr_scene = scene_info[1].init_scene(self.layout, self.n_pixels)
         print '\tScene %s initialized\n' % self.curr_scene
 
     def get_osc_frame(self, clear=True):
@@ -199,10 +199,11 @@ class Effect(object):
 
 
 class EffectDefinition(object):
-    def __init__(self, name, clazz):  # TODO inputs
+    def __init__(self, name, clazz, **kwargs):  # TODO inputs
         # str, class -> None
         self.clazz = clazz
         self.name = name
+        self.kwargs = kwargs
 
     def __str__(self):
         # TODO: What's the python way of doing this?
@@ -212,7 +213,7 @@ class EffectDefinition(object):
         # None -> Effect
         print "\tCreating instance of effect %s" % self
         # TODO: pass args
-        return self.clazz(layout=layout, n_pixels=n_pixels)
+        return self.clazz(layout=layout, n_pixels=n_pixels, **self.kwargs)
         # return [child.create_effect() for child in self.children] + [self.clazz()]
 
 
@@ -227,7 +228,7 @@ class SceneDefinition(object):
         # TODO: What's the python way of doing this?
         return "Scene(%s)" % self.name
 
-    def init_scene(self, package, layout, n_pixels):
+    def init_scene(self, layout, n_pixels):
         """Initialize a scene"""
         # TODO: init child instances
         # TODO: cleanup
