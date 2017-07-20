@@ -1,0 +1,7 @@
+input[type=range][orient=vertical] {
+    // writing-mode: bt-lr; /* IE */
+    appearance: slider-vertical; /* WebKit */
+    width: 8px;
+    height: 125px;
+    padding: 0 5px;
+}

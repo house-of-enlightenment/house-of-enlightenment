@@ -13,10 +13,10 @@ const indexHtml = path.resolve(buildDirectory, "index.html");
 
 function forwardWebsocketMsgOverOsc(udpPort) {
   const wss = new WebSocket.Server({ port: 4040 });
-  wss.on('connection', function connection(ws) {
-    console.log('Websocket connection made');
-    ws.on('message', function incoming(message) {
-      console.log('Received: %s', message);
+  wss.on("connection", function connection(ws) {
+    console.log("Websocket connection made");
+    ws.on("message", function incoming(message) {
+      console.log("Received: %s", message);
       parseAndSend(message, udpPort);
     });
   })
@@ -24,7 +24,8 @@ function forwardWebsocketMsgOverOsc(udpPort) {
 
 
 function parseAndSend(message, udpPort) {
-  var data = JSON.parse(message)
+  var data = JSON.parse(message);
+
   udpPort.send({
     address: "/button",
     args: [
@@ -70,7 +71,7 @@ udpPort.open();
 
 // When the port is read, send an OSC message to, say, SuperCollider
 udpPort.on("ready", function () {
-  console.log('READY');
+  console.log("READY");
   forwardWebsocketMsgOverOsc(udpPort);
 
   // TODO: should actually wait for the websocket to be made

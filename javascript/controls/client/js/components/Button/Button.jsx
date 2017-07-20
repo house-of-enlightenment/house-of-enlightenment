@@ -12,9 +12,7 @@ const Button = ({ onClick, direction }) => {
 
   return (
     <button onClick={onClick}>
-      {
-        direction === "left" ? "<" : ">"
-      }
+      { direction === "left" ? "<" : ">"}
     </button>
   );
 
