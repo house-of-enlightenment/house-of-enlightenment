@@ -3,8 +3,8 @@ import random
 import sys
 import time
 
-import opc
-import osc_utils
+from hoe import opc
+from hoe import osc_utils
 
 
 WHITE = (255, 255, 255)

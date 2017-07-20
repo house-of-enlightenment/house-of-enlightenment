@@ -10,3 +10,7 @@ This package is the pattern logic driving the House of Enlightment LEDs.
    - Development mode (`-e`) is recommended so that any changes made to the code
 	 are reflected immediately and you don't need to install the package again
 
+## Contributing
+### Before you commit
+Reformat your code:
+`yapf --in-place -r hoe

@@ -51,9 +51,32 @@ const generateLayout = exports.generateLayout = function generateLayout(data) {
 
   )(R.range(0, 66));
 
+  // const maxMins = getMaxMins(strips);
+  // console.log("maxMins", JSON.stringify(maxMins, null, 2));
+
   return strips;
 };
 
+
+function getMaxMins(strips){
+
+  function maxMins(lookup, { point }) {
+
+    // for each x, y, z
+    return R.compose(
+      R.map(
+        i => ({
+          min: R.min(point[i], R.path([i, "min"], lookup)),
+          max: R.max(point[i], R.path([i, "max"], lookup))
+        })
+      )
+    )(R.range(0, 3));
+
+  }
+
+  return R.reduce(maxMins, null, strips);
+
+}
 
 /**
  * @param sliceAt0 {Object} { top: [], bottom: [] }
@@ -87,7 +110,7 @@ const processSlice = R.curry((sliceAt0, sliceIndex) => {
       return "10.0.0.34";
     }
 
-  }
+  };
 
 
   // for each strip top/bottom
