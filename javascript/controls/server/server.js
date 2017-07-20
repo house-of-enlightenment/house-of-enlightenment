@@ -26,16 +26,14 @@ function forwardWebsocketMsgOverOsc(udpPort) {
 function parseAndSend(message, udpPort) {
   var data = JSON.parse(message);
 
+  console.log("message", JSON.stringify(data, null, 2));
+
   udpPort.send({
-    address: "/button",
+    address: `/input/station/${data.stationId}/${data.type}/${data.id}`,
     args: [
       {
-        type: "i",
-        value: data.controlsId
-      },
-      {
         type: "s",
-        value: data.leftOrRight
+        value: data.value || null
       }
     ]
   }, "127.0.0.1", 7000);

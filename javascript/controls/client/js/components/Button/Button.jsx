@@ -3,16 +3,16 @@ import { func, oneOf } from "prop-types";
 
 
 const propTypes = {
-  onClick: func.isRequired,
-  direction: oneOf(["left", "right"])
+  id: oneOf(["left", "right"]),
+  onClick: func.isRequired
 };
 
 
-const Button = ({ onClick, direction }) => {
+const Button = ({ id, onClick }) => {
 
   return (
     <button onClick={onClick}>
-      { direction === "left" ? "<" : ">"}
+      { id === "left" ? "<" : ">"}
     </button>
   );
 

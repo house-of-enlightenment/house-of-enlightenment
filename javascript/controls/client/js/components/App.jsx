@@ -10,24 +10,26 @@ const propTypes = {
 
 const App = ({ ws }) => {
 
-  const onButtonClick = R.curry((controlsId, leftOrRight) => {
+  const onButtonClick = R.curry((stationId, buttonId) => {
 
-    console.log(controlsId, leftOrRight);
+    console.log("button", stationId, buttonId);
 
     ws.send(JSON.stringify({
-      controlsId: controlsId,
+      stationId: stationId,
       type: "button",
-      leftOrRight: leftOrRight
+      id: buttonId
     }));
   });
 
-  const onSliderChange = R.curry((controlsId, value) => {
+  const onFaderChange = R.curry((stationId, faderId, value) => {
 
-    console.log("slider", controlsId, value);
+    console.log("fader", stationId, faderId, value);
 
     ws.send(JSON.stringify({
-      controlsId: controlsId,
-      type: "slider"
+      stationId: stationId,
+      type: "fader",
+      id: faderId,
+      value
     }));
   });
 
@@ -38,7 +40,7 @@ const App = ({ ws }) => {
         <Controls key={i}
           id={i}
           onButtonClick={onButtonClick(i)}
-          onSliderChange={onSliderChange(i)}
+          onFaderChange={onFaderChange(i)}
         />
       ))}
     </div>

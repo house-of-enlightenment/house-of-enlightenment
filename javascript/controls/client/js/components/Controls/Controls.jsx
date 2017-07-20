@@ -2,22 +2,22 @@ import React from "react";
 import { func, number } from "prop-types";
 
 import Button from "../Button/Button.jsx";
-import Slider from "../Slider/Slider.jsx";
+import Fader from "../Fader/Fader.jsx";
 
 const propTypes = {
   id: number.isRequired,
   onButtonClick: func.isRequired,
-  onSliderChange: func.isRequired
+  onFaderChange: func.isRequired
 };
 
 
-const Controls = ({ onButtonClick, onSliderChange }) => {
+const Controls = ({ onButtonClick, onFaderChange }) => {
 
   return (
     <div className="controls">
-      <Button onClick={() => onButtonClick("left")} direction="left" />
-      <Slider onChange={onSliderChange}/>
-      <Button onClick={() => onButtonClick("right")} direction="right" />
+      <Button id="left" onClick={() => onButtonClick(0)} />
+      <Fader id="middle" onChange={onFaderChange(0)} />
+      <Button id="right" onClick={() => onButtonClick(1)} />
     </div>
   );
 
