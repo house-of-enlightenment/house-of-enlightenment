@@ -20,7 +20,7 @@ def main():
         layout = json.load(f)
 
     server = osc_utils.create_osc_server()
-    server.addMsgHandler("/button", lambda *args: flash(client, layout))
+    server.addMsgHandler("/button", lambda *args: flash(client, layout, *args))
 
     max_row = max(pt['row'] for pt in layout)
     pixels = [WHITE] * len(layout)
@@ -30,7 +30,8 @@ def main():
         time.sleep(.1)
 
 
-def flash(client, layout):
+def flash(client, layout, *args):
+    print args
     color = random_rgb()
     for _ in range(3):
         client.put_pixels([color] * len(layout))
