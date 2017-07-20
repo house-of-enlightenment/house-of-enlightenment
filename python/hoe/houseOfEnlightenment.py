@@ -103,16 +103,20 @@ def init_osc_inputs(mgr):
     """
 
     # Good and easy faders for sharing across testing
-    mgr.add_fader("r", 50)
-    mgr.add_fader("g", 50)
-    mgr.add_fader("b", 255)
+    mgr.add_fader("r", default=50)
+    mgr.add_fader("g", default=50)
+    mgr.add_fader("b", default=255)
 
-    # Add some generic buttons
-    for i in range(6):
-        mgr.add_button("b%s" % i)
+    # Add "stations"
+    for s in range(6):
+        for i in range(6):
+            # TODO : Can we send to a single input each time with args data?
+            mgr.add_button("s%s.b%s" % (s, i), "/input/station/%s/button/%s" % (s, i))
+            mgr.add_fader("s%s.f%s" % (s, i), "/input/station/%s/fader/%s" % (s, i), 0)
+
 
     # A fader for example_spatial_stripes.AdjustableFillFromBottom
-    mgr.add_fader("bottom_fill", 25)
+    mgr.add_fader("bottom_fill", default=25)
 
     print 'Registered OSC Inputs\n'
 

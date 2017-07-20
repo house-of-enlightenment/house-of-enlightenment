@@ -136,31 +136,34 @@ class SceneManager(object):
         if args[0] > 0:
             self.next_scene(args)
 
-    def add_button(self, button_name):
-        print "Registering button at /input/button/%s" % button_name
+    def add_button(self, button_id, path=None):
+        path = path if path else "/input/button/%s" % button_id
+        print "Registering button %s at path %s" % (button_id, path)
 
         def handle_button(path, tags, args, source):
             print "Button [%s] received message: path=[%s], tags=[%s], args=[%s], source=[%s]" % (
-                button_name, path, tags, args, source)
-            self.osc_data.buttons[button_name] = 1
+                button_id, path, tags, args, source)
+            self.osc_data.buttons[button_id] = 1
             self.osc_data.contains_change = True
 
-        self.osc_server.addMsgHandler("/input/button/%s" % button_name, handle_button)
+        self.osc_server.addMsgHandler(path, handle_button)
         pass
 
-    def add_fader(self, handler_name, default=""):
-        print "Registering fader at /input/fader/%s" % handler_name
+    def add_fader(self, fader_id, path=None, default="0"):
+        path = path if path else "/input/fader/%s" % fader_id
+        print "Registering fader %s at %s" % (fader_id, path)
 
         def handle_fader(path, tags, args, source):
             print("Fader [{}] received message: "
                   "path=[{}], tags=[{}], args=[{}], source=[{}], name=[{}]").format(
-                      handler_name, path, tags, args, source, handler_name)
+                      fader_id, path, tags, args, source, fader_id)
             fader_value = args[0]
-            self.osc_data.faders[handler_name] = fader_value
+            self.osc_data.faders[fader_id] = fader_value
             self.osc_data.contains_change = True
 
-        self.osc_server.addMsgHandler("/input/fader/%s" % handler_name, handle_fader)
-        self.osc_data.faders[handler_name] = default
+        # TODO : force check for slashes
+        self.osc_server.addMsgHandler(path, handle_fader)
+        self.osc_data.faders[fader_id] = default
         pass
 
 
