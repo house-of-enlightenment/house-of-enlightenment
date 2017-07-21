@@ -41,7 +41,7 @@ function createGeometry(layout) {
       }),
       R.splitEvery(3) // r, g, b
     )(data);
-
+    geometry.attributes.color.needsUpdate = true;
   };
 
   const geometry = new THREE.BufferGeometry();
@@ -131,8 +131,6 @@ function createGeometry(layout) {
     colors[ j ]     = r / 255;
     colors[ j + 1 ] = g / 255;
     colors[ j + 2 ] = b / 255;
-    geometry.attributes.color.needsUpdate = true;
-
   }
 
   /** getHue */
