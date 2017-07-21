@@ -4,14 +4,12 @@ from hoe import color_utils
 from hoe.scene_manager import SceneDefinition
 from hoe.scene_manager import EffectDefinition
 from hoe.scene_manager import Effect
-from pydoc import locate
-
+import numpy as np
 
 class DadJokes(Effect):
     """Always return red"""
     def next_frame(self, pixels, t, osc_data):
-        for ii in range(self.n_pixels):
-            pixels[ii] = pixels[ii] if pixels[ii] else (255, 0, 0)
+        pixels[np.all(pixels==(0,0,0), axis=1)]=(255, 0, 0)
 
 
 class SpatialStripesBackground(Effect):
@@ -32,7 +30,7 @@ class SpatialStripesBackground(Effect):
         Returns an (r, g, b) tuple in the range 0-255
 
         """
-        if pixels[ii]:
+        if not np.array_equal(pixels[ii],(0,0,0)):
             return
 
         # make moving stripes for x, y, and z
@@ -58,7 +56,7 @@ class MovingDot(Effect):
     def moving_dot(self, pixels, ii, spark_ii, n_pixels):
         """ make a moving white dot showing the order of the pixels in the layout file """
 
-        if pixels[ii]:
+        if not np.array_equal(pixels[ii], (0,0,0)):
             return
 
         spark_val = max(0, (self.spark_rad - color_utils.mod_dist(ii, spark_ii, n_pixels)) / self.spark_rad)
@@ -74,7 +72,7 @@ class AdjustableFillFromBottom(Effect):
             self.fill(pixels, t, coord, ii, osc_data)
 
     def fill(self, pixels, time, coord, ii, osc_data):
-        if (not pixels[ii]) and "bottom_fill" in osc_data.faders and int(osc_data.faders["bottom_fill"]) > int(coord["row"]):
+        if (np.array_equal(pixels[ii], (0,0,0))) and "bottom_fill" in osc_data.faders and int(osc_data.faders["bottom_fill"]) > int(coord["row"]):
             pixels[ii] = tuple([int(osc_data.faders[key]) for key in ['r','g','b']])
 
 
