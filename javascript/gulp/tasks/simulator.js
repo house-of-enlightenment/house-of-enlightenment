@@ -11,7 +11,8 @@ module.exports = function simulatorTask(config, env) {
   const simulatorDest = path.resolve(config.root, "./javascript/simulator/build/");
   const projectRoot = config.root;
 
-  const simulatorTasks = ["copy", "js", "css"];
+  // const simulatorTasks = ["copy", "js", "css"];
+  const simulatorTasks = ["js", "css"];
 
   const simulatorConfig = {
     "css": {

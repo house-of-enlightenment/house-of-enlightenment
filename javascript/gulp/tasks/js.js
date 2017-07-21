@@ -13,6 +13,7 @@ const vinylSource = require("vinyl-source-stream");
 const vinylBuffer = require("vinyl-buffer");
 const findup      = require("find-up");
 const R           = require("ramda");
+const runSequence = require("run-sequence");
 
 
 module.exports = function jsTask(config, env){
@@ -143,7 +144,7 @@ module.exports = function jsTask(config, env){
   });
 
 
-  /* 3. Create entry "js" gulp task to run them all */
+  /* 3. Create entry "js" function to run them all */
 
   // if package.json changes, re-run all js tasks
   quench.registerWatcher("js", [ findup.sync("package.json") ]);
@@ -154,8 +155,10 @@ module.exports = function jsTask(config, env){
     R.map(R.prop("gulpTaskId"))
   )(jsConfig.files);
 
-  // the main js task depends on all the individual file tasks
-  gulp.task("js", allTasks);
+  // a function to run all the individual file tasks in parallel
+  return function(cb){
+    runSequence([ allTasks ]);
+  };
 
 };
 

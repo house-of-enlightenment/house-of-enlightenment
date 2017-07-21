@@ -22,7 +22,24 @@ const defaults = {
 quench.singleTasks(defaults);
 
 
+const gulpCopy = require("./tasks/copy.js");
+
+
+gulp.task("copyTest", gulpCopy({
+  base: `${projectRoot}/javascript/test/`,
+  tasks: [
+    {
+      gulpTaskId: "copy-test",
+      src: `${projectRoot}/javascript/test/**/*`,
+      dest: `${projectRoot}/javascript/testBuild`,
+      watch: `${projectRoot}/javascript/test/**/*`
+    }
+  ]
+}));
+
 gulp.task("default", function(){
+
+
 
   console.log("Available commands: ");
   console.log("");

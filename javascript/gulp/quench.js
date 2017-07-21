@@ -78,12 +78,7 @@ const environments = ["development", "production", "local"];
  *      eg. ["js", "css", "svg-sprite"] << will run in parallel
  *
  */
-let config = {};
 
-// register the environments with gulp-environments
-environments.forEach(function(environment) {
-  env[environment] = env.make(environment);
-});
 
 // --watch will be treated as a boolean
 // can do --no-watch to set it to false
@@ -93,7 +88,7 @@ const yargOptions = {
     type: "boolean"
   },
   "env": {
-    default: undefined,
+    default: "local",
     type: "string"
   },
   "layout": {
@@ -103,6 +98,76 @@ const yargOptions = {
 };
 
 const yargs = require("yargs").options(yargOptions).argv;
+
+
+/* when this file is loaded, init */
+initEnv();
+
+
+function initEnv(){
+
+  // register the environments with gulp-environments
+  environments.forEach(function(environment) {
+    env[environment] = env.make(environment);
+  });
+
+
+  // validate the env
+  if (environments.indexOf(yargs.env) === -1) {
+    logError("Environment '" + yargs.env + "' not found! Check your spelling or add a new environment in quench.js.");
+    logError("Valid environments: " + environments.join(", "));
+    process.exit();
+  }
+
+  // set NODE_ENV https://facebook.github.io/react/downloads.html#npm
+  process.env.NODE_ENV = yargs.env;
+  // set gulp-environments
+  env.current(env[yargs.env]);
+
+  console.log(color.green("Building for '" + yargs.env + "' environment"));
+}
+
+
+
+/**
+ * watches the glob if --watch is passed on the command line
+ * @param  {String} taskName the name of the task
+ * @param  {String} glob files to watch
+ * @param  {Function} task task to run
+ * @return {Nothing}
+ */
+module.exports.maybeWatch = function maybeWatch(taskName, glob, task){
+
+  // if --watch was provided on the command line
+  if (yargs.watch){
+
+    // alert the console that we're watching
+    logYellow("watching", taskName + ":", JSON.stringify(glob, null, 2));
+
+    // if there is a taks, watch and run that task
+    if (task){
+      return watch(glob, task);
+    }
+    // otherwise, watch and start the taskName
+    else {
+      return watch(glob, function(){
+        gulp.start([ taskName ]);
+      });
+    }
+
+  }
+
+};
+
+
+
+module.exports.getEnv = function getEnv(){
+  return env.current();
+};
+
+
+///////////
+
 
 
 /**

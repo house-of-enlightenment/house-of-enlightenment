@@ -8,9 +8,9 @@ const header       = require("gulp-header");
 const concat       = require("gulp-concat");
 const sourcemaps   = require("gulp-sourcemaps");
 const R            = require("ramda");
+const runSequence  = require("run-sequence");
 
-
-module.exports = function cssTask(config, env) {
+module.exports = function cssTask(userConfig, env) {
 
   // css settings
   const cssConfig = R.merge({
@@ -31,7 +31,7 @@ module.exports = function cssTask(config, env) {
     ],
 
     /**
-     *  Add new stylesheets here (or pass via config.css.stylesheets)
+     *  Add new stylesheets here (or pass via userConfig.stylesheets)
      *  keys:
      *    gulpTaskId  : unique name for the gulp task
      *    src         : src scss files to include in this stylesheet
@@ -39,21 +39,9 @@ module.exports = function cssTask(config, env) {
      *    filename    : name for the generated file (without -generated)
      *    watch       : rerun this files's task when these files change (can be an array of globs)
      */
-    stylesheets: [
-      {
-        gulpTaskId: "css-index",
-        src: [
-          `${config.root}/scss/**/*.scss`,
-          `${config.root}/js/**/*.scss"`
-        ],
-        filename: "index.css",
-        watch: [
-          `${config.root}/scss/**/*.scss`,
-          `${config.root}/js/**/*.scss"`
-        ]
-      }
-    ]
-  }, config.css);
+    stylesheets: []
+    
+  }, userConfig);
 
 
 
@@ -90,8 +78,11 @@ module.exports = function cssTask(config, env) {
   });
 
 
-  /* 2. Create css task that depends on all the tasks above */
+  /* 2. Create css function to run all the tasks above */
+  const allTasks = cssConfig.stylesheets.map(s => s.gulpTaskId);
 
-  gulp.task("css", cssConfig.stylesheets.map(s => s.gulpTaskId));
+  return function(cb){
+    runSequence([ allTasks ]);
+  };
 
 };
