@@ -36,16 +36,16 @@ else:
 # Send pixels forever
 while True:
 
-    for x in range(0, 100):
+    
 
-        pixels = []
+    pixels = []
 
-        pixels += [(x,0,0)] * 120
-        pixels += [(0,x,0)] * 120
-        pixels += [(0,0,x)] * 120
-        pixels += [(x,x,x)] * 120
+    pixels += [(255,0,0)] * 120
+    pixels += [(0,255,0)] * 120
+    pixels += [(0,0,255)] * 120
+    pixels += [(255,255,255)] * 120
 
-        pixels = pixels * 12
+    pixels = pixels * 12
 
 
 
