@@ -1,25 +1,35 @@
 import collections
 import json
 
+import numpy as np
+
 
 _GROUPBY = [
     "address",
-    "row",
     "section",
-    "slice",
     "strip",
     "stripIndex",
     "topOrBottom",
 ]
 
 
+ROWS = 216
+COLUMNS = 66
+
+
 class Layout(object):
     def __init__(self, pixels):
         self.pixels = pixels
         # for example, layout.row[0] will return a list of pixels in row 0.
+        self.grid = np.zeros((ROWS, COLUMNS))
+
         for attr in _GROUPBY:
             setattr(self, attr, collections.defaultdict(list))
+
         for i, pixel in enumerate(self.pixels):
+            self.grid[pixel['row'], pixel['slice']] = i
             for attr in _GROUPBY:
                 getattr(self, attr)[pixel[attr]].append(i)
-        # TODO: it might be useful to know the max rows and max columns
+
+        for attr in _GROUPBY:
+            setattr(self, attr, {k: v for k, v in getattr(self, attr).items()})
