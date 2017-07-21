@@ -102,6 +102,11 @@ net.createServer(function (socket) {
 
   });
 
+  socket.on("close", function() {
+    console.log('Connection closed');
+    ws.close();
+  });
+
 }).listen(7890, () => {
   console.log("Forwarding OPC input from port 7890 to 3030");
 });
