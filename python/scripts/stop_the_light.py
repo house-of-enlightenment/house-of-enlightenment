@@ -10,6 +10,8 @@ import math
 import sys
 import time
 
+import numpy as np
+
 from hoe import layout
 from hoe import opc
 from hoe import osc_utils
@@ -36,47 +38,37 @@ def main():
     # any button will work
     server.addMsgHandler("/input", lambda *args: stop(queue, *args))
 
-    pixels = [WHITE]*len(hoe_layout.pixels)
+    pixels = np.zeros((len(hoe_layout.pixels), 3), np.int8)
+    pixels[:] = 255
 
-    bottom_rows = set(hoe_layout.row[0] + hoe_layout.row[1])
-    target_idx = bottom_rows & set(hoe_layout.slice[0])
-    for idx in target_idx:
-        pixels[idx] = RED
+    bottom = slice(2)
+    section_centers = range(6, 66, 11)
+    # not sure what I want to do with the targets yet
+    target_idx = hoe_layout.grid[bottom, section_centers]
+    pixels[target_idx] = RED
     client.put_pixels(pixels)
 
-    max_slice = max(hoe_layout.slice)
     rotation_speed = .5  # rotation / second
     fps = 30
     start = time.time()
     location = 0
+    sprite = Sprite(location, rotation_speed, start)
+    frame_count = 1
     while True:
         # when starting a loop, don't want any previous (perhaps old)
         # commands to be around, so empty this out
         empty_queue(queue)
 
+        prev = start
         while True:
             now = time.time()
-            sprite_rotation = (now - start) * rotation_speed
-            sprite_location = int(max_slice * sprite_rotation) + location
-            sprite_idx = (
-                bottom_rows &
-                set.union(
-                    *[
-                        set(hoe_layout.slice[i % (max_slice + 1)])
-                        for i in
-                        (sprite_location - 1, sprite_location, sprite_location + 1)
-                    ])
-            )
-
-            pixels = [WHITE]*len(hoe_layout.pixels)
-            for idx in target_idx:
-                pixels[idx] = RED
-
-            for idx in sprite_idx:
-                pixels[idx] = BLUE
+            pixels[:] = 255
+            sprite.update(now)
+            sprite_idx = hoe_layout.grid[bottom, sprite.columns()]
+            pixels[target_idx] = RED
+            pixels[sprite_idx] = BLUE
 
             client.put_pixels(pixels)
-
             try:
                 should_stop = queue.get_nowait()
                 if should_stop:
@@ -95,12 +87,39 @@ def main():
             except Queue.Empty:
                 pass
 
-            next_frame = now + 1 / fps - time.time()
-            if next_frame > 0:
-                time.sleep(next_frame)
+            frame_took = time.time() - now
+            remaining_until_next_frame = (1 / fps) - frame_took
+            if remaining_until_next_frame > 0:
+                print time.time(), frame_count, frame_took, remaining_until_next_frame
+                time.sleep(remaining_until_next_frame)
             else:
+                print "!! Behind !!", next_frame
                 # dammit, we're running too slow!
                 pass
+            frame_count += 1
+
+
+class Sprite(object):
+    def __init__(self, start_location, rotation_speed, start, width=3):
+        self.start_location = start_location
+        self.rotation_speed = rotation_speed
+        self.location = start_location
+        self.start = start
+        self.width = width
+
+    def update(self, now):
+        sprite_rotation = (now - self.start) * self.rotation_speed
+        location = int(layout.COLUMNS * sprite_rotation) + self.start_location
+        self.location = location % layout.COLUMNS
+
+    def columns(self):
+        left = int(self.width / 2)
+        right = self.width - left
+        return map(colmod, range(self.location - left, self.location + right))
+
+
+def colmod(i):
+    return divmod(i, layout.COLUMNS)[1]
 
 
 def empty_queue(queue):
