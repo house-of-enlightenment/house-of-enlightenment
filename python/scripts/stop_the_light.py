@@ -34,7 +34,7 @@ def main():
 
     server = osc_utils.create_osc_server()
     # any button will work
-    server.addMsgHandler("/button", lambda *args: stop(queue))
+    server.addMsgHandler("/input", lambda *args: stop(queue, *args))
 
     pixels = [WHITE]*len(hoe_layout.pixels)
 
@@ -111,8 +111,14 @@ def empty_queue(queue):
             return
 
 
-def stop(queue):
-    print "Stop command recieved"
+
+def parse_address(address):
+    match = re.match('/input/stations/(\d+)/button/(\d+)', address)
+    return dict(zip(('station', 'button'), match.groups()))
+
+
+def stop(queue, address, types, payload, *args):
+    print address, types, payload, args
     queue.put(True)
 
 
