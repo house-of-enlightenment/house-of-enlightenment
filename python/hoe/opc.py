@@ -35,6 +35,9 @@ Recommended use:
 import socket
 import struct
 
+import numpy as np
+
+
 kinet_data = [0x0401dc4a, 0x0100, 0x0101, 0x00000000, 0x00, 0x00, 0x0000, 0xffffffff, 0x00]
 kinet_header = struct.pack(">IHHIBBHIB", *kinet_data)
 kinet_maxpixels = 170
@@ -74,10 +77,11 @@ class Client(object):
         self._port = int(self._port)
 
         self._socket = None  # will be None when we're not connected
-
+        # TODO: if you want a different protocol, make a different class
+        assert protocol == 'opc'
         self.protocol = protocol
-        self.socket_type = socket.SOCK_STREAM if self.protocol == "opc" else socket.SOCK_DGRAM
-        self.header = bytearray(4) if self.protocol == "opc" else kinet_header
+        self.socket_type = socket.SOCK_STREAM
+        self.header = bytearray(4)
         self.message = bytearray()
 
     def _debug(self, m):
@@ -160,13 +164,17 @@ class Client(object):
             self._debug('put_pixels: not connected.  ignoring these pixels.')
             return False
 
-        self.allocate_message(pixels)
-        # build OPC message
-        if (self.protocol == "opc"):
-            self.header = self.get_opc_header(channel, pixels)
-        self.headerl = len(self.header)
-        self.copy_header_into_message()
-        self.copy_pixels_into_message(pixels)
+        if isinstance(pixels, np.ndarray):
+            header = self.get_opc_header(channel, pixels)
+            self.message = header + pixels.tobytes()
+        else:
+            self.allocate_message(pixels)
+            # build OPC message
+            if (self.protocol == "opc"):
+                self.header = self.get_opc_header(channel, pixels)
+            self.headerl = len(self.header)
+            self.copy_header_into_message()
+            self.copy_pixels_into_message(pixels)
         if not self._send_message():
             return False
         if not self._long_connection:
