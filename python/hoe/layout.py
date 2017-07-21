@@ -19,7 +19,7 @@ class Layout(object):
     def __init__(self, pixels):
         self.pixels = pixels
         # for example, layout.row[0] will return a list of pixels in row 0.
-        self.grid = np.zeros((ROWS, COLUMNS))
+        self.grid = np.zeros((ROWS, COLUMNS), np.int)
 
         for attr in _GROUPBY:
             setattr(self, attr, collections.defaultdict(list))
