@@ -34,7 +34,7 @@ def main():
     queue = Queue.Queue()
 
     server = osc_utils.create_osc_server()
-    # any button will work
+    # pylint: disable=no-value-for-parameter
     server.addMsgHandler("/input", lambda *args: stop(queue, *args))
 
     pixels = np.zeros((len(hoe_layout.pixels), 3), np.int8)
@@ -75,10 +75,7 @@ def main():
                     # and then continue on
                     # Reset our timer and location
                     time.sleep(5)
-                    start = time.time()
-                    location = sprite_location
-                    rotation_speed = -rotation_speed
-                    # and restart the inner loop
+                    sprite.reverse()
                     break
                 else:
                     print 'should_stop'
@@ -92,7 +89,7 @@ def main():
                 print time.time(), frame_count, frame_took, remaining_until_next_frame
                 time.sleep(remaining_until_next_frame)
             else:
-                print "!! Behind !!", next_frame
+                print "!! Behind !!", remaining_until_next_frame
                 # dammit, we're running too slow!
                 pass
             frame_count += 1
@@ -105,6 +102,11 @@ class Sprite(object):
         self.location = start_location
         self.start = start
         self.width = width
+
+    def reverse(self):
+        self.start_location = self.location
+        self.rotation_speed = -self.rotation_speed
+        self.start = time.time()
 
     def update(self, now):
         sprite_rotation = (now - self.start) * self.rotation_speed
@@ -127,11 +129,6 @@ def empty_queue(queue):
             queue.get_nowait()
         except Queue.Empty:
             return
-
-
-def parse_address(address):
-    match = re.match('/input/stations/(\d+)/button/(\d+)', address)
-    return dict(zip(('station', 'button'), match.groups()))
 
 
 def stop(queue, address, types, payload, *args):
