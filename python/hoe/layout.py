@@ -3,7 +3,6 @@ import json
 
 import numpy as np
 
-
 _GROUPBY = [
     "address",
     "section",
@@ -11,7 +10,6 @@ _GROUPBY = [
     "stripIndex",
     "topOrBottom",
 ]
-
 
 ROWS = 216
 COLUMNS = 66

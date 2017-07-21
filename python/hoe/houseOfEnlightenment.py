@@ -114,7 +114,6 @@ def init_osc_inputs(mgr):
             mgr.add_button("s%s.b%s" % (s, i), "/input/station/%s/button/%s" % (s, i))
             mgr.add_fader("s%s.f%s" % (s, i), "/input/station/%s/fader/%s" % (s, i), 0)
 
-
     # A fader for example_spatial_stripes.AdjustableFillFromBottom
     mgr.add_fader("bottom_fill", default=25)
 

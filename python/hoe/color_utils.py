@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 """Helper functions to make color manipulations easier."""
 
 from __future__ import division
@@ -14,8 +13,8 @@ def remap(x, oldmin, oldmax, newmin, newmax):
         remap(sin(time.time()), -1, 1, 0, 256)
 
     """
-    zero_to_one = (x-oldmin) / (oldmax-oldmin)
-    return zero_to_one*(newmax-newmin) + newmin
+    zero_to_one = (x - oldmin) / (oldmax - oldmin)
+    return zero_to_one * (newmax - newmin) + newmin
 
 
 def clamp(x, minn, maxx):
@@ -31,8 +30,8 @@ def scaled_cos(x, offset=0, period=1, minn=0, maxx=1):
     minn, maxx: the output range
 
     """
-    value = cos((x/period - offset) * pi * 2) / 2 + 0.5
-    return value*(maxx-minn) + minn
+    value = cos((x / period - offset) * pi * 2) / 2 + 0.5
+    return value * (maxx - minn) + minn
 
 
 def contrast(color, center, mult):
@@ -58,7 +57,7 @@ def clip_black_by_luminance(color, threshold):
 
     """
     r, g, b = color
-    if r+g+b < threshold*3:
+    if r + g + b < threshold * 3:
         return (0, 0, 0)
     return (r, g, b)
 
@@ -88,10 +87,10 @@ def mod_dist(a, b, n):
     mod_dist(11, 1, 12) == 2 because you can "wrap around".
 
     """
-    return min((a-b) % n, (b-a) % n)
+    return min((a - b) % n, (b - a) % n)
 
 
 def gamma(color, gamma):
     """Apply a gamma curve to the color.  The color values should be in the range 0-1."""
     r, g, b = color
-    return (max(r, 0) ** gamma, max(g, 0) ** gamma, max(b, 0) ** gamma)
+    return (max(r, 0)**gamma, max(g, 0)**gamma, max(b, 0)**gamma)
