@@ -20,8 +20,15 @@ function createGeometry(layout) {
   // listen to the server for OPC messages
   const socket = new WebSocket("ws://localhost:3030");
 
+  var count = 0
+  var last = Date.now();
   // when we receive an OPC message
   socket.onmessage = function (event) {
+    var now = Date.now();
+    var elapsed = now - last;
+    last = now;
+    console.log('%s - %s - Received frame %s', now, elapsed, count);
+    count += 1;
 
     // http://openpixelcontrol.org/
     const opcArray = JSON.parse(event.data);

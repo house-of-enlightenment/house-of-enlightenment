@@ -82,21 +82,28 @@ server.listen(3030, () => {
 // create a socket server to listen to the OPC data
 // it's a buffer, forward to the websocket server (port 3030)
 net.createServer(function (socket) {
-
+  console.log('Connection made');
   // connect to the web server
   const ws = new WebSocket("ws://localhost:3030", { });
 
   ws.on("open", function open() {
 
+    var count = 0
+    var last = Date.now();
     // forward socket messages from python to the browser
     socket.on("data", function (data) {
+      now = Date.now();
+      elapsed = now - last;
+      last = now;
+      console.log('%s - %s - Received frame %s', now, elapsed, count);
       ws.send(data);
+      count += 1;
     });
 
   });
 
 }).listen(7890, () => {
-      console.log("Forwarding OPC input from port 7890 to 3030");
+  console.log("Forwarding OPC input from port 7890 to 3030");
 });
 
 
