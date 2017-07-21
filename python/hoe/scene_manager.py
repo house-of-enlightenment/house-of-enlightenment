@@ -185,8 +185,9 @@ class StoredOSCData(object):
         self.contains_change = False
 
     def __str__(self):
-        return "StoredOSCData{buttons=%s, faders=%s, changed=%s}" % (
-            str(self.buttons), str(self.faders), str(self.contains_change))
+        return "StoredOSCData{buttons=%s, faders=%s, changed=%s}" % (str(self.buttons),
+                                                                     str(self.faders),
+                                                                     str(self.contains_change))
 
 
 class Effect(object):

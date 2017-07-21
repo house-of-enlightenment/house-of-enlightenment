@@ -6,7 +6,6 @@ import time
 from hoe import opc
 from hoe import osc_utils
 
-
 WHITE = (255, 255, 255)
 
 

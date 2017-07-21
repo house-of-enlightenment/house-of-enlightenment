@@ -37,7 +37,6 @@ import struct
 
 import numpy as np
 
-
 kinet_data = [0x0401dc4a, 0x0100, 0x0101, 0x00000000, 0x00, 0x00, 0x0000, 0xffffffff, 0x00]
 kinet_header = struct.pack(">IHHIBBHIB", *kinet_data)
 kinet_maxpixels = 170

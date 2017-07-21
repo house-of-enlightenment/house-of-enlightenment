@@ -16,7 +16,6 @@ from hoe import layout
 from hoe import opc
 from hoe import osc_utils
 
-
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
@@ -128,7 +127,6 @@ def empty_queue(queue):
             queue.get_nowait()
         except Queue.Empty:
             return
-
 
 
 def parse_address(address):
