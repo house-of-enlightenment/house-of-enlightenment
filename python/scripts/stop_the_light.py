@@ -64,7 +64,10 @@ class Render(object):
         self.target_idx = self.layout.grid[self.bottom, self.section_centers]
         self.pixels[self.target_idx] = YELLOW
         self.client.put_pixels(self.pixels)
-        self.sprite.start()
+
+        self.now = time.time()
+        self.sprite.start(self.now)
+
         while True:
             self.now = time.time()
             self.next_frame()
@@ -100,6 +103,23 @@ class Render(object):
             columns = self.sprite.columns()
             self[self.bottom, columns] = BLUE
             self.client.put_pixels(self.pixels)
+            try:
+                section = self.queue.get_nowait()
+                # TODO: actually move into a hit or miss state
+                self.state = None
+                self.wait_until = self.now + 3
+            except Queue.Empty:
+                pass
+        else:
+            # Note that there is no call to sprite.update()
+            self.pixels[self.target_idx] = YELLOW
+            columns = self.sprite.columns()
+            self[self.bottom, columns] = BLUE
+            self.client.put_pixels(self.pixels)
+            if self.now >= self.wait_until:
+                self.sprite.reverse(self.now)
+                self.wait_until = None
+                self.state = State.ACTIVE
         #     try:
         #         section = queue.get_nowait()
         #         target = section_centers[section]
@@ -150,13 +170,13 @@ class Sprite(object):
         self.width = width
         self.start_time = None
 
-    def start(self):
-        self.start_time = time.time()
+    def start(self, now):
+        self.start_time = now
 
-    def reverse(self):
+    def reverse(self, now):
         self.start_location = self.location
         self.rotation_speed = -self.rotation_speed
-        self.start()
+        self.start(now)
 
     def update(self, now):
         sprite_rotation = (now - self.start_time) * self.rotation_speed
@@ -183,7 +203,7 @@ def empty_queue(queue):
 
 def add_station_id(queue, address, types, payload, *args):
     print address, types, payload, args
-    station_id, control_type, control_id, value = paylot
+    station_id, control_type, control_id, value = payload
     queue.put(station_id)
 
 
