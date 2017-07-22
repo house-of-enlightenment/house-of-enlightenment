@@ -106,24 +106,40 @@ class Render(object):
             try:
                 section = self.queue.get_nowait()
                 # TODO: actually move into a hit or miss state
-                self.state = None
-                self.wait_until = self.now + 3
+                target = self.section_centers[section]
+                if target in columns:
+                    self.state = State.HIT
+                    self.wait_until = self.now + 3
+                else:
+                    self.state = State.MISS
+                    self.wait_until = self.now + 2
             except Queue.Empty:
                 pass
-        else:
+        elif self.state == State.HIT:
             # Note that there is no call to sprite.update()
             self.pixels[self.target_idx] = YELLOW
             columns = self.sprite.columns()
-            self[self.bottom, columns] = BLUE
+            self[self.bottom, columns] = GREEN
             self.client.put_pixels(self.pixels)
             if self.now >= self.wait_until:
                 self.sprite.reverse(self.now)
                 self.wait_until = None
                 self.state = State.ACTIVE
+        elif self.state == State.MISS:
+            # Note that there is no call to sprite.update()
+            self.pixels[self.target_idx] = YELLOW
+            columns = self.sprite.columns()
+            self[self.bottom, columns] = RED
+            self.client.put_pixels(self.pixels)
+            if self.now >= self.wait_until:
+                self.sprite.reverse(self.now)
+                self.wait_until = None
+                self.state = State.ACTIVE
+
         #     try:
         #         section = queue.get_nowait()
-        #         target = section_centers[section]
-        #         if target in columns():
+        #         
+        #         
 
 
         #         if should_stop:
@@ -138,7 +154,7 @@ class Render(object):
         #             raise Exception('Queue should always return True')
         #     except Queue.Empty:
         #         pass
-        # elif state == State.HIT:
+        # elif 
         #     pass
         # elif state == State.MISS:
         #     pass
