@@ -20,8 +20,15 @@ function createGeometry(layout) {
   // listen to the server for OPC messages
   const socket = new WebSocket("ws://localhost:3030");
 
+  var count = 0
+  var last = Date.now();
   // when we receive an OPC message
   socket.onmessage = function (event) {
+    var now = Date.now();
+    var elapsed = now - last;
+    last = now;
+    console.log('%s - %s - Received frame %s', now, elapsed, count);
+    count += 1;
 
     // http://openpixelcontrol.org/
     const opcArray = JSON.parse(event.data);
@@ -34,7 +41,7 @@ function createGeometry(layout) {
       }),
       R.splitEvery(3) // r, g, b
     )(data);
-
+    geometry.attributes.color.needsUpdate = true;
   };
 
   const geometry = new THREE.BufferGeometry();
@@ -124,8 +131,6 @@ function createGeometry(layout) {
     colors[ j ]     = r / 255;
     colors[ j + 1 ] = g / 255;
     colors[ j + 2 ] = b / 255;
-    geometry.attributes.color.needsUpdate = true;
-
   }
 
   /** getHue */
