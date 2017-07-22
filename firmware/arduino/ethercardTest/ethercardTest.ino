@@ -21,9 +21,14 @@ const char page[] PROGMEM =
   "</body>"
 "</html>";
 
+int inPin = 2;
+int val = 0;
+
 void setup(){
   Serial.begin(57600);
   Serial.println("\n[Hello World]");
+
+  pinMode(inPin, INPUT_PULLUP);
 
   if (ether.begin(sizeof Ethernet::buffer, mymac) == 0) 
     Serial.println( "Failed to access Ethernet controller");
@@ -35,9 +40,12 @@ void setup(){
 }
 
 void loop(){
+    val = digitalRead(inPin);   // read the input pin
+  
   // wait for an incoming TCP packet, but ignore its contents
   if (ether.packetLoop(ether.packetReceive())) {
     memcpy_P(ether.tcpOffset(), page, sizeof page);
     ether.httpServerReply(sizeof page - 1);
   }
+  Serial.println(val);
 }
