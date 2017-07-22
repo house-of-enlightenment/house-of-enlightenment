@@ -17,6 +17,7 @@ from hoe import opc
 from hoe import osc_utils
 
 
+BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
@@ -107,11 +108,14 @@ class Render(object):
                 section = self.queue.get_nowait()
                 # TODO: actually move into a hit or miss state
                 target = self.section_centers[section]
+                sprite_idx = self.layout.grid[self.bottom, columns]
                 if target in columns:
                     self.state = State.HIT
+                    self.flash = Flash(sprite_idx, .25, (GREEN, BLACK))
                     self.wait_until = self.now + 3
                 else:
                     self.state = State.MISS
+                    self.flash = Flash(sprite_idx, .25, (RED, BLACK))
                     self.wait_until = self.now + 2
             except Queue.Empty:
                 pass
@@ -119,7 +123,7 @@ class Render(object):
             # Note that there is no call to sprite.update()
             self.pixels[self.target_idx] = YELLOW
             columns = self.sprite.columns()
-            self[self.bottom, columns] = GREEN
+            self.flash.render(self.now, self.pixels)
             self.client.put_pixels(self.pixels)
             if self.now >= self.wait_until:
                 self.sprite.reverse(self.now)
@@ -129,37 +133,15 @@ class Render(object):
             # Note that there is no call to sprite.update()
             self.pixels[self.target_idx] = YELLOW
             columns = self.sprite.columns()
-            self[self.bottom, columns] = RED
+            self.flash.render(self.now, self.pixels)
             self.client.put_pixels(self.pixels)
             if self.now >= self.wait_until:
                 self.sprite.reverse(self.now)
                 self.wait_until = None
                 self.state = State.ACTIVE
+        else:
+             raise Exception('You are in a bad state: {}'.format(self.state))
 
-        #     try:
-        #         section = queue.get_nowait()
-        #         
-        #         
-
-
-        #         if should_stop:
-        #             # we'll pause for 5 seconds to see where we stopped it
-        #             # and then continue on
-        #             # Reset our timer and location
-        #             time.sleep(5)
-        #             sprite.reverse()
-        #             break
-        #         else:
-        #             print 'should_stop'
-        #             raise Exception('Queue should always return True')
-        #     except Queue.Empty:
-        #         pass
-        # elif 
-        #     pass
-        # elif state == State.MISS:
-        #     pass
-        # else:
-        #     raise Exception('You are in a bad state: {}'.format(state))
 
     def sleep_until_next_frame(self):
         self.frame_count += 1
@@ -170,6 +152,27 @@ class Render(object):
             time.sleep(remaining_until_next_frame)
         else:
             print "!! Behind !!", remaining_until_next_frame
+
+
+class Flash(object):
+    def __init__(self, idx, duration, colors):
+        self.idx = idx
+        self.duration = duration
+        self.colors = colors
+        self.next_switch = time.time() + duration
+        self.color_idx = 0
+
+    def current_color(self):
+        return self.colors[self.color_idx]
+
+    def switch(self, now):
+        self.next_switch = now + self.duration
+        self.color_idx = (self.color_idx + 1) % len(self.colors)
+
+    def render(self, now, pixels):
+        if self.next_switch < now:
+            self.switch(now)
+        pixels[self.idx] = self.current_color()
 
 
 class State(object):
