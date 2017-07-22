@@ -13,12 +13,11 @@ const vinylSource = require("vinyl-source-stream");
 const vinylBuffer = require("vinyl-buffer");
 const findup      = require("find-up");
 const R           = require("ramda");
-const runSequence = require("run-sequence");
 
 
-module.exports = function jsTask(config, env){
+module.exports = function jsTask(taskName, userConfig){
 
-  const client = `${config.simulator}/client`;
+  const env = quench.getEnv();
 
   const jsConfig = R.merge({
 
@@ -40,48 +39,67 @@ module.exports = function jsTask(config, env){
        *   watch       : rerun this files's task when these files change (can be an array of globs)
      **/
     files: [
-      {
-        gulpTaskId: "js-index",
-        entry: `${client}/js/index.js`,
-        filename: "index.js",
-        watch: [
-          `${client}/js/**/*.js`,
-          `${client}/js/**/*.jsx`,
-          `${config.root}/layout/**/*.json`
-        ]
-      },
-      {
-        gulpTaskId: "js-layout",
-        entry: `${config.root}/javascript/layout-generator/test.js`,
-        filename: "layout.js",
-        watch: [
-          `${config.root}/javascript/layout-generator/**/*.js`
-        ]
-      },
-      {
-        gulpTaskId: "js-controls",
-        entry: `${config.root}/javascript/controls/client/js/index.js`,
-        filename: "controls.js",
-        watch: [
-          `${config.root}/javascript/controls/client/**/*.js`
-        ]
-      }
+      // {
+      //   gulpTaskId: "js-index",
+      //   entry: `${client}/js/index.js`,
+      //   filename: "index.js",
+      //   watch: [
+      //     `${client}/js/**/*.js`,
+      //     `${client}/js/**/*.jsx`,
+      //     `${config.root}/layout/**/*.json`
+      //   ]
+      // },
+      // {
+      //   gulpTaskId: "js-layout",
+      //   entry: `${config.root}/javascript/layout-generator/test.js`,
+      //   filename: "layout.js",
+      //   watch: [
+      //     `${config.root}/javascript/layout-generator/**/*.js`
+      //   ]
+      // }
+      // {
+      //   gulpTaskId: "js-controls",
+      //   entry: `${config.root}/javascript/controls/client/js/index.js`,
+      //   filename: "controls.js",
+      //   watch: [
+      //     `${config.root}/javascript/controls/client/**/*.js`
+      //   ]
+      // }
     ]
-  }, config.js);
+  }, userConfig);
 
+  if (!jsConfig.dest){
+    quench.logError(`
+      Js task requires a dest!
+      Given jsConfig: ${JSON.stringify(jsConfig, null, 2)}
+    `);
+    return;
+  }
 
+  const librariesTaskName = `${taskName}-libraries`;
 
   // a function to look in all the files to find what npm packages are being used
-  const getNpmPackages = createNpmPackagesGetter(jsConfig.files);
+  const getNpmPackages = createNpmPackagesGetter(jsConfig.files, librariesTaskName);
 
 
 
   /* 1. Create a gulp task and watcher for each file in the files array */
 
-  jsConfig.files.forEach(({ gulpTaskId, entry, filename, watch, dest }) => {
+  jsConfig.files.forEach(fileConfig => {
+
+    const { gulpTaskId, entry, filename, watch, dest } = fileConfig;
+
+
+    if (!gulpTaskId || !entry || !filename) {
+      quench.logError(`
+        Js task requires a unique gulpTaskId, and entyr, and a filename!
+        Given fileConfig: ${JSON.stringify(fileConfig, null, 2)}
+      `);
+      return;
+    }
 
     // register the watcher for this task
-    quench.registerWatcher(gulpTaskId, watch);
+    quench.maybeWatch(gulpTaskId, watch);
 
     // create a gulp task to compile this file
     gulp.task(gulpTaskId, function(){
@@ -113,7 +131,7 @@ module.exports = function jsTask(config, env){
   /* 2. Create a special task to compile all the npm packages into js-libraries.js */
 
   // http://stackoverflow.com/questions/30294003/how-to-avoid-code-duplication-using-browserify/30294762#30294762
-  gulp.task("js-libraries", function(){
+  gulp.task(librariesTaskName, function(){
 
     const npmPackages = getNpmPackages();
 
@@ -140,25 +158,23 @@ module.exports = function jsTask(config, env){
       }))
       .pipe(sourcemaps.write("./"))
       .pipe(gulp.dest(jsConfig.dest))
-      .pipe(debug({ title: "js-libraries: " }));
+      .pipe(debug({ title: `${librariesTaskName}: ` }));
   });
 
 
   /* 3. Create entry "js" function to run them all */
 
   // if package.json changes, re-run all js tasks
-  quench.registerWatcher("js", [ findup.sync("package.json") ]);
+  quench.maybeWatch(taskName, [ findup.sync("package.json") ]);
 
   // a list of all the dynamic tasks we made above + js-libraries
   const allTasks = R.compose(
-    R.prepend("js-libraries"),
+    R.prepend(librariesTaskName),
     R.map(R.prop("gulpTaskId"))
   )(jsConfig.files);
 
   // a function to run all the individual file tasks in parallel
-  return function(cb){
-    runSequence([ allTasks ]);
-  };
+  gulp.task(taskName, allTasks);
 
 };
 
@@ -169,7 +185,7 @@ module.exports = function jsTask(config, env){
   * @param  {Array} files Array of file objects (see jsConfig.tasks) (object with .entry field)
   * @return {Function} see below
   */
-function createNpmPackagesGetter(files){
+function createNpmPackagesGetter(files, librariesTaskName){
 
   // keep track of the result last time this was run
   let lastCommonPackages = [];
@@ -194,7 +210,7 @@ function createNpmPackagesGetter(files){
 
     // if the list is different, re-run js-libraries
     if (!R.equals(lastCommonPackages, npmPackages)){
-      gulp.start("js-libraries");
+      gulp.start(librariesTaskName);
       lastCommonPackages = npmPackages;
     }
 

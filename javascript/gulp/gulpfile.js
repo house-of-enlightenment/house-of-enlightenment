@@ -7,6 +7,8 @@ const gulp   = require("gulp");
 const quench = require("./quench.js");
 const path   = require("path");
 
+const loadSimulatorTasks = require("./pages/simulator.js");
+
 const projectRoot = path.resolve(__dirname, "../..");
 
 
@@ -18,40 +20,22 @@ const defaults = {
   watch: false
 };
 
-/* watch for single tasks on the command line, eg "gulp js" */
-quench.singleTasks(defaults);
 
 
-const gulpCopy = require("./tasks/copy.js");
+loadSimulatorTasks(projectRoot);
 
 
-gulp.task("copyTest", gulpCopy({
-  base: `${projectRoot}/javascript/test/`,
-  tasks: [
-    {
-      gulpTaskId: "copy-test",
-      src: `${projectRoot}/javascript/test/**/*`,
-      dest: `${projectRoot}/javascript/testBuild`,
-      watch: `${projectRoot}/javascript/test/**/*`
-    }
-  ]
-}));
+
+
 
 gulp.task("default", function(){
-
-
 
   console.log("Available commands: ");
   console.log("");
 
-  console.log("  gulp simulator:build  - will build the simulator files");
-  console.log("  gulp simulator:server - will run the simulator server on http://localhost:3030");
-  console.log("  gulp simulator:watch  - will build/run/watch the simulator code");
-  console.log("");
+  Object.keys(gulp.tasks).forEach(taskName => {
+    console.log(`  gulp ${taskName}`)
+  });
 
-  console.log("  gulp controls:build  - will build the simulator files");
-  console.log("  gulp controls:server - will run the controls server on http://localhost:3032");
-  console.log("  gulp controls:watch  - will build/run/watch the controls code");
-  console.log("");
 
 });

@@ -128,6 +128,10 @@ function initEnv(){
 }
 
 
+module.exports.isWatching = function isWatching(){
+  return yargs.watch;
+};
+
 
 /**
  * watches the glob if --watch is passed on the command line
@@ -162,7 +166,7 @@ module.exports.maybeWatch = function maybeWatch(taskName, glob, task){
 
 
 module.exports.getEnv = function getEnv(){
-  return env.current();
+  return env;
 };
 
 
