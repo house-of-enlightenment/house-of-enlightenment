@@ -16,9 +16,12 @@ from hoe import layout
 from hoe import opc
 from hoe import osc_utils
 
+
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
+GREEN = (0, 255, 0)
+YELLOW = (255, 255, 0)
 
 
 def main():
@@ -31,85 +34,132 @@ def main():
     with open('layout/hoeLayout.json') as f:
         hoe_layout = layout.Layout(json.load(f))
 
-    queue = Queue.Queue()
-
+    osc_queue = Queue.Queue()
     server = osc_utils.create_osc_server()
     # pylint: disable=no-value-for-parameter
-    server.addMsgHandler("/input", lambda *args: stop(queue, *args))
+    server.addMsgHandler("/input", lambda *args: add_station_id(osc_queue, *args))
+    render = Render(client, osc_queue, hoe_layout)
+    render.run_forever()
 
-    pixels = np.zeros((len(hoe_layout.pixels), 3), np.int8)
-    pixels[:] = 255
 
-    bottom = slice(2)
-    section_centers = range(6, 66, 11)
-    # not sure what I want to do with the targets yet
-    target_idx = hoe_layout.grid[bottom, section_centers]
-    pixels[target_idx] = RED
-    client.put_pixels(pixels)
+class Render(object):
+    def __init__(self, opc_client, osc_queue, hoe_layout):
+        self.state = State.ACTIVE
+        self.successful_sections = [False] * layout.SECTIONS
+        self.fps = 30
+        rotation_speed = .5  # rotation / second
+        location = 0
+        self.sprite = Sprite(location, rotation_speed)
+        self.frame_count = 0
+        self.client = opc_client
+        self.queue = osc_queue
+        self.layout = hoe_layout
 
-    rotation_speed = .5  # rotation / second
-    fps = 30
-    start = time.time()
-    location = 0
-    sprite = Sprite(location, rotation_speed, start)
-    frame_count = 1
-    while True:
-        # when starting a loop, don't want any previous (perhaps old)
-        # commands to be around, so empty this out
-        empty_queue(queue)
-
-        prev = start
+    def run_forever(self):
+        self.pixels = np.zeros((len(self.layout.pixels), 3), np.int8)
+        self.bottom = slice(None, 10, None)
+        self.top = slice(10, None, None)
+        self.init_pixels()
+        self.section_centers = range(6, 66, 11)
+        self.target_idx = self.layout.grid[self.bottom, self.section_centers]
+        self.pixels[self.target_idx] = YELLOW
+        self.client.put_pixels(self.pixels)
+        self.sprite.start()
         while True:
-            now = time.time()
-            pixels[:] = 255
-            sprite.update(now)
-            sprite_idx = hoe_layout.grid[bottom, sprite.columns()]
-            pixels[target_idx] = RED
-            pixels[sprite_idx] = BLUE
+            self.now = time.time()
+            self.next_frame()
+            self.sleep_until_next_frame()
 
-            client.put_pixels(pixels)
-            try:
-                should_stop = queue.get_nowait()
-                if should_stop:
-                    # we'll pause for 5 seconds to see where we stopped it
-                    # and then continue on
-                    # Reset our timer and location
-                    time.sleep(5)
-                    sprite.reverse()
-                    break
-                else:
-                    print 'should_stop'
-                    raise Exception('Queue should always return True')
-            except Queue.Empty:
-                pass
 
-            frame_took = time.time() - now
-            remaining_until_next_frame = (1 / fps) - frame_took
-            if remaining_until_next_frame > 0:
-                print time.time(), frame_count, frame_took, remaining_until_next_frame
-                time.sleep(remaining_until_next_frame)
-            else:
-                print "!! Behind !!", remaining_until_next_frame
-                # dammit, we're running too slow!
-                pass
-            frame_count += 1
+            # # when starting a loop, don't want any previous (perhaps old)
+            # # commands to be around, so empty this out
+            # empty_queue(queue)
+            # state =
+            # successful_sections = [False] * layout.SECTIONS
+            # ignore_buttons = False
+            # prev = start
+            # while True:
+            #     self.loop_until_interaction()
+
+    def init_pixels(self):
+        self[self.bottom,:] = 32
+        self[self.top,:] = (64, 0, 0)
+
+    # a convenience method to allow me to do, like:
+    # self[rows, columns] = RED
+    def __setitem__(self, key, value):
+        idx = self.layout.grid[key]
+        self.pixels[idx] = value
+
+    def next_frame(self):
+        self.now = time.time()
+        self.init_pixels()
+        if self.state == State.ACTIVE:
+            self.sprite.update(self.now)
+            self.pixels[self.target_idx] = YELLOW
+            columns = self.sprite.columns()
+            self[self.bottom, columns] = BLUE
+            self.client.put_pixels(self.pixels)
+        #     try:
+        #         section = queue.get_nowait()
+        #         target = section_centers[section]
+        #         if target in columns():
+
+
+        #         if should_stop:
+        #             # we'll pause for 5 seconds to see where we stopped it
+        #             # and then continue on
+        #             # Reset our timer and location
+        #             time.sleep(5)
+        #             sprite.reverse()
+        #             break
+        #         else:
+        #             print 'should_stop'
+        #             raise Exception('Queue should always return True')
+        #     except Queue.Empty:
+        #         pass
+        # elif state == State.HIT:
+        #     pass
+        # elif state == State.MISS:
+        #     pass
+        # else:
+        #     raise Exception('You are in a bad state: {}'.format(state))
+
+    def sleep_until_next_frame(self):
+        self.frame_count += 1
+        frame_took = time.time() - self.now
+        remaining_until_next_frame = (1 / self.fps) - frame_took
+        if remaining_until_next_frame > 0:
+            print time.time(), self.frame_count, frame_took, remaining_until_next_frame
+            time.sleep(remaining_until_next_frame)
+        else:
+            print "!! Behind !!", remaining_until_next_frame
+
+
+class State(object):
+    ACTIVE = 'active'
+    HIT = 'hit'
+    MISS = 'miss'
 
 
 class Sprite(object):
-    def __init__(self, start_location, rotation_speed, start, width=3):
+    def __init__(self, start_location, rotation_speed, width=3):
         self.start_location = start_location
         self.rotation_speed = rotation_speed
         self.location = start_location
-        self.start = start
         self.width = width
+        self.start_time = None
+
+    def start(self):
+        self.start_time = time.time()
 
     def reverse(self):
         self.start_location = self.location
         self.rotation_speed = -self.rotation_speed
-        self.start = time.time()
+        self.start()
 
     def update(self, now):
-        sprite_rotation = (now - self.start) * self.rotation_speed
+        sprite_rotation = (now - self.start_time) * self.rotation_speed
         location = int(layout.COLUMNS * sprite_rotation) + self.start_location
         self.location = location % layout.COLUMNS
 
@@ -131,9 +181,10 @@ def empty_queue(queue):
             return
 
 
-def stop(queue, address, types, payload, *args):
+def add_station_id(queue, address, types, payload, *args):
     print address, types, payload, args
-    queue.put(True)
+    station_id, control_type, control_id, value = paylot
+    queue.put(station_id)
 
 
 if __name__ == '__main__':
