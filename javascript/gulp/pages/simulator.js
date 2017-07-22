@@ -28,7 +28,12 @@ module.exports = function simulatorTask(projectRoot) {
 
   const layout = yargs.layout || "layout/hoeLayout.json";
 
-
+  /**
+   * main entry simulator task
+   * use --watch and --env development/production
+   */
+  gulp.task("simulator", function(){
+    
   createCopyTask("simulator-copy", {
     src: [
       `${simulatorRoot}/client/index.html`,
@@ -92,7 +97,8 @@ module.exports = function simulatorTask(projectRoot) {
     proxy: "http://localhost:3030"
   });
 
-  gulp.task("simulator", function(){
+
+
 
     const simulatorTasks = ["simulator-copy", "simulator-css", "simulator-js"];
 
@@ -112,7 +118,7 @@ module.exports = function simulatorTask(projectRoot) {
 
 
   /**
-   * run the simulator server
+   * run the simulator server (after it is already built)
    */
   gulp.task("simulator-server", function(cb){
 
@@ -132,43 +138,5 @@ module.exports = function simulatorTask(projectRoot) {
     });
 
   });
-
-  // /**
-  //  * simulator server with watcher (to develop)
-  //  */
-  // gulp.task("simulator:watch", function(next){
-  //
-  //   const yargs = require("yargs").options({
-  //     "layout": {
-  //       default: undefined,
-  //       type: "string"
-  //     }
-  //   }).argv;
-  //
-  //   const serverDir = path.resolve(simulatorRoot, "./server/");
-  //   const layout = yargs.layout || path.resolve(projectRoot, "./layout/hoeLayout.json");
-  //
-  //
-  //   const buildConfig = R.mergeAll([
-  //     {
-  //       env   : "development",
-  //       watch : true,
-  //       tasks: [simulatorTasks, "nodemon", "browserSync"],
-  //       browserSync: {
-  //         root: simulatorDest,
-  //         proxy: "http://localhost:3030"
-  //       },
-  //       nodemon: {
-  //         script: path.resolve(serverDir, "server.js"),
-  //         args: ["--layout", layout],
-  //         watch: [ serverDir ]
-  //       }
-  //     },
-  //     simulatorConfig
-  //   ]);
-  //
-  //   quench.build(buildConfig, next);
-  //
-  // });
 
 };

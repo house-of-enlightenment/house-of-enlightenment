@@ -8,6 +8,7 @@ const quench = require("./quench.js");
 const path   = require("path");
 
 const loadSimulatorTasks = require("./pages/simulator.js");
+const loadControlsTasks = require("./pages/controls.js");
 
 const projectRoot = path.resolve(__dirname, "../..");
 
@@ -24,6 +25,7 @@ const defaults = {
 
 loadSimulatorTasks(projectRoot);
 
+loadControlsTasks(projectRoot);
 
 
 
@@ -33,9 +35,12 @@ gulp.task("default", function(){
   console.log("Available commands: ");
   console.log("");
 
-  Object.keys(gulp.tasks).forEach(taskName => {
-    console.log(`  gulp ${taskName}`)
-  });
+  Object.keys(gulp.tasks)
+    .filter(taskName => taskName !== "default")
+    .forEach(taskName => {
+      console.log(`  gulp ${taskName}`);
+    });
 
+  console.log("");
 
 });
