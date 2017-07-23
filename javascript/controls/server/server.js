@@ -5,7 +5,7 @@ const path      = require("path");
 const morgan    = require("morgan"); // express logger
 const WebSocket = require("ws");
 const osc       = require("osc");
-
+const fs        = require("fs");
 
 const buildDirectory = path.resolve(__dirname, "../build");
 const indexHtml = path.resolve(buildDirectory, "index.html");
@@ -19,7 +19,7 @@ function forwardWebsocketMsgOverOsc(udpPort) {
       console.log("Received: %s", message);
       parseAndSend(message, udpPort);
     });
-  })
+  });
 }
 
 
@@ -47,6 +47,12 @@ app.use(morgan("dev"));     /* debugging: "default", "short", "tiny", "dev" */
 
 // index.html
 app.get("/", function(req, res){
+
+  // check if index.html is there
+  if (!fileExists(indexHtml)){
+    res.status(500).send("<h2>index.html doesn't exist!!</h2> did you run <code>gulp controls</code>?");
+    return;
+  }
 
   // send index.html
   res.sendFile(indexHtml);
@@ -77,4 +83,21 @@ udpPort.on("ready", function () {
     // eslint-disable-next-line no-console
     console.log("Listening on port 3032...");
   });
-})
+});
+
+
+
+/**
+ * fileExists
+ * @param  {String} filepath : path to the file
+ * @return {Boolean} true if the filepath exists and is readable
+ */
+const fileExists = module.exports.fileExists = function fileExists(filepath) {
+  try {
+    fs.accessSync(filepath, fs.R_OK);
+    return true;
+  }
+  catch(e) {
+    return false;
+  }
+};

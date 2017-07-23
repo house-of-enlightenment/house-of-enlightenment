@@ -122,7 +122,8 @@ module.exports = function simulatorTask(projectRoot) {
     server.stderr.pipe(process.stderr);
 
     server.on("exit", (code) => {
-      console.log("server stopped with code " + code.toString());
+      const codeMsg = (code) ? `with code ${code.toString()}` : "";
+      console.log(` Simulator server stopped ${codeMsg}`);
     });
 
   });

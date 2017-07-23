@@ -6,7 +6,6 @@ const morgan    = require("morgan"); // express logger
 const net       = require("net");
 const WebSocket = require("ws");
 const fs        = require("fs");
-const dgram     = require('dgram');
 
 
 const yargs = require("yargs")
@@ -52,13 +51,13 @@ app.get("/", function(req, res){
 
   // check if index.html is there
   if (!fileExists(indexHtml)){
-    res.status(500).send("<h2>index.html doesn't exits!!</h2> did you run <code>gulp simulator:build</code>?");
+    res.status(500).send("<h2>index.html doesn't exist!!</h2> did you run <code>gulp simulator</code>?");
     return;
   }
 
   // check to see if the layout file exists
   if (!fileExists(layoutFile)){
-    res.status(500).send(`<h2>layout file doesn't exits!!</h2> <code>${layoutFile}</code>`);
+    res.status(500).send(`<h2>layout file doesn't exist!!</h2> <code>${layoutFile}</code> did you run <code>gulp layout</code>?`);
     return;
   }
 
@@ -96,7 +95,7 @@ net.createServer(function (socket) {
   });
 
 }).listen(7890, () => {
-      console.log("Forwarding OPC input from port 7890 to 3030");
+  console.log("Forwarding OPC input from port 7890 to 3030");
 });
 
 
@@ -113,6 +112,6 @@ function fileExists(filepath) {
   catch(e) {
     return false;
   }
-};
+}
 
 module.exports = app;
