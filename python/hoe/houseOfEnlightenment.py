@@ -140,8 +140,13 @@ def listen_for_keyboard(scene):
             print "Received shutdown command. Exiting now"
             scene.shutdown()
             keep_running = False
-        elif (key_lower in ["next"]):
-            osc_utils.send_simple_message(osc_client, "/nextScene")
+        elif key_lower.startswith("next"):
+            # Increment one or more scenes
+            args = key_lower.split(" ")
+            if len(args)>1:
+                osc_utils.send_simple_message(osc_client, "/nextScene", args[1])
+            else:
+                osc_utils.send_simple_message(osc_client, "/nextScene")
         else:
             args = key.split(" ", 1)
             if (len(args) == 1):

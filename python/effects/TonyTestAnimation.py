@@ -1,21 +1,21 @@
 from hoe import color_utils
-from hoe.animation_framework import SceneDefinition
+from hoe.animation_framework import Scene
 from hoe.animation_framework import EffectDefinition
 from hoe.animation_framework import Effect
+from example_spatial_stripes import SampleFeedbackEffect
 
 
 class TonyEffect(Effect):
     """Always return red"""
     def next_frame(self, pixels, t, osc_data):
-        for ii, coord in enumerate(self.layout):
+        for ii, coord in enumerate(self.layout.pixels):
             pixels[ii] = (0, 255, 0)
 
 
 # a simple effect for the bottom of the ring in red
-class background1(Effect):
-
+class Background1(Effect):
     def next_frame(self, pixels, t, osc_data):
-        for ii, coord in enumerate(self.layout):
+        for ii, coord in enumerate(self.layout.pixels):
             self.gentle_glow(pixels, t, coord, ii)
 
     def gentle_glow(self, pixels, t, coord, ii):
@@ -32,6 +32,6 @@ class background1(Effect):
 
 
 __all__= [
-    SceneDefinition("tony's scene", EffectDefinition("Tony's Effect", TonyEffect)),
-    SceneDefinition("tony's next scene", EffectDefinition("Tony's Next Effect", background1))
+    Scene("tony's scene", SampleFeedbackEffect(), TonyEffect()),
+    Scene("tony's next scene", SampleFeedbackEffect(), Background1())
  ]

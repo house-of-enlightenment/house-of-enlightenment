@@ -6,6 +6,7 @@
 import sys
 import time
 from threading import Thread
+from layout import Layout
 from opc import Client
 from OSC import OSCServer
 from functools import partial
@@ -17,14 +18,15 @@ class AnimationFramework(object):
         # OSCServer, Client, dict, int -> None
         self.osc_server = osc
         self.opc = opc
-        self.layout = layout
+        self.layout = Layout(layout)
         self.fps = fps
         self.n_pixels = len(layout)
 
         # Load all scenes from effects package. Then set initial index and load it up
-        self.scenes = AnimationFramework.load_scenes()
-        self.scene_index = 0
-        self.init_scene()
+        self.scenes = AnimationFramework.load_scenes(self.layout, self.n_pixels)
+        self.curr_scene = None
+        self.queued_scene = self.scenes[self.scenes.keys()[0]]
+        self.change_scene()
 
         self.serve = False
         self.is_running = False
@@ -32,8 +34,8 @@ class AnimationFramework(object):
         self.osc_data = StoredOSCData()
 
     @staticmethod
-    def load_scenes(effects_dir=None):
-        # None -> [SceneDefinition]
+    def load_scenes(layout, n_pixels, effects_dir=None):
+        # None -> [Scene]
 
         from os.path import dirname, join, isdir, abspath, basename
         from glob import glob
@@ -45,19 +47,23 @@ class AnimationFramework(object):
             effects_dir = pwd + '/../effects/'
         sys.path.append(effects_dir)
 
-        scenes = []
+        scenes = {}
         for f in glob(join(effects_dir, '*.py')):
             pkg_name = basename(f)[:-3]
             if not pkg_name.startswith("_"):
                 try:
                     effect_dict = importlib.import_module(pkg_name)
                     for scene in effect_dict.__all__:
-                        if (isinstance(scene, SceneDefinition)):
+                        if (isinstance(scene, Scene)):
+                            if scene.name in scenes.keys():
+                                print "Cannot register scene %s. Scene with name already exists" % scene.name
+                                continue
                             print "Registering %s" % scene
                             # TODO clean this up
-                            scenes.append([effect_dict, scene])
+                            scene.initialize_layout(layout, n_pixels)
+                            scenes[scene.name] = scene
                         else:
-                            print "Got scene %s not of type SceneDefinition" % scene
+                            print "Got scene %s not of type Scene" % scene
                 except ImportError:
                     print "WARNING: could not load effect %s" % pkg_name
 
@@ -65,22 +71,68 @@ class AnimationFramework(object):
 
         return scenes
 
-    def load_palettes(self, rootDir):
-        # TODO: palettes existed in wheel. (1) Are they needed here
-        # and (2) what is the palettes module to import?
+    # ----- Handlers -----
+
+    def next_scene_handler(self, path, tags, args, source):
+        # TODO: Call specific scenes
+        print path, tags, args, source
+        if args[0] == "":
+            self.next_scene()
+        else:
+            self.next_scene(int(args[0]))
+
+    def add_button(self, button_id, path=None):
+        path = path if path else "/input/button/%s" % button_id
+        print "Registering button %s at path %s" % (button_id, path)
+
+        def handle_button(path, tags, args, source):
+            print "Button [%s] received message: path=[%s], tags=[%s], args=[%s], source=[%s]" % (
+                button_id, path, tags, args, source)
+            self.osc_data.buttons[button_id] = 1
+            self.osc_data.contains_change = True
+
+        self.osc_server.addMsgHandler(path, handle_button)
         pass
 
-    def init_scene(self):
-        scene_info = self.scenes[self.scene_index]
-        # TODO: Clean this up
-        print '\tInitializing scene %s' % scene_info[1]
-        self.curr_scene = scene_info[1].init_scene(self.layout, self.n_pixels)
-        print '\tScene %s initialized\n' % self.curr_scene
+    def add_fader(self, fader_id, path=None, default="0"):
+        path = path if path else "/input/fader/%s" % fader_id
+        print "Registering fader %s at %s" % (fader_id, path)
+
+        def handle_fader(path, tags, args, source):
+            print("Fader [{}] received message: "
+                  "path=[{}], tags=[{}], args=[{}], source=[{}], name=[{}]").format(
+                fader_id, path, tags, args, source, fader_id)
+            fader_value = args[0]
+            self.osc_data.faders[fader_id] = fader_value
+            self.osc_data.contains_change = True
+
+        # TODO : force check for slashes
+        self.osc_server.addMsgHandler(path, handle_fader)
+        self.osc_data.faders[fader_id] = default
+        pass
+
+    # ---- EFFECT CONTROL METHODS -----
+    def change_scene(self):
+        self.queued_scene.start_scene()
+        self.curr_scene = self.queued_scene
+        print '\tScene %s started\n' % self.curr_scene
+        self.curr_scene.scene_ended()
 
     def get_osc_frame(self, clear=True):
         last_frame = self.osc_data
         self.osc_data = StoredOSCData(last_frame)
         return last_frame
+
+    def next_scene(self, increment=1):
+        curr_idx = self.scenes.keys().index(self.curr_scene.name)
+        new_idx = (curr_idx+increment)%len(self.scenes)
+        self.pick_scene(self.scenes.keys()[new_idx])
+
+    def pick_scene(self, scene_name):
+        self.queued_scene = self.scenes[scene_name]
+        self.change_scene()
+
+    # ---- LIFECYCLE (START/STOP) METHODS ----
 
     def serve_in_background(self):
         # [function] -> Thread
@@ -121,52 +173,8 @@ class AnimationFramework(object):
         self.is_running = False
         print "Scene Manager Exited"
 
-    def next_scene(self, args):
-        # TODO: concurrency issues
-        self.scene_index = (self.scene_index + 1) % len(self.scenes)
-        print '\tChanged scene to index %s. Initializing now' % (self.scene_index)
-        self.init_scene()
-
     def shutdown(self):
         self.serve = False
-
-# ----- Handlers -----
-
-    def next_scene_handler(self, path, tags, args, source):
-        # TODO: Call specific scenes
-        if args[0] > 0:
-            self.next_scene(args)
-
-    def add_button(self, button_id, path=None):
-        path = path if path else "/input/button/%s" % button_id
-        print "Registering button %s at path %s" % (button_id, path)
-
-        def handle_button(path, tags, args, source):
-            print "Button [%s] received message: path=[%s], tags=[%s], args=[%s], source=[%s]" % (
-                button_id, path, tags, args, source)
-            self.osc_data.buttons[button_id] = 1
-            self.osc_data.contains_change = True
-
-        self.osc_server.addMsgHandler(path, handle_button)
-        pass
-
-    def add_fader(self, fader_id, path=None, default="0"):
-        path = path if path else "/input/fader/%s" % fader_id
-        print "Registering fader %s at %s" % (fader_id, path)
-
-        def handle_fader(path, tags, args, source):
-            print("Fader [{}] received message: "
-                  "path=[{}], tags=[{}], args=[{}], source=[{}], name=[{}]").format(
-                      fader_id, path, tags, args, source, fader_id)
-            fader_value = args[0]
-            self.osc_data.faders[fader_id] = fader_value
-            self.osc_data.contains_change = True
-
-        # TODO : force check for slashes
-        self.osc_server.addMsgHandler(path, handle_fader)
-        self.osc_data.faders[fader_id] = default
-        pass
-
 
 # TODO: do the python way
 def get_first_non_empty(pixels):
@@ -192,13 +200,29 @@ class StoredOSCData(object):
 
 
 class Effect(object):
-    def __init__(self, layout, n_pixels):
+    def __init__(self, layout=None, n_pixels=None):
         self.layout=layout
         self.n_pixels=n_pixels
 
     def next_frame(self, pixels, t, osc_data):
         raise NotImplementedError("All effects must implement next_frame")
         # TODO: Use abc
+
+    def initialize_layout(self, layout, n_pixels):
+        self.layout = layout
+        self.n_pixels = n_pixels
+
+    def scene_starting(self, scene):
+        pass
+
+    def scene_ended(self, scene):
+        pass
+
+
+class FeedbackEffect(Effect):
+    def compute_state(self, state, osc_data):
+        raise NotImplementedError("All feedback effects must implement compute_state")
+        # TODO: use abc
 
 
 class EffectDefinition(object):
@@ -209,41 +233,42 @@ class EffectDefinition(object):
         self.kwargs = kwargs
 
     def __str__(self):
-        # TODO: What's the python way of doing this?
-        return "EffectDefinition(%s)" % self.name
+        return "{}({})".format(self.__class__.__name__, self.name)
 
     def create_effect(self, layout, n_pixels):
         # None -> Effect
         print "\tCreating instance of effect %s" % self
-        # TODO: pass args
         return self.clazz(layout=layout, n_pixels=n_pixels, **self.kwargs)
-        # return [child.create_effect() for child in self.children] + [self.clazz()]
 
 
-class SceneDefinition(object):
-    def __init__(self, name, *layers):
-        # str, List[EffectDefinition] -> None
+class Scene(object):
+    def __init__(self, name, feedback_effect, *layer_effects):
+        # str, FeedbackEffect, List[Effect] -> None
         self.name = name
-        self.layer_definitions = layers
-        self.instances = []
+        self.feedback_effect = feedback_effect
+        self.layer_effects = layer_effects
 
     def __str__(self):
-        # TODO: What's the python way of doing this?
-        return "Scene(%s)" % self.name
+        return "{}({})".format(self.__class__.__name__, self.name)
 
-    def init_scene(self, layout, n_pixels):
+    def initialize_layout(self, layout, n_pixels):
+        self.feedback_effect.initialize_layout(layout, n_pixels)
+        for layer_effect in self.layer_effects:
+            layer_effect.initialize_layout(layout, n_pixels)
+
+    def start_scene(self):
         """Initialize a scene"""
-        # TODO: init child instances
-        # TODO: cleanup
-        self.instances = [layer_def.create_effect(layout, n_pixels) for layer_def in self.layer_definitions]
-        return self
+        self.feedback_effect.scene_starting(self)
+        for layer_effect in self.layer_effects:
+            layer_effect.scene_starting(self)
+
+    def scene_ended(self):
+        self.feedback_effect.scene_ended(self)
+        for layer_effect in self.layer_effects:
+            layer_effect.scene_ended(self)
 
     def next_frame(self, pixels, t, osc_data):
-        # Now get all the pixels, ordering from the first foreground
-        # to the last foreground to the background TODO We mixed the
-        # model and implementation. This is the first thing to go when
-        # separating them
-        for layer in self.instances:
-            layer.next_frame(pixels, t, osc_data)
+        self.feedback_effect.next_frame(pixels, t, osc_data)
 
-        return pixels
+        for layer_effect in self.layer_effects:
+            layer_effect.next_frame(pixels, t, osc_data)
