@@ -128,7 +128,15 @@ function initEnv(){
 }
 
 
-module.exports.isWatching = function isWatching(){
+/**
+ * Returns the value of yargs.watch
+ * the cli can change it by adding options:
+ *   --watch     << true
+ *   --no-watch  << false
+ *               << undefined
+ * @return {Boolean} true, false, or undefined
+ */
+const isWatching = module.exports.isWatching = function isWatching(){
   return yargs.watch;
 };
 
@@ -217,7 +225,7 @@ module.exports.drano = function drano() {
     errorHandler: function(error) {
 
       // gulp notify is freezing jenkins builds, so we're only going to show this message if we're watching
-      if (config.watch) {
+      if (isWatching()) {
         notify.onError({ title: "<%= error.plugin %>", message: "<%= error.message %>", sound: "Beep" })(error);
       }
       else {

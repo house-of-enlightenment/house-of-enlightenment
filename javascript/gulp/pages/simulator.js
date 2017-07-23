@@ -33,71 +33,59 @@ module.exports = function simulatorTask(projectRoot) {
    * use --watch and --env development/production
    */
   gulp.task("simulator", function(){
-    
-  createCopyTask("simulator-copy", {
-    src: [
-      `${simulatorRoot}/client/index.html`,
-      `${simulatorRoot}/client/layout.html`,
-      `${simulatorRoot}/client/models/**`,
-      `${simulatorRoot}/client/layout/**` // need csv
-    ],
-    dest: simulatorDest,
-    base: `${simulatorRoot}/client/`
-  });
+
+    createCopyTask("simulator-copy", {
+      src: [
+        `${simulatorRoot}/client/index.html`,
+        `${simulatorRoot}/client/models/**`
+      ],
+      dest: simulatorDest,
+      base: `${simulatorRoot}/client/`
+    });
 
 
-  createCssTask("simulator-css", {
-    src: [
-      `${simulatorRoot}/client/scss/**/*.scss`,
-      `${simulatorRoot}/client/js/**/*.scss`
-    ],
-    dest: `${simulatorDest}/css/`,
-    watch: [
-      `${simulatorRoot}/client/scss/**/*.scss`,
-      `${simulatorRoot}/client/js/**/*.scss`
-    ],
-    filename: "index.css"
-  });
+    createCssTask("simulator-css", {
+      src: [
+        `${simulatorRoot}/client/scss/**/*.scss`,
+        `${simulatorRoot}/client/js/**/*.scss`
+      ],
+      dest: `${simulatorDest}/css/`,
+      watch: [
+        `${simulatorRoot}/client/scss/**/*.scss`,
+        `${simulatorRoot}/client/js/**/*.scss`
+      ],
+      filename: "index.css"
+    });
 
 
-  createJsTask("simulator-js", {
-    dest: `${simulatorDest}/js/`,
-    files: [
-      {
-        gulpTaskId: "js-index",
-        entry: `${simulatorRoot}/client/js/index.js`,
-        filename: "index.js",
-        watch: [
-          `${simulatorRoot}/client/js/**/*.js`,
-          `${simulatorRoot}/client/js/**/*.jsx`,
-          `${projectRoot}/layout/**/*.json`
-        ]
-      },
-      {
-        gulpTaskId: "js-layout",
-        entry: `${projectRoot}/javascript/layout-generator/test.js`,
-        filename: "layout.js",
-        watch: [
-          `${projectRoot}/javascript/layout-generator/**/*.js`
-        ]
-      }
-    ]
-  });
+    createJsTask("simulator-js", {
+      dest: `${simulatorDest}/js/`,
+      files: [
+        {
+          gulpTaskId: "simulator-js-index",
+          entry: `${simulatorRoot}/client/js/index.js`,
+          filename: "index.js",
+          watch: [
+            `${simulatorRoot}/client/js/**/*.js`,
+            `${simulatorRoot}/client/js/**/*.jsx`,
+            `${projectRoot}/layout/**/*.json`
+          ]
+        }
+      ]
+    });
 
 
-  createNodemonTask("simulator-nodemon", {
-    script: path.resolve(serverDir, "server.js"),
-    args: ["--layout", layout],
-    watch: [ serverDir ]
-  });
+    createNodemonTask("simulator-nodemon", {
+      script: path.resolve(serverDir, "server.js"),
+      args: ["--layout", layout],
+      watch: [ serverDir ]
+    });
 
 
-  createBrowserSyncTask("simulator-browser-sync", {
-    files: simulatorDest + "/**",
-    proxy: "http://localhost:3030"
-  });
-
-
+    createBrowserSyncTask("simulator-browser-sync", {
+      files: simulatorDest + "/**",
+      proxy: "http://localhost:3030"
+    });
 
 
     const simulatorTasks = ["simulator-copy", "simulator-css", "simulator-js"];

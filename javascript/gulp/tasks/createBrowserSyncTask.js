@@ -24,8 +24,13 @@ module.exports = function(taskName, userConfig){
   // watch these files and reload the browser when they change
   // merge the userConfig files
   const files = R.cond([
+    // if userConfig.files is an array, concat defaultFiles on it
     [fs => Array.isArray(fs)      , fs => R.concat(fs), defaultFiles],
+    // if userConfig.files is a string, append it to the defaultFiles
     [fs => typeof(fs) === "string", fs => R.append(fs, defaultFiles)],
+    // if server is defined, watch that directory
+    [fs => userConfig.server      , fs => [`${userConfig.server}/**`]],
+    // otherwise, return an empty array
     [R.T                          , fs => []]
   ])(userConfig.files);
 

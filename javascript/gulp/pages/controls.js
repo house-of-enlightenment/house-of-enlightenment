@@ -53,7 +53,7 @@ module.exports = function controlsTask(projectRoot) {
       dest: `${controlsDest}/js/`,
       files: [
         {
-          gulpTaskId: "js-index",
+          gulpTaskId: "controls-js-index",
           entry: `${controlsRoot}/client/js/index.js`,
           filename: "index.js",
           watch: [

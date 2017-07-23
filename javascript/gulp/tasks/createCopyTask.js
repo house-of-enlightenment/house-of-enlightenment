@@ -2,7 +2,6 @@ const gulp   = require("gulp");
 const quench = require("../quench.js");
 const debug  = require("gulp-debug");
 const R      = require("ramda");
-const runSequence = require("run-sequence");
 
 module.exports = function copyTask(taskName, userConfig) {
 
@@ -13,7 +12,6 @@ module.exports = function copyTask(taskName, userConfig) {
     * base      : *optionalbase for copy
     * watch     : files to watch that will trigger a rerun when changed
     */
-    base: ""
   }, userConfig);
 
   const { src, dest, base, watch } = copyConfig;

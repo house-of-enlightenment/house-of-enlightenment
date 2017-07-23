@@ -4,28 +4,32 @@
 
 // Include gulp and plugins
 const gulp   = require("gulp");
-const quench = require("./quench.js");
 const path   = require("path");
 
 const loadSimulatorTasks = require("./pages/simulator.js");
 const loadControlsTasks = require("./pages/controls.js");
+const loadLayoutTasks = require("./pages/layout.js");
 
 const projectRoot = path.resolve(__dirname, "../..");
 
 
 // default configuration
 // For details, see "user supplied keys" in quench.js
-const defaults = {
-  root: projectRoot,
-  env: "development", // "development", "production", "local"
-  watch: false
-};
+// const defaults = {
+//   root: projectRoot,
+//   env: "development", // "development", "production", "local"
+//   watch: false
+// };
 
 
-
+/* gulp simulator */
 loadSimulatorTasks(projectRoot);
 
+/* gulp controls */
 loadControlsTasks(projectRoot);
+
+/* gulp layout */
+loadLayoutTasks(projectRoot);
 
 
 

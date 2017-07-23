@@ -5,7 +5,9 @@ const mapIndexed = R.addIndex(R.map);
 
 
 /**
- *
+ * Transform data into hoeLayout format
+ * This file can be used by node to generate and write a file
+ * or used in a browser to ease development (see /test/)
  * @param {Array} data javascript array of { X, Y }
  * @return see readme.md in /layout/readme.md
  */
