@@ -9,7 +9,6 @@ from threading import Thread
 from opc import Client
 from OSC import OSCServer
 from functools import partial
-import numpy
 import atexit
 
 
@@ -103,25 +102,17 @@ class SceneManager(object):
         print '\tsending pixels forever (quit or control-c to exit)...'
         self.is_running = True
 
-        # Create the pixels, set all, then put
-        pixels = numpy.zeros((len(self.layout), 3), numpy.uint8)
-
         while self.serve:
             # TODO : Does this create lots of GC?
             frame_start_time = time.time()
             t = frame_start_time - start_time
             target_frame_end_time = frame_start_time + fps_frame_time
 
+            # Create the pixels, set all, then put
+            pixels = [None] * self.n_pixels
             self.curr_scene.next_frame(pixels, t, self.get_osc_frame())
-
             # TODO: Check for None and replace with (0, 0, 0)
-            # Removed for now: Replace (1,1,1) with (0,0,0)
-            # This didn't work: pixels[pixels==(1,1,1)] = 0
-            # This should: numpy.all(pixels==(1,1,1), axis=1)
             self.opc.put_pixels(pixels, channel=0)
-
-            # Reset pixels for next frame.
-            pixels[:] = 0
 
             # Crude way of trying to hit target fps
             time.sleep(max(0, target_frame_end_time - time.time()))

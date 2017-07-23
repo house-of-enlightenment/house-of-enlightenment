@@ -17,7 +17,6 @@ from hoe import osc_utils
 from hoe.scene_manager import SceneDefinition
 from hoe.scene_manager import EffectDefinition
 from hoe.scene_manager import Effect
-import numpy as np
 
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
@@ -83,7 +82,7 @@ class StopTheLight(Effect):
 
         # Since this will be a foreground layer, we can't fall back to other pix in the bottoms rows
         for idx in self.bottom_rows:
-            pixels[idx] = pixels[idx] if not np.array_equal(pixels[idx], (0,0,0)) else \
+            pixels[idx] = pixels[idx] if pixels[idx] else \
                 self.sprite_color if idx in sprite_idx else \
                     RED if idx in self.target_idx else \
                         BLACK
@@ -97,7 +96,7 @@ class SolidColor(Effect):
     """Always return color"""
     def next_frame(self, pixels, t, osc_data):
         for ii in range(self.n_pixels):
-            pixels[ii] = pixels[ii] if not np.array_equal(pixels[ii],(0,0,0)) else self.color
+            pixels[ii] = pixels[ii] if pixels[ii] else self.color
 
 
 __all__ = [
