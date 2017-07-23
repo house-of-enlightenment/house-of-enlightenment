@@ -5,7 +5,9 @@ import numpy as np
 
 _GROUPBY = [
     "address",
+    "row",
     "section",
+    "slice",
     "strip",
     "stripIndex",
     "topOrBottom",
