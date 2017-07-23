@@ -12,7 +12,7 @@ from functools import partial
 import atexit
 
 
-class SceneManager(object):
+class AnimationFramework(object):
     def __init__(self, osc, opc, layout, fps):
         # OSCServer, Client, dict, int -> None
         self.osc_server = osc
@@ -22,7 +22,7 @@ class SceneManager(object):
         self.n_pixels = len(layout)
 
         # Load all scenes from effects package. Then set initial index and load it up
-        self.scenes = SceneManager.load_scenes()
+        self.scenes = AnimationFramework.load_scenes()
         self.scene_index = 0
         self.init_scene()
 

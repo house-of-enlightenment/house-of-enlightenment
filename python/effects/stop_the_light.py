@@ -14,9 +14,9 @@ from hoe.layout import Layout
 from hoe import opc
 from hoe import osc_utils
 
-from hoe.scene_manager import SceneDefinition
-from hoe.scene_manager import EffectDefinition
-from hoe.scene_manager import Effect
+from hoe.animation_framework import SceneDefinition
+from hoe.animation_framework import EffectDefinition
+from hoe.animation_framework import Effect
 
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)

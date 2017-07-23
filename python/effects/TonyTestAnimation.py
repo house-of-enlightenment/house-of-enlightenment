@@ -1,7 +1,7 @@
 from hoe import color_utils
-from hoe.scene_manager import SceneDefinition
-from hoe.scene_manager import EffectDefinition
-from hoe.scene_manager import Effect
+from hoe.animation_framework import SceneDefinition
+from hoe.animation_framework import EffectDefinition
+from hoe.animation_framework import Effect
 
 
 class TonyEffect(Effect):
