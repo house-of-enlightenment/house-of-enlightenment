@@ -15,6 +15,11 @@ const yargs = require("yargs")
       alias: "l",
       describe: "path to layout file",
       required: true
+    },
+    "verbose": {
+      alias: "v",
+      describe: "Run in debug mode",
+      default: false
     }
   })
   .help()
@@ -31,6 +36,7 @@ const buildDirectory = path.resolve(__dirname, "../build");
 const layoutDirectory = path.resolve(__dirname, "../../../layout");
 const layoutFile = path.resolve(process.cwd(), yargs.layout);
 const indexHtml = path.resolve(buildDirectory, "index.html");
+const verbose = yargs.verbose
 
 app.use(morgan("dev"));     /* debugging: "default", "short", "tiny", "dev" */
 // app.use(express.json());  // for parsing json
@@ -92,10 +98,12 @@ net.createServer(function (socket) {
     var last = Date.now();
     // forward socket messages from python to the browser
     socket.on("data", function (data) {
-      now = Date.now();
-      elapsed = now - last;
-      last = now;
-      console.log('%s - %s - Received frame %s', now, elapsed, count);
+      if(verbose) {
+          now = Date.now();
+          elapsed = now - last;
+          last = now;
+          console.log('%s - %s - Received frame %s', now, elapsed, count);
+      }
       ws.send(data);
       count += 1;
     });
