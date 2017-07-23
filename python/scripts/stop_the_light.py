@@ -17,7 +17,6 @@ from hoe import layout
 from hoe import opc
 from hoe import osc_utils
 
-
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
@@ -59,8 +58,7 @@ class Render(object):
 
     def set_target_idx(self):
         unhit_centers = [
-            c for suc, c in zip(self.successful_sections, self.section_centers)
-            if not suc
+            c for suc, c in zip(self.successful_sections, self.section_centers) if not suc
         ]
         self.target_idx = self.layout.grid[self.bottom, unhit_centers]
 
@@ -82,7 +80,6 @@ class Render(object):
             self.next_frame()
             self.sleep_until_next_frame()
 
-
             # # when starting a loop, don't want any previous (perhaps old)
             # # commands to be around, so empty this out
             # empty_queue(queue)
@@ -94,8 +91,8 @@ class Render(object):
             #     self.loop_until_interaction()
 
     def init_pixels(self):
-        self[self.bottom,:] = 32
-        self[self.top,:] = (64, 0, 0)
+        self[self.bottom, :] = 32
+        self[self.top, :] = (64, 0, 0)
 
     # a convenience method to allow me to do, like:
     # self[rows, columns] = RED
@@ -169,8 +166,7 @@ class Render(object):
                 self.ignore_buttons_until = self.now + random.random() * 2 + .5
                 self.state = State.ACTIVE
         else:
-             raise Exception('You are in a bad state: {}'.format(self.state))
-
+            raise Exception('You are in a bad state: {}'.format(self.state))
 
     def sleep_until_next_frame(self):
         self.frame_count += 1
