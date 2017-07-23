@@ -74,7 +74,7 @@ class Render(object):
         self.pixels[self.target_idx] = YELLOW
         self.client.put_pixels(self.pixels)
         self.now = time.time()
-        self.ignore_buttons_until = self.now + random.random() + 1
+        self.ignore_buttons_until = self.now + random.random() * 2 + .5
         self.sprite.start(self.now)
 
         while True:
@@ -117,7 +117,9 @@ class Render(object):
                 # have the sprite be light blue until a button can be
                 # pressed
                 # TODO: maybe increase the wait time if a button
-                # is pressed while the sprite is light blue
+                # is pressed while the sprite is light blue; this will stop
+                # people from just spamming the buttons, although
+                # that is not a useful strategy.
                 self[self.bottom, columns] = (135, 206, 250)
                 self.client.put_pixels(self.pixels)
                 return
@@ -153,7 +155,7 @@ class Render(object):
             if self.now >= self.wait_until:
                 self.sprite.reverse(self.now)
                 self.wait_until = None
-                self.ignore_buttons_until = self.now + random.random() + 1
+                self.ignore_buttons_until = self.now + random.random() * 2 + .5
                 self.state = State.ACTIVE
         elif self.state == State.MISS:
             # Note that there is no call to sprite.update()
@@ -164,7 +166,7 @@ class Render(object):
             if self.now >= self.wait_until:
                 self.sprite.reverse(self.now)
                 self.wait_until = None
-                self.ignore_buttons_until = self.now + random.random() + 1
+                self.ignore_buttons_until = self.now + random.random() * 2 + .5
                 self.state = State.ACTIVE
         else:
              raise Exception('You are in a bad state: {}'.format(self.state))
