@@ -1,12 +1,13 @@
 """Recreate the classic arcade game where a light rotates around and
 the player has to hit the button to stop the light at a target.
 """
-# sorry for the spaghetti like nature of this code.
+# sorry for the spaghetti like nature of this code, but its getting better
 
 from __future__ import division
 import json
-import Queue
 import math
+import Queue
+import random
 import sys
 import time
 
@@ -56,17 +57,24 @@ class Render(object):
         self.queue = osc_queue
         self.layout = hoe_layout
 
+    def set_target_idx(self):
+        unhit_centers = [
+            c for suc, c in zip(self.successful_sections, self.section_centers)
+            if not suc
+        ]
+        self.target_idx = self.layout.grid[self.bottom, unhit_centers]
+
     def run_forever(self):
         self.pixels = np.zeros((len(self.layout.pixels), 3), np.int8)
         self.bottom = slice(None, 10, None)
         self.top = slice(10, None, None)
         self.init_pixels()
         self.section_centers = range(6, 66, 11)
-        self.target_idx = self.layout.grid[self.bottom, self.section_centers]
+        self.set_target_idx()
         self.pixels[self.target_idx] = YELLOW
         self.client.put_pixels(self.pixels)
-
         self.now = time.time()
+        self.ignore_buttons_until = self.now + random.random() + 1
         self.sprite.start(self.now)
 
         while True:
@@ -102,17 +110,34 @@ class Render(object):
             self.sprite.update(self.now)
             self.pixels[self.target_idx] = YELLOW
             columns = self.sprite.columns()
-            self[self.bottom, columns] = BLUE
-            self.client.put_pixels(self.pixels)
+            # want to allow the sprite to move for a little while
+            # before allowing any buttons to be pressed
+            if self.now < self.ignore_buttons_until:
+                empty_queue(self.queue)
+                # have the sprite be light blue until a button can be
+                # pressed
+                # TODO: maybe increase the wait time if a button
+                # is pressed while the sprite is light blue
+                self[self.bottom, columns] = (135, 206, 250)
+                self.client.put_pixels(self.pixels)
+                return
+            else:
+                self[self.bottom, columns] = BLUE
+                self.client.put_pixels(self.pixels)
+
             try:
                 section = self.queue.get_nowait()
-                # TODO: actually move into a hit or miss state
+                if self.successful_sections[section]:
+                    # Ignore buttons for already succesful sections
+                    return
                 target = self.section_centers[section]
                 sprite_idx = self.layout.grid[self.bottom, columns]
                 if target in columns:
                     self.state = State.HIT
                     self.flash = Flash(sprite_idx, .25, (GREEN, BLACK))
                     self.wait_until = self.now + 3
+                    self.successful_sections[section] = True
+                    self.set_target_idx()
                 else:
                     self.state = State.MISS
                     self.flash = Flash(sprite_idx, .25, (RED, BLACK))
@@ -128,6 +153,7 @@ class Render(object):
             if self.now >= self.wait_until:
                 self.sprite.reverse(self.now)
                 self.wait_until = None
+                self.ignore_buttons_until = self.now + random.random() + 1
                 self.state = State.ACTIVE
         elif self.state == State.MISS:
             # Note that there is no call to sprite.update()
@@ -138,6 +164,7 @@ class Render(object):
             if self.now >= self.wait_until:
                 self.sprite.reverse(self.now)
                 self.wait_until = None
+                self.ignore_buttons_until = self.now + random.random() + 1
                 self.state = State.ACTIVE
         else:
              raise Exception('You are in a bad state: {}'.format(self.state))
