@@ -125,7 +125,6 @@ net.createServer(function (socket) {
 // when there is an error, properly close all servers
 process.on("uncaughtException", function(e){
   server.close(() => console.log("http://localhost:3030 closed"));
-  net.close(() => console.log("http://localhost:7890 closed"));
 
   console.log("simulator server error: ", e);
 });
