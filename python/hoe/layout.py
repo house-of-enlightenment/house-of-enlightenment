@@ -13,11 +13,9 @@ _GROUPBY = [
     "topOrBottom",
 ]
 
-
 SECTIONS = 6
 ROWS = 216
 COLUMNS = 66
-
 
 
 class Layout(object):

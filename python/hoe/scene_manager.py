@@ -193,8 +193,8 @@ class StoredOSCData(object):
 
 class Effect(object):
     def __init__(self, layout, n_pixels):
-        self.layout=layout
-        self.n_pixels=n_pixels
+        self.layout = layout
+        self.n_pixels = n_pixels
 
     def next_frame(self, pixels, t, osc_data):
         raise NotImplementedError("All effects must implement next_frame")
@@ -235,7 +235,9 @@ class SceneDefinition(object):
         """Initialize a scene"""
         # TODO: init child instances
         # TODO: cleanup
-        self.instances = [layer_def.create_effect(layout, n_pixels) for layer_def in self.layer_definitions]
+        self.instances = [
+            layer_def.create_effect(layout, n_pixels) for layer_def in self.layer_definitions
+        ]
         return self
 
     def next_frame(self, pixels, t, osc_data):
