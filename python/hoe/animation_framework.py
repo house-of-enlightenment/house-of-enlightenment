@@ -81,6 +81,14 @@ class AnimationFramework(object):
         else:
             self.next_scene(int(args[0]))
 
+    def select_scene_handler(self, path, tags, args, source):
+        # TODO: Call specific scenes
+        print path, tags, args, source
+        if args[0] == "":
+            self.next_scene()
+        else:
+            self.pick_scene(args[0])
+
     def add_button(self, button_id, path=None):
         path = path if path else "/input/button/%s" % button_id
         print "Registering button %s at path %s" % (button_id, path)

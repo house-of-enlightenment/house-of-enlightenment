@@ -140,13 +140,16 @@ def listen_for_keyboard(scene):
             print "Received shutdown command. Exiting now"
             scene.shutdown()
             keep_running = False
-        elif key_lower.startswith("next"):
+        elif key_lower.startswith("next "):
             # Increment one or more scenes
             args = key_lower.split(" ")
             if len(args)>1:
-                osc_utils.send_simple_message(osc_client, "/nextScene", args[1])
+                osc_utils.send_simple_message(osc_client, "/scene/next", args[1])
             else:
-                osc_utils.send_simple_message(osc_client, "/nextScene")
+                osc_utils.send_simple_message(osc_client, "/scene/next")
+        elif key_lower.startswith("scene "):
+            args = key_lower.split(" ", 1)
+            osc_utils.send_simple_message(osc_client, "/scene/select", args[1])
         else:
             args = key.split(" ", 1)
             if (len(args) == 1):
@@ -164,7 +167,8 @@ def launch():
     opc = start_opc(config.server)
     framework = init_animation_framework(osc_server, opc, config)
 
-    osc_server.addMsgHandler("/nextScene", framework.next_scene_handler)
+    osc_server.addMsgHandler("/scene/next", framework.next_scene_handler)
+    osc_server.addMsgHandler("/scene/select", framework.select_scene_handler)
 
     keyboard_thread = Thread(
         target=listen_for_keyboard, args=(framework, ), name="KeyboardListeningThread")
