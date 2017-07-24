@@ -11,7 +11,7 @@ from hoe.layout import Layout
 from hoe.animation_framework import Scene
 from hoe.animation_framework import Effect
 from hoe.animation_framework import FeedbackEffect
-from example_spatial_stripes import SolidBackground
+from generic_effects import SolidBackground
 
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
@@ -95,13 +95,20 @@ class CollaborationCountBasedBackground(Effect):
     def __init__(self, color=(0, 255, 0), max_count=6, bottom_row=3, max_row=216, layout=None, n_pixels=None):
         Effect.__init__(self, layout, n_pixels)
         self.color = color
-        self.bottom_row=bottom_row
+        self.bottom_row = bottom_row
         self.top_row_dict = { i : int(bottom_row+i*(max_row-bottom_row)/max_count) for i in range(1, max_count+1)}
+        self.current_level = int(bottom_row+(max_row-bottom_row)/max_count)
+        self.target_row= self.current_level
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
-        for ii in set(reduce(lambda a,b: a+b, [self.layout.row[i] for i in range(self.bottom_row, self.top_row_dict[collaboration_state["count"]])])):
-            pixels[ii] = pixels[ii] if pixels[ii] else self.color
+        self.target_row = self.top_row_dict[collaboration_state["count"]]
+        if self.target_row > self.current_level:
+            self.current_level+=1
+        elif self.target_row < self.current_level:
+            self.current_level-=1
 
+        for ii in set(reduce(lambda a,b: a+b, [self.layout.row[i] for i in range(self.bottom_row, self.current_level)])):
+            pixels[ii] = pixels[ii] if pixels[ii] else self.color
 
 
 __all__ = [

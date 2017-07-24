@@ -2,7 +2,7 @@ from hoe import color_utils
 from hoe.animation_framework import Scene
 from hoe.animation_framework import EffectDefinition
 from hoe.animation_framework import Effect
-from example_spatial_stripes import SampleFeedbackEffect
+from examples import SampleFeedbackEffect
 
 
 class TonyEffect(Effect):
