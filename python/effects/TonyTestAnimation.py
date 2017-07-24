@@ -7,14 +7,14 @@ from example_spatial_stripes import SampleFeedbackEffect
 
 class TonyEffect(Effect):
     """Always return red"""
-    def next_frame(self, pixels, t, osc_data):
+    def next_frame(self, pixels, t, collaborative_state, osc_data):
         for ii, coord in enumerate(self.layout.pixels):
             pixels[ii] = (0, 255, 0)
 
 
 # a simple effect for the bottom of the ring in red
 class Background1(Effect):
-    def next_frame(self, pixels, t, osc_data):
+    def next_frame(self, pixels, t, collaborative_state, osc_data):
         for ii, coord in enumerate(self.layout.pixels):
             self.gentle_glow(pixels, t, coord, ii)
 

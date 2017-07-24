@@ -204,7 +204,7 @@ class Effect(object):
         self.layout=layout
         self.n_pixels=n_pixels
 
-    def next_frame(self, pixels, t, osc_data):
+    def next_frame(self, pixels, t, collaboration_state, osc_data):
         raise NotImplementedError("All effects must implement next_frame")
         # TODO: Use abc
 
@@ -220,7 +220,7 @@ class Effect(object):
 
 
 class FeedbackEffect(Effect):
-    def compute_state(self, state, osc_data):
+    def compute_state(self, t, collaboration_state, osc_data):
         raise NotImplementedError("All feedback effects must implement compute_state")
         # TODO: use abc
 
@@ -247,6 +247,7 @@ class Scene(object):
         self.name = name
         self.feedback_effect = feedback_effect
         self.layer_effects = layer_effects
+        self.collaboration_state={}
 
     def __str__(self):
         return "{}({})".format(self.__class__.__name__, self.name)
@@ -268,7 +269,9 @@ class Scene(object):
             layer_effect.scene_ended(self)
 
     def next_frame(self, pixels, t, osc_data):
-        self.feedback_effect.next_frame(pixels, t, osc_data)
+        self.collaboration_state = self.feedback_effect.compute_state(t, self.collaboration_state, osc_data)
+
+        self.feedback_effect.next_frame(pixels, t, self.collaboration_state, osc_data)
 
         for layer_effect in self.layer_effects:
-            layer_effect.next_frame(pixels, t, osc_data)
+            layer_effect.next_frame(pixels, t, self.collaboration_state, osc_data)

@@ -12,13 +12,13 @@ class SolidBackground(Effect):
         self.color = color
         print "Created with color", self.color
 
-    def next_frame(self, pixels, t, osc_data):
+    def next_frame(self, pixels, t, collaboration_state, osc_data):
         for ii in range(self.n_pixels):
             pixels[ii] = pixels[ii] if pixels[ii] else self.color
 
 
 class SpatialStripesBackground(Effect):
-    def next_frame(self, pixels, t, osc_data):
+    def next_frame(self, pixels, t, collaboration_state, osc_data):
         for ii, coord in enumerate(self.layout.pixels):
             self.spatial_stripes(pixels,t, coord, ii)
 
@@ -52,7 +52,7 @@ class MovingDot(Effect):
         Effect.__init__(self, layout, n_pixels)
         self.spark_rad = spark_rad
 
-    def next_frame(self, pixels, t, osc_data):
+    def next_frame(self, pixels, t, collaboration_state, osc_data):
         spark_ii = (t*80) % self.n_pixels
 
         for ii in range(self.n_pixels):
@@ -72,7 +72,7 @@ class MovingDot(Effect):
 
 
 class AdjustableFillFromBottom(Effect):
-    def next_frame(self, pixels, t, osc_data):
+    def next_frame(self, pixels, t, collaboration_state, osc_data):
         for ii, coord in enumerate(self.layout.pixels):
             self.fill(pixels, t, coord, ii, osc_data)
 
@@ -83,7 +83,7 @@ class AdjustableFillFromBottom(Effect):
 
 class PrintOSC(Effect):
     """A effect layer that just prints OSC info when it changes"""
-    def next_frame(self, pixels, t, osc_data):
+    def next_frame(self, pixels, t, collaboration_state, osc_data):
         if osc_data.contains_change:
             print "Frame's osc_data is", osc_data
 
@@ -104,11 +104,11 @@ __all__= [
 
 
 class SampleFeedbackEffect(FeedbackEffect):
-    def next_frame(self, pixels, t, osc_data):
+    def next_frame(self, pixels, t, collaboration_state, osc_data):
         for ii in self.layout.row[0]+self.layout.row[1]:
             pixels[ii] = (0, 255, 0)
 
-    def compute_state(self, state, osc_data):
+    def compute_state(self, t, collaboration_state, osc_data):
         pass
 
 osc_printing_effect = PrintOSC()
