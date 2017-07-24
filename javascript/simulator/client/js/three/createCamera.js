@@ -14,6 +14,8 @@ export default function createCamera(store) {
   const FAR = 10000;
 
   const camera = new THREE.PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR);
+  const { selector } = store.getState().canvas;
+  const container = document.querySelector(selector);
 
   // https://github.com/mrdoob/three.js/blob/master/examples/js/controls/PointerLockControls.js
   camera.rotation.set( 0, 0, 0 );
@@ -32,8 +34,8 @@ export default function createCamera(store) {
   window.addEventListener("keydown", handleKeyDown(store));
   window.addEventListener("keyup", handleKeyUp(store));
 
-  window.addEventListener("mousedown", () => store.dispatch(setMouseIsDown(true)));
-  window.addEventListener("mouseup", () => store.dispatch(setMouseIsDown(false)));
+  container.addEventListener("mousedown", () => store.dispatch(setMouseIsDown(true)));
+  container.addEventListener("mouseup", () => store.dispatch(setMouseIsDown(false)));
   window.addEventListener("mousemove", handleMouseMove(camera, store, yaw, pitch));
 
 

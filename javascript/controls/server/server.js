@@ -11,12 +11,19 @@ const buildDirectory = path.resolve(__dirname, "../build");
 const indexHtml = path.resolve(buildDirectory, "index.html");
 
 
+
+
 function forwardWebsocketMsgOverOsc(udpPort) {
+
+  // websocket for the client to connect o
   const wss = new WebSocket.Server({ port: 4040 });
+
   wss.on("connection", function connection(ws) {
-    console.log("Websocket connection made");
+
+    console.log("Websocket connection made on 4040");
+
     ws.on("message", function incoming(message) {
-      console.log("Received: %s", message);
+      console.log("Controls message: %s", message);
       parseAndSend(message, udpPort);
     });
   });
@@ -28,6 +35,7 @@ function parseAndSend(message, udpPort) {
 
   console.log("message", JSON.stringify(data, null, 2));
 
+  // a python script should be listening on port 7000
   udpPort.send({
     address: `/input/station/${data.stationId}/${data.type}/${data.id}`,
     args: [
@@ -41,8 +49,6 @@ function parseAndSend(message, udpPort) {
 
 
 app.use(morgan("dev"));     /* debugging: "default", "short", "tiny", "dev" */
-// app.use(express.json());  // for parsing json
-// app.use(express.favicon(__dirname + "/public/favicon.ico"));
 
 
 // index.html
@@ -50,7 +56,7 @@ app.get("/", function(req, res){
 
   // check if index.html is there
   if (!fileExists(indexHtml)){
-    res.status(500).send("<h2>index.html doesn't exist!!</h2> did you run <code>gulp controls</code>?");
+    res.status(500).send("<h2>index.html doesn't exist!!</h2> did you run <code>gulp controls-build</code>?");
     return;
   }
 
@@ -65,9 +71,10 @@ app.use(express.static(buildDirectory));
 
 // Create an osc.js UDP Port listening on port 57121.
 // We never send data back, so this doesn't matter
+// https://www.npmjs.com/package/osc
 var udpPort = new osc.UDPPort({
   localAddress: "127.0.0.1",
-  localPort: 57121,
+  localPort: 57121, // default
   metadata: true
 });
 udpPort.open();
@@ -75,17 +82,24 @@ udpPort.open();
 
 // When the port is read, send an OSC message to, say, SuperCollider
 udpPort.on("ready", function () {
-  console.log("READY");
+
   forwardWebsocketMsgOverOsc(udpPort);
 
   // TODO: should actually wait for the websocket to be made
   server.listen(3032, () => {
     // eslint-disable-next-line no-console
-    console.log("Listening on port 3032...");
+    console.log("Controls listening on port 3032...");
   });
 });
 
+udpPort.on("error", function (error) {
+    console.log("udpPort error occurred: ", error.message);
+});
 
+// when there is an error, properly close all servers
+process.on("uncaughtException", function(e){
+  console.log("controls server error: ", e);
+});
 
 /**
  * fileExists

@@ -32,7 +32,7 @@ module.exports = function simulatorTask(projectRoot) {
    * main entry simulator task
    * use --watch and --env development/production
    */
-  gulp.task("simulator", function(){
+  gulp.task("simulator-build", function(){
 
     createCopyTask("simulator-copy", {
       src: [
@@ -108,7 +108,7 @@ module.exports = function simulatorTask(projectRoot) {
   /**
    * run the simulator server (after it is already built)
    */
-  gulp.task("simulator-server", function(cb){
+  gulp.task("simulator", function(cb){
 
     // run the node server
     // https://stackoverflow.com/questions/10232192/exec-display-stdout-live
@@ -125,6 +125,8 @@ module.exports = function simulatorTask(projectRoot) {
       const codeMsg = (code) ? `with code ${code.toString()}` : "";
       console.log(` Simulator server stopped ${codeMsg}`);
     });
+
+    cb();
 
   });
 

@@ -23,7 +23,7 @@ module.exports = function controlsTask(projectRoot) {
    * main entry controls task
    * use --watch and --env development/production
    */
-  gulp.task("controls", function(){
+  gulp.task("controls-build", function(){
 
 
     createCopyTask("controls-copy", {
@@ -97,7 +97,7 @@ module.exports = function controlsTask(projectRoot) {
   /**
    * run the controls server (after it is already built)
    */
-  gulp.task("controls-server", function(cb){
+  gulp.task("controls", function(cb){
 
     // run the node server
     // https://stackoverflow.com/questions/10232192/exec-display-stdout-live
@@ -114,6 +114,8 @@ module.exports = function controlsTask(projectRoot) {
       const codeMsg = (code) ? `with code ${code.toString()}` : "";
       console.log(` Controls server stopped ${codeMsg}`);
     });
+
+    cb();
 
   });
 

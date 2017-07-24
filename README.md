@@ -9,8 +9,7 @@ Make sure you have the latest LTS of node from https://nodejs.org/en/ (currently
 ```
 npm install -g gulp-cli // installs gulp cli globally (only needed once per computer)
 npm install             // installs projects dependancies
-gulp simulator          // compile the simulator client files
-gulp controls           // compile the controls client files
+gulp build-all          // compile the simulator, contorls, and hoe client files
 ```
 
 ## Javascript Simulator and OSC Controls
@@ -20,10 +19,10 @@ Below are the most common commands for starting the simulator. Upon launching, t
 
 ```
 # Run with default layout file (`hoeLayout.json`)
-gulp simulator-server
+gulp simulator
 
 # To specify a layout file
-gulp simulator-server --layout ./layout/spire-large.json
+gulp simulator --layout ./layout/spire-large.json
 
 # To run simulator without gulp
 node ./javascript/simulator/server/server.js --layout layout/hoeLayout.json
@@ -32,7 +31,7 @@ node ./javascript/simulator/server/server.js --layout layout/hoeLayout.json
 ### Run controls page
 To send OSC commands from the browser, launch the javascript controls server. The server will be running on http://localhost:3032. For more information, read [here](./javascript/controls)
 ```
-gulp controls-server
+gulp controls
 ```
 
 ## Run Python OPC light server
