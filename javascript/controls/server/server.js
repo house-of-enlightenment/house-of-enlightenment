@@ -11,8 +11,6 @@ const buildDirectory = path.resolve(__dirname, "../build");
 const indexHtml = path.resolve(buildDirectory, "index.html");
 
 
-
-
 function forwardWebsocketMsgOverOsc(udpPort) {
 
   // websocket for the client to connect o
@@ -30,35 +28,62 @@ function forwardWebsocketMsgOverOsc(udpPort) {
 }
 
 
+
+/**
+ * [parseAndSend description]
+ * @param  {String} message json message from the client
+ * @param  {Object} udpPort and instance of OSC.udpPort
+ * @return {Nothing} will send the osc message to the python script
+ *                   on port 7000
+ */
 function parseAndSend(message, udpPort) {
-  var data = JSON.parse(message);
-  var address = '/input'
-  var args = [
+  const data = JSON.parse(message);
+  const address = `/input/${data.type}`; // eg. /input/button
+  const args = getArgs(data);
+
+  console.log("Sending OSC: ", address, args);
+
+  // a python script should be listening on port 7000
+  udpPort.send({
+    address: address,
+    args: args
+  }, "127.0.0.1", 7000);
+}
+
+
+/**
+ * http://opensoundcontrol.org/spec-1_0
+ * @param  {Object} data { stationId, type, id, value }
+ * @return {Array} arguments array according to the osc spec
+ */
+function getArgs(data){
+
+  // type: i = int32,  f = float32, s = OSC-string,  b = OSC-blob
+  const defaultArgs = [
     {
       type: "i",
       value: data.stationId
     },
     {
-      type: "s",
-      value: data.type
-    },
-    {
       type: "i",
       value: data.id
-    },
-    {
-      type: "s",
-      value: data.value || null
     }
-  ]
+  ];
 
-  console.log("Sending OSC: ", address, args)
+  // different types have different args
+  switch(data.type){
+    // add value to the fader
+    case "fader":
+      return defaultArgs.concat([{
+        type: "i",
+        value: parseInt(data.value)
+      }]);
 
-  // a python script should be listening on port 7000
-  udpPort.send({
-    address: address,
-    args: args,
-  }, "127.0.0.1", 7000);
+    // use the default args for button
+    case "button":
+    default:
+      return defaultArgs;
+  }
 }
 
 
