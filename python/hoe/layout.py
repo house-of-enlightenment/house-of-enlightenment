@@ -13,17 +13,13 @@ _GROUPBY = [
     "topOrBottom",
 ]
 
-SECTIONS = 6
-ROWS = 216
-COLUMNS = 66
-
-
 class Layout(object):
-    def __init__(self, pixels, rows=216, columns=66):
+    def __init__(self, pixels, rows=216, columns=66, sections=6):
         self.pixels = pixels
         self.rows = rows
         self.columns = columns
         self.grid = np.zeros((rows, columns), np.int)
+        self.sections=6
 
         for attr in _GROUPBY:
             setattr(self, attr, collections.defaultdict(list))

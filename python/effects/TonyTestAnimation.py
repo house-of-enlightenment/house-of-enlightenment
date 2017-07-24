@@ -1,27 +1,28 @@
 from hoe import color_utils
-from hoe.scene_manager import SceneDefinition
-from hoe.scene_manager import EffectDefinition
-from hoe.scene_manager import Effect
+from hoe.animation_framework import Scene
+from hoe.animation_framework import EffectDefinition
+from hoe.animation_framework import Effect
+from examples import SampleFeedbackEffect
 
 
 class TonyEffect(Effect):
     """Always return red"""
-    def next_frame(self, pixels, t, osc_data):
-        for ii, coord in enumerate(self.layout):
+
+    def next_frame(self, pixels, t, collaborative_state, osc_data):
+        for ii, coord in enumerate(self.layout.pixels):
             pixels[ii] = (0, 255, 0)
 
 
 # a simple effect for the bottom of the ring in red
-class background1(Effect):
-
-    def next_frame(self, pixels, t, osc_data):
-        for ii, coord in enumerate(self.layout):
+class Background1(Effect):
+    def next_frame(self, pixels, t, collaborative_state, osc_data):
+        for ii, coord in enumerate(self.layout.pixels):
             self.gentle_glow(pixels, t, coord, ii)
 
     def gentle_glow(self, pixels, t, coord, ii):
         if pixels[ii]:
             return
-        
+
         x, y, z = coord['point']
         g = 0
         b = 0
@@ -30,8 +31,7 @@ class background1(Effect):
         pixels[ii] = (r * 255, g * 255, b * 255)
 
 
-
-__all__= [
-    SceneDefinition("tony's scene", EffectDefinition("Tony's Effect", TonyEffect)),
-    SceneDefinition("tony's next scene", EffectDefinition("Tony's Next Effect", background1))
- ]
+__all__ = [
+    Scene("tony's scene", SampleFeedbackEffect(), TonyEffect()),
+    Scene("tony's next scene", SampleFeedbackEffect(), Background1())
+]
