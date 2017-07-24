@@ -102,25 +102,18 @@ def init_osc_inputs(mgr):
     DEVELOPERS - Add inputs you need for testing. They will be finalized later
     """
 
-    # Add "stations"
-    for s in range(6):
-        for i in range(6):
-            # TODO : Can we send to a single input each time with args data?
-            mgr.add_button("s%s.b%s" % (s, i), "/input/station/%s/button/%s" % (s, i))
-            mgr.add_fader("s%s.f%s" % (s, i), "/input/station/%s/fader/%s" % (s, i), 0)
-
     # ----------- Developers - add buttons/faders here for testing ------------
 
     # Good and easy faders for sharing across testing
-    mgr.add_fader("r", default=50)
-    mgr.add_fader("g", default=50)
-    mgr.add_fader("b", default=255)
+    #mgr.add_fader("r", default=50)
+    #mgr.add_fader("g", default=50)
+    #mgr.add_fader("b", default=255)
 
     # A fader for example_spatial_stripes.AdjustableFillFromBottom
-    mgr.add_fader("bottom_fill", default=25)
+    #mgr.add_fader("bottom_fill", default=25)
 
     #A button for stop_the_light example
-    mgr.add_button("b0")
+    #mgr.add_button("b0")
 
     print 'Registered OSC Inputs\n'
 
@@ -158,7 +151,6 @@ def listen_for_keyboard(scene):
                 osc_utils.send_simple_message(osc_client, args[0], args[1])
 
         sleep(.1)
-
 
 def launch():
     config = parse_command_line()

@@ -48,7 +48,7 @@ class StopTheLight(FeedbackEffect):
             collaboration_state["count"] = 1
         # A button was pressed!
         # For now just use b0
-        if "b0" in osc_data.buttons and osc_data.buttons["b0"]:
+        if 0 in osc_data.stations[0].buttons:
             # Did it hit? TODO: Deal with wrap-around
             if self.target_location in (self.sprite_location - 1, self.sprite_location,
                                         self.sprite_location + 1):

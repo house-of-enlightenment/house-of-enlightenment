@@ -24,9 +24,9 @@ class AdjustableFillFromBottom(Effect):
             self.fill(pixels, t, coord, ii, osc_data)
 
     def fill(self, pixels, time, coord, ii, osc_data):
-        if (not pixels[ii]) and "bottom_fill" in osc_data.faders and int(
-                osc_data.faders["bottom_fill"]) > int(coord["row"]):
-            pixels[ii] = tuple([int(osc_data.faders[key]) for key in ['r', 'g', 'b']])
+        # TODO Check for existance of fade
+        if not pixels[ii] and osc_data.stations[5].faders[0] > int(coord["row"]):
+            pixels[ii] = tuple([int(osc_data.stations[i].faders[0]) for i in range(3)])
 
 
 __all__ = []

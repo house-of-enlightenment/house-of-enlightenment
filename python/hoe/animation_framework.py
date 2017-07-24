@@ -32,6 +32,7 @@ class AnimationFramework(object):
         self.is_running = False
 
         self.osc_data = StoredOSCData()
+        self.setup_handlers({0 : 50})
 
     @staticmethod
     def load_scenes(layout, n_pixels, effects_dir=None):
@@ -89,18 +90,21 @@ class AnimationFramework(object):
         else:
             self.pick_scene(args[0])
 
-    def add_button(self, button_id, path=None):
-        path = path if path else "/input/button/%s" % button_id
-        print "Registering button %s at path %s" % (button_id, path)
-
+    def setup_handlers(self, faders={}):
         def handle_button(path, tags, args, source):
-            print "Button [%s] received message: path=[%s], tags=[%s], args=[%s], source=[%s]" % (
-                button_id, path, tags, args, source)
-            self.osc_data.buttons[button_id] = 1
-            self.osc_data.contains_change = True
+            station, button_id = args
+            self.osc_data.button_pressed(station, button_id)
 
-        self.osc_server.addMsgHandler(path, handle_button)
-        pass
+        self.osc_server.addMsgHandler("/input/button", handle_button)
+
+        for fader in faders:
+            self.osc_data.init_fader_on_all_stations(fader, faders[fader])
+
+        def handle_fader(path, tags, args, source):
+            station, button_id, value = args
+            self.osc_data.fader_changed(station, button_id, value)
+
+        self.osc_server.addMsgHandler("/input/fader", handle_fader)
 
     def add_fader(self, fader_id, path=None, default="0"):
         path = path if path else "/input/fader/%s" % fader_id
@@ -192,7 +196,7 @@ def get_first_non_empty(pixels):
             return pix
 
 
-class StoredOSCData(object):
+class StoredStationData(object):
     def __init__(self, last_data=None):
         self.buttons = {}
         if last_data is None:
@@ -203,9 +207,36 @@ class StoredOSCData(object):
         self.contains_change = False
 
     def __str__(self):
-        return "StoredOSCData{buttons=%s, faders=%s, changed=%s}" % (str(self.buttons),
-                                                                     str(self.faders),
-                                                                     str(self.contains_change))
+        return "%s{buttons=%s, faders=%s, changed=%s}" % (self.__class__.__name__, str(self.buttons), str(self.faders), str(self.contains_change))
+
+    def button_pressed(self, button):
+        self.buttons[button] = 1
+        self.contains_change = True
+
+    def fader_changed(self, fader, value):
+        self.faders[fader] = value
+        self.contains_change = True
+
+
+class StoredOSCData(object):
+    def __init__(self, last_data=None, num_stations=6):
+        self.stations = [StoredStationData(last_data.stations[i] if last_data else None) for i in range(num_stations)]
+        self.contains_change = False
+
+    def __str__(self):
+        return "{}({})".format(self.__class__.__name__, ','.join([str(station) for station in self.stations]))
+
+    def button_pressed(self, station, button):
+        self.stations[station].button_pressed(button)
+        self.contains_change = True
+
+    def fader_changed(self, station, fader, value):
+        self.stations[station].fader_changed(fader, value)
+        self.contains_change = True
+
+    def init_fader_on_all_stations(self, fader, value):
+        for station in self.stations:
+            station.faders[fader] = value
 
 
 class Effect(object):
