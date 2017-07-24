@@ -5,22 +5,27 @@ import numpy as np
 
 _GROUPBY = [
     "address",
+    "row",
     "section",
+    "slice",
     "strip",
     "stripIndex",
     "topOrBottom",
 ]
+
 
 SECTIONS = 6
 ROWS = 216
 COLUMNS = 66
 
 
+
 class Layout(object):
-    def __init__(self, pixels):
+    def __init__(self, pixels, rows=216, columns=66):
         self.pixels = pixels
-        # for example, layout.row[0] will return a list of pixels in row 0.
-        self.grid = np.zeros((ROWS, COLUMNS), np.int)
+        self.rows = rows
+        self.columns = columns
+        self.grid = np.zeros((rows, columns), np.int)
 
         for attr in _GROUPBY:
             setattr(self, attr, collections.defaultdict(list))

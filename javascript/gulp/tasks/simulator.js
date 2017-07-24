@@ -80,12 +80,22 @@ module.exports = function simulatorTask(config, env) {
    */
   gulp.task("simulator:server", function(cb){
 
-    const layout = R.path(["yargs", "layout"], config) || "layout/hoeLayout.json";
+    const yargs = require("yargs").options({
+      "layout": {
+        default: undefined,
+        type: "string"
+      }, "verbose": {
+        type:"boolean",
+        default: false
+      }
+    }).argv;
+    const layout = yargs.layout || path.resolve(projectRoot, "./layout/hoeLayout.json");
+    const verbose = yargs.verbose ? "--verbose" : "";
 
     // run the node server
     // https://stackoverflow.com/questions/10232192/exec-display-stdout-live
     const server = spawn("node",
-      ["javascript/simulator/server/server.js", "--layout", layout],
+      ["javascript/simulator/server/server.js", "--layout", layout, verbose],
       { cwd: `${projectRoot}` }
     );
 

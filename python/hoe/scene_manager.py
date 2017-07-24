@@ -19,6 +19,7 @@ class SceneManager(object):
         self.opc = opc
         self.layout = layout
         self.fps = fps
+        self.n_pixels = len(layout)
 
         # Load all scenes from effects package. Then set initial index and load it up
         self.scenes = SceneManager.load_scenes()
@@ -73,7 +74,7 @@ class SceneManager(object):
         scene_info = self.scenes[self.scene_index]
         # TODO: Clean this up
         print '\tInitializing scene %s' % scene_info[1]
-        self.curr_scene = scene_info[1].init_scene(scene_info[0])
+        self.curr_scene = scene_info[1].init_scene(self.layout, self.n_pixels)
         print '\tScene %s initialized\n' % self.curr_scene
 
     def get_osc_frame(self, clear=True):
@@ -96,9 +97,6 @@ class SceneManager(object):
 
         self.serve = True
 
-        n_pixels = len(self.layout)
-        pixels = [(0, 0, 0, )] * n_pixels
-
         start_time = time.time()
         fps_frame_time = 1 / self.fps
         print '\tsending pixels forever (quit or control-c to exit)...'
@@ -110,7 +108,10 @@ class SceneManager(object):
             t = frame_start_time - start_time
             target_frame_end_time = frame_start_time + fps_frame_time
 
-            pixels = self.curr_scene.next_frame(self.layout, t, n_pixels, self.get_osc_frame())
+            # Create the pixels, set all, then put
+            pixels = [None] * self.n_pixels
+            self.curr_scene.next_frame(pixels, t, self.get_osc_frame())
+            # TODO: Check for None and replace with (0, 0, 0)
             self.opc.put_pixels(pixels, channel=0)
 
             # Crude way of trying to hit target fps
@@ -191,26 +192,31 @@ class StoredOSCData(object):
 
 
 class Effect(object):
-    def next_frame(self, layout, time, n_pixels, osc_data):
+    def __init__(self, layout, n_pixels):
+        self.layout=layout
+        self.n_pixels=n_pixels
+
+    def next_frame(self, pixels, t, osc_data):
         raise NotImplementedError("All effects must implement next_frame")
         # TODO: Use abc
 
 
 class EffectDefinition(object):
-    def __init__(self, name, clazz):  # TODO inputs
+    def __init__(self, name, clazz, **kwargs):  # TODO inputs
         # str, class -> None
         self.clazz = clazz
         self.name = name
+        self.kwargs = kwargs
 
     def __str__(self):
         # TODO: What's the python way of doing this?
         return "EffectDefinition(%s)" % self.name
 
-    def create_effect(self):
+    def create_effect(self, layout, n_pixels):
         # None -> Effect
         print "\tCreating instance of effect %s" % self
         # TODO: pass args
-        return self.clazz()
+        return self.clazz(layout=layout, n_pixels=n_pixels, **self.kwargs)
         # return [child.create_effect() for child in self.children] + [self.clazz()]
 
 
@@ -225,21 +231,19 @@ class SceneDefinition(object):
         # TODO: What's the python way of doing this?
         return "Scene(%s)" % self.name
 
-    def init_scene(self, package):
+    def init_scene(self, layout, n_pixels):
         """Initialize a scene"""
         # TODO: init child instances
         # TODO: cleanup
-        self.instances = [layer_def.create_effect() for layer_def in self.layer_definitions]
+        self.instances = [layer_def.create_effect(layout, n_pixels) for layer_def in self.layer_definitions]
         return self
 
-    def next_frame(self, layout, time, n_pixels, osc_data):
+    def next_frame(self, pixels, t, osc_data):
         # Now get all the pixels, ordering from the first foreground
         # to the last foreground to the background TODO We mixed the
         # model and implementation. This is the first thing to go when
         # separating them
-        all_pixels = [
-            layer.next_frame(layout, time, n_pixels, osc_data) for layer in self.instances
-        ]
-        # Smush them together, taking the first non-None pixel available
-        pixels = [get_first_non_empty(pixs) for pixs in zip(*all_pixels)]
+        for layer in self.instances:
+            layer.next_frame(pixels, t, osc_data)
+
         return pixels
