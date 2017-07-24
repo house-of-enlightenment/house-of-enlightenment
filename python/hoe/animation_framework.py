@@ -81,6 +81,14 @@ class AnimationFramework(object):
         else:
             self.next_scene(int(args[0]))
 
+    def select_scene_handler(self, path, tags, args, source):
+        # TODO: Call specific scenes
+        print path, tags, args, source
+        if args[0] == "":
+            self.next_scene()
+        else:
+            self.pick_scene(args[0])
+
     def add_button(self, button_id, path=None):
         path = path if path else "/input/button/%s" % button_id
         print "Registering button %s at path %s" % (button_id, path)
@@ -101,7 +109,7 @@ class AnimationFramework(object):
         def handle_fader(path, tags, args, source):
             print("Fader [{}] received message: "
                   "path=[{}], tags=[{}], args=[{}], source=[{}], name=[{}]").format(
-                fader_id, path, tags, args, source, fader_id)
+                      fader_id, path, tags, args, source, fader_id)
             fader_value = args[0]
             self.osc_data.faders[fader_id] = fader_value
             self.osc_data.contains_change = True
@@ -125,7 +133,7 @@ class AnimationFramework(object):
 
     def next_scene(self, increment=1):
         curr_idx = self.scenes.keys().index(self.curr_scene.name)
-        new_idx = (curr_idx+increment)%len(self.scenes)
+        new_idx = (curr_idx + increment) % len(self.scenes)
         self.pick_scene(self.scenes.keys()[new_idx])
 
     def pick_scene(self, scene_name):
@@ -176,6 +184,7 @@ class AnimationFramework(object):
     def shutdown(self):
         self.serve = False
 
+
 # TODO: do the python way
 def get_first_non_empty(pixels):
     for pix in pixels:
@@ -201,8 +210,8 @@ class StoredOSCData(object):
 
 class Effect(object):
     def __init__(self, layout=None, n_pixels=None):
-        self.layout=layout
-        self.n_pixels=n_pixels
+        self.layout = layout
+        self.n_pixels = n_pixels
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
         raise NotImplementedError("All effects must implement next_frame")
@@ -247,7 +256,7 @@ class Scene(object):
         self.name = name
         self.feedback_effect = feedback_effect
         self.layer_effects = layer_effects
-        self.collaboration_state={}
+        self.collaboration_state = {}
 
     def __str__(self):
         return "{}({})".format(self.__class__.__name__, self.name)
@@ -269,7 +278,8 @@ class Scene(object):
             layer_effect.scene_ended(self)
 
     def next_frame(self, pixels, t, osc_data):
-        self.collaboration_state = self.feedback_effect.compute_state(t, self.collaboration_state, osc_data)
+        self.collaboration_state = self.feedback_effect.compute_state(t, self.collaboration_state,
+                                                                      osc_data)
 
         self.feedback_effect.next_frame(pixels, t, self.collaboration_state, osc_data)
 
