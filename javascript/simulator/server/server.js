@@ -6,7 +6,6 @@ const morgan    = require("morgan"); // express logger
 const net       = require("net");
 const WebSocket = require("ws");
 const fs        = require("fs");
-const dgram     = require('dgram');
 
 
 const yargs = require("yargs")
@@ -58,13 +57,13 @@ app.get("/", function(req, res){
 
   // check if index.html is there
   if (!fileExists(indexHtml)){
-    res.status(500).send("<h2>index.html doesn't exits!!</h2> did you run <code>gulp simulator:build</code>?");
+    res.status(500).send("<h2>index.html doesn't exist!!</h2> did you run <code>gulp simulator-build</code>?");
     return;
   }
 
   // check to see if the layout file exists
   if (!fileExists(layoutFile)){
-    res.status(500).send(`<h2>layout file doesn't exits!!</h2> <code>${layoutFile}</code>`);
+    res.status(500).send(`<h2>layout file doesn't exist!!</h2> <code>${layoutFile}</code> did you run <code>gulp layout</code>?`);
     return;
   }
 
@@ -79,7 +78,7 @@ app.use(express.static(buildDirectory));
 
 server.listen(3030, () => {
   // eslint-disable-next-line no-console
-  console.log("Listening on port 3030...");
+  console.log("Simulator listening on port 3030...");
 });
 
 
@@ -120,6 +119,18 @@ net.createServer(function (socket) {
 });
 
 
+
+
+
+// when there is an error, properly close all servers
+process.on("uncaughtException", function(e){
+  server.close(() => console.log("http://localhost:3030 closed"));
+  net.close(() => console.log("http://localhost:7890 closed"));
+
+  console.log("simulator server error: ", e);
+});
+
+
 /**
  * fileExists
  * @param  {String} filepath : path to the file
@@ -133,6 +144,6 @@ function fileExists(filepath) {
   catch(e) {
     return false;
   }
-};
+}
 
 module.exports = app;

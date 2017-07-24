@@ -39,7 +39,6 @@ document.body.appendChild( stats.dom );
 
 function animate() {
 
-
   stats.begin();
 
   renderer.render( scene, camera );

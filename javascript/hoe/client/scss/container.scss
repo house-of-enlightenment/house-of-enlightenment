@@ -9,13 +9,16 @@
 }
 
 .container__top {
-    flex: none;
+    position: relative;
+    flex: auto;
     text-align: center;
 }
 
 .container__bottom {
     position: relative;
-    flex: auto;
+    flex-basis: auto;
+    flex-grow: 0;
+    flex-shrink: 0;
     // padding: 20px;
     box-sizing: border-box;
     overflow: hidden; // important for resize measurements

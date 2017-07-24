@@ -5,9 +5,10 @@ const multiplySpire = require("./multiplySpire.js");
 
 /**
  * Usage: $ node nodeGenerateLayout.js
+ * will generate and write write hoeLayout.json
  */
 
-const layout = path.resolve(__dirname, "../../layout")
+const layout = path.resolve(__dirname, "../../../layout")
 
 fs.readFile(`${layout}/files/led-coordinates.csv`, "utf8", (err, csvString) => {
 

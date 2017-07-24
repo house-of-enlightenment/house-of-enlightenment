@@ -76,7 +76,7 @@
     "no-catch-shadow": 0,
     "no-class-assign": 1,
     "no-cond-assign": 2,
-    "no-console": [1, { "allow": ["warn", "error"] }],
+    "no-console": [0, { "allow": ["warn", "error"] }],
     "no-const-assign": 1,
     "no-constant-condition": 2,
     "no-continue": 0,

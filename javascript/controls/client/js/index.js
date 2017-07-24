@@ -6,9 +6,9 @@ import App from "./components/App.jsx";
 const ws = new WebSocket("ws://localhost:4040");
 
 ws.onopen = function (event) {
-  console.log("websocket connection made, render page");
+  console.log("controls websocket connection made tp ws://localhost:4040");
   ReactDom.render(
     <App ws={ws} />,
-    document.querySelector(".js-app-mount")
+    document.querySelector(".js-controls-mount")
   );
 };
