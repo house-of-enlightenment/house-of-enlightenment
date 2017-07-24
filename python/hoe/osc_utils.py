@@ -5,7 +5,7 @@ from threading import Thread
 import atexit
 
 defaults = {}
-defaults['address'] = '127.0.0.1'
+defaults['address'] = '0.0.0.0'
 defaults['port'] = 7000
 
 
