@@ -7,6 +7,7 @@ from hoe.animation_framework import FeedbackEffect
 
 class SolidBackground(Effect):
     """Always return a color"""
+
     def __init__(self, color=(255, 0, 0), layout=None, n_pixels=None):
         Effect.__init__(self, layout, n_pixels)
         self.color = color
@@ -23,7 +24,9 @@ class AdjustableFillFromBottom(Effect):
             self.fill(pixels, t, coord, ii, osc_data)
 
     def fill(self, pixels, time, coord, ii, osc_data):
-        if (not pixels[ii]) and "bottom_fill" in osc_data.faders and int(osc_data.faders["bottom_fill"]) > int(coord["row"]):
-            pixels[ii] = tuple([int(osc_data.faders[key]) for key in ['r','g','b']])
+        if (not pixels[ii]) and "bottom_fill" in osc_data.faders and int(
+                osc_data.faders["bottom_fill"]) > int(coord["row"]):
+            pixels[ii] = tuple([int(osc_data.faders[key]) for key in ['r', 'g', 'b']])
 
-__all__=[]
+
+__all__ = []

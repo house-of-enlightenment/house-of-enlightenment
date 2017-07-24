@@ -143,7 +143,7 @@ def listen_for_keyboard(scene):
         elif key_lower.startswith("next "):
             # Increment one or more scenes
             args = key_lower.split(" ")
-            if len(args)>1:
+            if len(args) > 1:
                 osc_utils.send_simple_message(osc_client, "/scene/next", args[1])
             else:
                 osc_utils.send_simple_message(osc_client, "/scene/next")
