@@ -17,7 +17,6 @@ from hoe import layout
 from hoe import opc
 from hoe import osc_utils
 
-
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)

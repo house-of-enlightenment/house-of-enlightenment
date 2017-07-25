@@ -18,7 +18,6 @@ from hoe import layout
 from hoe import opc
 from hoe import osc_utils
 
-
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
@@ -60,13 +59,9 @@ class Render(object):
         hue = self.hue.update(self.now)
         sv = self.sv.update(self.now)
         # mirror the hues so that we don't get any sharp edges
-        self.rainbow = np.concatenate((
-            color_utils.rainbow(
-                layout.COLUMNS / 2, hue[0], hue[1], sv[0], sv[1]),
-            color_utils.rainbow(
-                layout.COLUMNS / 2, hue[1], hue[0], sv[0], sv[1]),
-        ))
-
+        self.rainbow = np.concatenate(
+            (color_utils.rainbow(layout.COLUMNS / 2, hue[0], hue[1], sv[0], sv[1]),
+             color_utils.rainbow(layout.COLUMNS / 2, hue[1], hue[0], sv[0], sv[1]), ))
 
     def run_forever(self):
         self.now = time.time()
@@ -74,8 +69,8 @@ class Render(object):
         self.hue = HueTransition(self.now)
         self.pixels = np.zeros((len(self.layout.pixels), 3), np.uint8)
         self.set_rainbow()
-        self[10,:] = self.rainbow
-        self.before_idx = self.layout.grid[10: -self.pixels_per_frame:, :]
+        self[10, :] = self.rainbow
+        self.before_idx = self.layout.grid[10:-self.pixels_per_frame:, :]
         a = self.layout.grid[10 + self.pixels_per_frame:, 1:]
         b = self.layout.grid[10 + self.pixels_per_frame:, :1]
         self.after_idx = np.concatenate((a, b), axis=1)
@@ -90,17 +85,17 @@ class Render(object):
         self.pixels[self.after_idx] = self.pixels[self.before_idx]
         # grab the 10th row and copy up
         for i in range(self.pixels_per_frame):
-            self[10 + i, :] = self[10,:]
+            self[10 + i, :] = self[10, :]
         self.client.put_pixels(self.pixels)
         self.set_rainbow()
         # vary the rotation speed
         if np.random.random() < self.rotation_speed.update(self.now):
             self.rotation = (self.rotation + 1) % layout.COLUMNS
         if self.rotation == 0:
-            self[10,:] = self.rainbow
+            self[10, :] = self.rainbow
         else:
-            self[10,:-self.rotation] = self.rainbow[self.rotation:]
-            self[10,-self.rotation:] = self.rainbow[:self.rotation]
+            self[10, :-self.rotation] = self.rainbow[self.rotation:]
+            self[10, -self.rotation:] = self.rainbow[:self.rotation]
 
     def __setitem__(self, key, value):
         idx = self.layout.grid[key]
@@ -181,8 +176,6 @@ class HueTransition(object):
             self._reset(now)
         delta = (self.end - self.start) * (now - self.start_time) / self.length
         return self.start + delta
-
-
 
 
 if __name__ == '__main__':
