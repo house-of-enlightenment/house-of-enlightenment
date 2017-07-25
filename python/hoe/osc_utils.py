@@ -4,7 +4,7 @@ from OSC import OSCMessage
 from threading import Thread
 import atexit
 
-defaults = { 'address':'0.0.0.0', 'port':7000}
+defaults = {'address': '0.0.0.0', 'port': 7000}
 
 
 def create_osc_server(host=defaults['address'], port=defaults['port']):

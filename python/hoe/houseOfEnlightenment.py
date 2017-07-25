@@ -152,6 +152,7 @@ def listen_for_keyboard(scene):
 
         sleep(.1)
 
+
 def launch():
     config = parse_command_line()
     osc_server = osc_utils.create_osc_server()

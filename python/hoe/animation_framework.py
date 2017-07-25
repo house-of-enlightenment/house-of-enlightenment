@@ -32,7 +32,7 @@ class AnimationFramework(object):
         self.is_running = False
 
         self.osc_data = StoredOSCData()
-        self.setup_handlers({0 : 50})
+        self.setup_handlers({0: 50})
 
     @staticmethod
     def load_scenes(layout, n_pixels, effects_dir=None):
@@ -207,7 +207,9 @@ class StoredStationData(object):
         self.contains_change = False
 
     def __str__(self):
-        return "%s{buttons=%s, faders=%s, changed=%s}" % (self.__class__.__name__, str(self.buttons), str(self.faders), str(self.contains_change))
+        return "%s{buttons=%s, faders=%s, changed=%s}" % (self.__class__.__name__,
+                                                          str(self.buttons), str(self.faders),
+                                                          str(self.contains_change))
 
     def button_pressed(self, button):
         self.buttons[button] = 1
@@ -220,11 +222,15 @@ class StoredStationData(object):
 
 class StoredOSCData(object):
     def __init__(self, last_data=None, num_stations=6):
-        self.stations = [StoredStationData(last_data.stations[i] if last_data else None) for i in range(num_stations)]
+        self.stations = [
+            StoredStationData(last_data.stations[i] if last_data else None)
+            for i in range(num_stations)
+        ]
         self.contains_change = False
 
     def __str__(self):
-        return "{}({})".format(self.__class__.__name__, ','.join([str(station) for station in self.stations]))
+        return "{}({})".format(self.__class__.__name__,
+                               ','.join([str(station) for station in self.stations]))
 
     def button_pressed(self, station, button):
         self.stations[station].button_pressed(button)

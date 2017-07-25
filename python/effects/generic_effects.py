@@ -31,7 +31,8 @@ class AdjustableFillFromBottom(Effect):
     def fill(self, pixels, time, coord, ii, osc_data):
         # TODO Check for existance of fade
         if not pixels[ii] and osc_data.stations[5].faders[0] * self.row_scale > coord["row"]:
-            pixels[ii] = tuple([int(osc_data.stations[i].faders[0] * self.color_scale) for i in range(3)])
+            pixels[ii] = tuple(
+                [int(osc_data.stations[i].faders[0] * self.color_scale) for i in range(3)])
 
 
 __all__ = []
