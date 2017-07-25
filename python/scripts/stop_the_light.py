@@ -17,6 +17,7 @@ from hoe import layout
 from hoe import opc
 from hoe import osc_utils
 
+
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
@@ -63,7 +64,7 @@ class Render(object):
         self.target_idx = self.layout.grid[self.bottom, unhit_centers]
 
     def run_forever(self):
-        self.pixels = np.zeros((len(self.layout.pixels), 3), np.int8)
+        self.pixels = np.zeros((len(self.layout.pixels), 3), np.uint8)
         self.bottom = slice(None, 10, None)
         self.top = slice(10, None, None)
         self.init_pixels()
