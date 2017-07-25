@@ -59,8 +59,14 @@ class Render(object):
     def set_rainbow(self):
         hue = self.hue.update(self.now)
         sv = self.sv.update(self.now)
-        self.rainbow = color_utils.rainbow(
-            layout.COLUMNS, hue[0], hue[1], sv[0], sv[1])
+        # mirror the hues so that we don't get any sharp edges
+        self.rainbow = np.concatenate((
+            color_utils.rainbow(
+                layout.COLUMNS / 2, hue[0], hue[1], sv[0], sv[1]),
+            color_utils.rainbow(
+                layout.COLUMNS / 2, hue[1], hue[0], sv[0], sv[1]),
+        ))
+
 
     def run_forever(self):
         self.now = time.time()
@@ -165,11 +171,7 @@ class HueTransition(object):
         start = np.random.randint(0, 256)
         # pick how much of the color wheel we're going to take
         # a longer slice will have more colors
-        #
-        # TODO: there is a sharp edge where the endpoints meet.
-        #       could be fixed by mapping the slice to half of the row,
-        #       and then mirroring the other half
-        length = np.random.randint(128, 256)
+        length = np.random.randint(32, 96)
         end = start + length
         return np.array([start, end])
 
