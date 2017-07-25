@@ -128,9 +128,9 @@ def hsv2rgb(hsv):
     return rgb.reshape(input_shape)
 
 
-def rainbow(size, saturation=255, value=255):
+def rainbow(size, hue_start, hue_end, saturation=255, value=255):
     hsv_pixels = np.zeros((size, 3), np.uint8)
-    hsv_pixels[:,0] = np.linspace(0, 255, size).astype(np.uint8)
+    hsv_pixels[:,0] = np.linspace(hue_start, hue_end, size).astype(np.uint8)
     hsv_pixels[:,1] = saturation
     hsv_pixels[:,2] = value
     return hsv2rgb(hsv_pixels)

@@ -55,12 +55,19 @@ class Render(object):
         self.frame_count = 0
         self.rotation_speed = SpeedUpdate(3)
         self.rotation = 0
-        self.rainbow = color_utils.rainbow(layout.COLUMNS)
+
+    def set_rainbow(self):
+        hue = self.hue.update(self.now)
+        sv = self.sv.update(self.now)
+        self.rainbow = color_utils.rainbow(
+            layout.COLUMNS, hue[0], hue[1], sv[0], sv[1])
 
     def run_forever(self):
         self.now = time.time()
-        self.sv_transition = SmoothTransition(self.now)
+        self.sv = SVTransition(self.now)
+        self.hue = HueTransition(self.now)
         self.pixels = np.zeros((len(self.layout.pixels), 3), np.uint8)
+        self.set_rainbow()
         self[10,:] = self.rainbow
         self.before_idx = self.layout.grid[10: -self.pixels_per_frame:, :]
         a = self.layout.grid[10 + self.pixels_per_frame:, 1:]
@@ -79,8 +86,7 @@ class Render(object):
         for i in range(self.pixels_per_frame):
             self[10 + i, :] = self[10,:]
         self.client.put_pixels(self.pixels)
-        s_v = self.sv_transition.update(self.now)
-        self.rainbow = color_utils.rainbow(layout.COLUMNS, *s_v)
+        self.set_rainbow()
         if np.random.random() < self.rotation_speed.update(self.now):
             self.rotation = (self.rotation + 1) % layout.COLUMNS
             if self.rotation == 0:
@@ -121,13 +127,13 @@ class SpeedUpdate(object):
         return self.value
 
 
-class SmoothTransition(object):
+class SVTransition(object):
     def __init__(self, now):
         self._reset(now)
 
     def _reset(self, now):
-        self.start = np.random.randint(196, 255, 2)
-        self.end = np.random.randint(196, 255, 2)
+        self.start = np.array([np.random.randint(128, 256), np.random.randint(196, 256)])
+        self.end = np.array([np.random.randint(128, 256), np.random.randint(196, 256)])
         self.length = np.random.rand() * 3
         self.start_time = now
 
@@ -137,6 +143,31 @@ class SmoothTransition(object):
             self._reset(now)
         delta = (self.end - self.start) * (now - self.start_time) / self.length
         return self.start + delta
+
+
+class HueTransition(object):
+    def __init__(self, now):
+        self._reset(now)
+
+    def _reset(self, now):
+        self.start = self.rnd_pt()
+        self.end = self.rnd_pt()
+        self.length = np.random.rand() * 3
+        self.start_time = now
+
+    def rnd_pt(self):
+        start = np.random.randint(0, 256)
+        end = start + np.random.randint(128, 256)
+        return np.array([start, end])
+
+    def update(self, now):
+        elapsed = now - self.start_time
+        if elapsed > self.length:
+            self._reset(now)
+        delta = (self.end - self.start) * (now - self.start_time) / self.length
+        return self.start + delta
+
+
 
 
 if __name__ == '__main__':
