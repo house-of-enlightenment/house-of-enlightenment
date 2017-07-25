@@ -33,7 +33,9 @@ export default class Info extends React.Component {
   }
 
   handleClickAway = (e) =>{
-    this.setState({ isOpen: false });
+    if (!e.target.closest(".info__popup")){
+      this.setState({ isOpen: false });
+    }
   }
 
   handleClick = (e) => {
@@ -50,6 +52,10 @@ export default class Info extends React.Component {
 
         <div className={classNames("info__popup-holder", { "is-hidden" : !isOpen })}>
           <div className="info__popup">
+            <h3>2017 House of Enlightenment</h3>
+
+            <p><a target="_blank" href="https://douglasruuska.com/tower-of-light/">https://douglasruuska.com/tower-of-light/</a></p>
+            <p></p>
             <p>Click/drag with mouse to look around like a first person shooter video game.</p>
             <p>
               Use
@@ -69,6 +75,11 @@ export default class Info extends React.Component {
             <p className="info__mappings">
               <span className="info__mapping"><span className="key">R</span>=up</span>
               <span className="info__mapping"><span className="key">F</span>=down</span>
+            </p>
+            <p></p>
+            <p style={{ fontSize: "0.8em" }}>
+              (This is an open source project on&nbsp;
+              <a target="_blank" href="https://github.com/house-of-enlightenment/house-of-enlightenment">github</a>)
             </p>
           </div>
         </div>

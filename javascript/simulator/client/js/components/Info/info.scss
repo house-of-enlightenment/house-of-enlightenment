@@ -30,12 +30,13 @@
     justify-content: center;
     align-items: center;
 
-    pointer-events: none;
     cursor: pointer;
+    pointer-events: auto;
 
     transition: opacity 375ms;
 
     &.is-hidden  {
+        pointer-events: none;
         opacity: 0;
     }
 }
@@ -49,6 +50,8 @@
     text-align: center;
     border-radius: 6px;
     padding: 20px;
+
+    cursor: auto;
 
     margin: 20px;
 }
