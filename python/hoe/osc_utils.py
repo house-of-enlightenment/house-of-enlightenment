@@ -27,8 +27,9 @@ def get_osc_client(host='localhost', port=defaults['port']):
     return client
 
 
-def send_simple_message(client, path, data="", timeout=None):
+def send_simple_message(client, path, data=[], timeout=None):
     # OSCClient, String, String, int -> None
     msg = OSCMessage(path)
-    msg.append(data)
+    for d in data:
+        msg.append(d)
     client.send(msg, timeout)

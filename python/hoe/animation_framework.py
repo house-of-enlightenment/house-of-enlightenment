@@ -75,9 +75,7 @@ class AnimationFramework(object):
     # ----- Handlers -----
 
     def next_scene_handler(self, path, tags, args, source):
-        # TODO: Call specific scenes
-        print path, tags, args, source
-        if args[0] == "":
+        if not args or args[0] == "":
             self.next_scene()
         else:
             self.next_scene(int(args[0]))
@@ -102,7 +100,7 @@ class AnimationFramework(object):
 
         # Set up buttons
         def handle_button(path, tags, args, source):
-            station, button_id = args
+            station, button_id = map(int, args)
             self.osc_data.button_pressed(station, button_id)
 
         self.osc_server.addMsgHandler("/input/button", handle_button)
@@ -112,7 +110,7 @@ class AnimationFramework(object):
             self.osc_data.init_fader_on_all_stations(fader, faders[fader])
 
         def handle_fader(path, tags, args, source):
-            station, button_id, value = args
+            station, button_id, value = map(int, args)
             self.osc_data.fader_changed(station, button_id, value)
 
         self.osc_server.addMsgHandler("/input/fader", handle_fader)

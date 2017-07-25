@@ -114,18 +114,18 @@ def listen_for_keyboard(scene):
             # Increment one or more scenes
             args = key_lower.split(" ")
             if len(args) > 1:
-                osc_utils.send_simple_message(osc_client, "/scene/next", args[1])
+                osc_utils.send_simple_message(osc_client, "/scene/next", [args[1]])
             else:
                 osc_utils.send_simple_message(osc_client, "/scene/next")
         elif key_lower.startswith("scene "):
             args = key_lower.split(" ", 1)
-            osc_utils.send_simple_message(osc_client, "/scene/select", args[1])
+            osc_utils.send_simple_message(osc_client, "/scene/select", [args[1]])
         else:
-            args = key.split(" ", 1)
+            args = key.split(" ")
             if (len(args) == 1):
                 osc_utils.send_simple_message(osc_client, args[0])
-            elif (len(args) == 2):
-                osc_utils.send_simple_message(osc_client, args[0], args[1])
+            elif (len(args) >= 2):
+                osc_utils.send_simple_message(osc_client, args[0], args[1:])
 
         sleep(.1)
 
