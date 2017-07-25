@@ -1,7 +1,7 @@
-"""Recreate the classic arcade game where a light rotates around and
-the player has to hit the button to stop the light at a target.
+"""Creates an effect that feels like a rainbow
+flowing and twisting up the House of Enlightenment
 """
-# sorry for the spaghetti like nature of this code, but its getting better
+
 
 from __future__ import division
 import json
@@ -171,6 +171,11 @@ class HueTransition(object):
         return np.array([start, end])
 
     def update(self, now):
+        # for hues, there are two ways that the transition can go, clockwise
+        # and counterclockwise.
+        # This is always going clockwise
+        #
+        # TODO: on reset, pick a direction
         elapsed = now - self.start_time
         if elapsed > self.length:
             self._reset(now)
