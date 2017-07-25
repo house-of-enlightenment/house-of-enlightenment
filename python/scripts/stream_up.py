@@ -80,20 +80,21 @@ class Render(object):
             self.sleep_until_next_frame()
 
     def next_frame(self):
-        # copy up one and rotate
+        # copy up and rotate
         self.pixels[self.after_idx] = self.pixels[self.before_idx]
         # grab the 10th row and copy up
         for i in range(self.pixels_per_frame):
             self[10 + i, :] = self[10,:]
         self.client.put_pixels(self.pixels)
         self.set_rainbow()
+        # vary the rotation speed
         if np.random.random() < self.rotation_speed.update(self.now):
             self.rotation = (self.rotation + 1) % layout.COLUMNS
-            if self.rotation == 0:
-                self[10,:] = self.rainbow
-            else:
-                self[10,:-self.rotation] = self.rainbow[self.rotation:]
-                self[10,-self.rotation:] = self.rainbow[:self.rotation]
+        if self.rotation == 0:
+            self[10,:] = self.rainbow
+        else:
+            self[10,:-self.rotation] = self.rainbow[self.rotation:]
+            self[10,-self.rotation:] = self.rainbow[:self.rotation]
 
     def __setitem__(self, key, value):
         idx = self.layout.grid[key]
@@ -129,12 +130,15 @@ class SpeedUpdate(object):
 
 class SVTransition(object):
     def __init__(self, now):
+        self.end = np.array([np.random.randint(128, 256), np.random.randint(196, 256)])
         self._reset(now)
 
     def _reset(self, now):
-        self.start = np.array([np.random.randint(128, 256), np.random.randint(196, 256)])
+        self.start = self.end
+        # pick a saturation between 128-256 (128 is very pastel, 256 is full saturation)
+        # pick a value between 192-256 (probably a very minor effect)
         self.end = np.array([np.random.randint(128, 256), np.random.randint(196, 256)])
-        self.length = np.random.rand() * 3
+        self.length = np.random.rand() * 3 + 1
         self.start_time = now
 
     def update(self, now):
@@ -147,17 +151,26 @@ class SVTransition(object):
 
 class HueTransition(object):
     def __init__(self, now):
+        self.end = self.rnd_pt()
         self._reset(now)
 
     def _reset(self, now):
-        self.start = self.rnd_pt()
+        self.start = self.end
         self.end = self.rnd_pt()
-        self.length = np.random.rand() * 3
+        self.length = np.random.rand() * 3 + 1
         self.start_time = now
 
     def rnd_pt(self):
+        # pick a hue to start with
         start = np.random.randint(0, 256)
-        end = start + np.random.randint(128, 256)
+        # pick how much of the color wheel we're going to take
+        # a longer slice will have more colors
+        #
+        # TODO: there is a sharp edge where the endpoints meet.
+        #       could be fixed by mapping the slice to half of the row,
+        #       and then mirroring the other half
+        length = np.random.randint(128, 256)
+        end = start + length
         return np.array([start, end])
 
     def update(self, now):
