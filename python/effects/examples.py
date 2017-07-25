@@ -97,7 +97,7 @@ default_feedback_effect = SampleFeedbackEffect()
 __all__ = [
     Scene("redgreenprinting", default_feedback_effect, osc_printing_effect,
           generic_effects.SolidBackground()),
-    Scene("blueredgreen", default_feedback_effect,
+    Scene("adjustablebackground", default_feedback_effect,
           generic_effects.AdjustableFillFromBottom(), red_background),
     Scene("bluewithdot", default_feedback_effect, moving_dot, blue_background),
     Scene("spatial scene", default_feedback_effect, spatial_background)

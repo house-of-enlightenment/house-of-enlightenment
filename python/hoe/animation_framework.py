@@ -91,12 +91,23 @@ class AnimationFramework(object):
             self.pick_scene(args[0])
 
     def setup_handlers(self, faders={}):
+        """
+        :param faders: Dictionary of faders and their default values for each station
+        :return:
+        """
+
+        # Set up scene control
+        self.osc_server.addMsgHandler("/scene/next", self.next_scene_handler)
+        self.osc_server.addMsgHandler("/scene/select", self.select_scene_handler)
+
+        # Set up buttons
         def handle_button(path, tags, args, source):
             station, button_id = args
             self.osc_data.button_pressed(station, button_id)
 
         self.osc_server.addMsgHandler("/input/button", handle_button)
 
+        # Set up faders
         for fader in faders:
             self.osc_data.init_fader_on_all_stations(fader, faders[fader])
 
@@ -106,22 +117,7 @@ class AnimationFramework(object):
 
         self.osc_server.addMsgHandler("/input/fader", handle_fader)
 
-    def add_fader(self, fader_id, path=None, default="0"):
-        path = path if path else "/input/fader/%s" % fader_id
-        print "Registering fader %s at %s" % (fader_id, path)
-
-        def handle_fader(path, tags, args, source):
-            print("Fader [{}] received message: "
-                  "path=[{}], tags=[{}], args=[{}], source=[{}], name=[{}]").format(
-                      fader_id, path, tags, args, source, fader_id)
-            fader_value = args[0]
-            self.osc_data.faders[fader_id] = fader_value
-            self.osc_data.contains_change = True
-
-        # TODO : force check for slashes
-        self.osc_server.addMsgHandler(path, handle_fader)
-        self.osc_data.faders[fader_id] = default
-        pass
+        print "Registered all OSC Handlers"
 
     # ---- EFFECT CONTROL METHODS -----
     def change_scene(self):

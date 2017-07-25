@@ -92,30 +92,7 @@ def start_opc(server):
 def init_animation_framework(osc_server, opc_client, config):
     # OSCServer, Client, dict -> SceneManager, Thread
     mgr = AF.AnimationFramework(osc_server, opc_client, config.layout, config.fps)
-    init_osc_inputs(mgr)
     return mgr
-
-
-def init_osc_inputs(mgr):
-    # SceneManager -> None
-    """
-    DEVELOPERS - Add inputs you need for testing. They will be finalized later
-    """
-
-    # ----------- Developers - add buttons/faders here for testing ------------
-
-    # Good and easy faders for sharing across testing
-    #mgr.add_fader("r", default=50)
-    #mgr.add_fader("g", default=50)
-    #mgr.add_fader("b", default=255)
-
-    # A fader for example_spatial_stripes.AdjustableFillFromBottom
-    #mgr.add_fader("bottom_fill", default=25)
-
-    #A button for stop_the_light example
-    #mgr.add_button("b0")
-
-    print 'Registered OSC Inputs\n'
 
 
 def listen_for_keyboard(scene):
@@ -159,9 +136,6 @@ def launch():
 
     opc = start_opc(config.server)
     framework = init_animation_framework(osc_server, opc, config)
-
-    osc_server.addMsgHandler("/scene/next", framework.next_scene_handler)
-    osc_server.addMsgHandler("/scene/select", framework.select_scene_handler)
 
     keyboard_thread = Thread(
         target=listen_for_keyboard, args=(framework, ), name="KeyboardListeningThread")
