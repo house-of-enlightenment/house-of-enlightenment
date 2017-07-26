@@ -259,7 +259,7 @@ class Effect(object):
         pass
 
 
-class FeedbackEffect(Effect):
+class CollaborationManager(object):
     def compute_state(self, t, collaboration_state, osc_data):
         raise NotImplementedError("All feedback effects must implement compute_state")
         # TODO: use abc
@@ -282,37 +282,36 @@ class EffectDefinition(object):
 
 
 class Scene(object):
-    def __init__(self, name, feedback_effect, *layer_effects):
-        # str, FeedbackEffect, List[Effect] -> None
+    def __init__(self, name, collaboration_manager, *layer_effects):
+        # str, CollaborationManager, List[Effect] -> None
         self.name = name
-        self.feedback_effect = feedback_effect
-        self.layer_effects = layer_effects
+        self.collaboration_manager = collaboration_manager
+        self.layer_effects = list(layer_effects)
+        if isinstance(collaboration_manager,
+                      Effect) and collaboration_manager not in self.layer_effects:
+            # print "WARNING: Scene %s has collaboration manager %s that is an effect but is not part of layers. Inserting as top layer" % (name, collaboration_manager)
+            self.layer_effects = [collaboration_manager] + self.layer_effects
         self.collaboration_state = {}
 
     def __str__(self):
         return "{}({})".format(self.__class__.__name__, self.name)
 
     def initialize_layout(self, layout, n_pixels):
-        self.feedback_effect.initialize_layout(layout, n_pixels)
         for layer_effect in self.layer_effects:
             layer_effect.initialize_layout(layout, n_pixels)
 
     def start_scene(self):
         """Initialize a scene"""
-        self.feedback_effect.scene_starting(self)
         for layer_effect in self.layer_effects:
             layer_effect.scene_starting(self)
 
     def scene_ended(self):
-        self.feedback_effect.scene_ended(self)
         for layer_effect in self.layer_effects:
             layer_effect.scene_ended(self)
 
     def next_frame(self, pixels, t, osc_data):
-        self.collaboration_state = self.feedback_effect.compute_state(t, self.collaboration_state,
-                                                                      osc_data)
-
-        self.feedback_effect.next_frame(pixels, t, self.collaboration_state, osc_data)
+        self.collaboration_state = self.collaboration_manager.compute_state(
+            t, self.collaboration_state, osc_data)
 
         for layer_effect in self.layer_effects:
             layer_effect.next_frame(pixels, t, self.collaboration_state, osc_data)

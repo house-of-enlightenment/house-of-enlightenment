@@ -9,7 +9,7 @@ from hoe.layout import Layout
 
 from hoe.animation_framework import Scene
 from hoe.animation_framework import Effect
-from hoe.animation_framework import FeedbackEffect
+from hoe.animation_framework import CollaborationManager
 from generic_effects import SolidBackground
 
 WHITE = (255, 255, 255)
@@ -20,9 +20,9 @@ YELLOW = (255, 255, 0)
 BLACK = (0, 0, 0)
 
 
-class StopTheLight(FeedbackEffect):
+class StopTheLight(CollaborationManager, Effect):
     def __init__(self, strip_bottom=5, strip_top=20, layout=None, n_pixels=None):
-        FeedbackEffect.__init__(self, layout, n_pixels)
+        Effect.__init__(self, layout, n_pixels)
         self.target_location = 15  # Moved to not deal with wrap-around case at 2am
         # self.rotation_speed = .5 # rotation / second
         self.sprite_location = 20
@@ -35,7 +35,7 @@ class StopTheLight(FeedbackEffect):
         self.strip_top = strip_top
 
     def initialize_layout(self, layout, n_pixels):
-        FeedbackEffect.initialize_layout(self, layout, n_pixels)
+        Effect.initialize_layout(self, layout, n_pixels)
         self.bottom_rows = set(
             reduce(lambda a, b: a + b,
                    [self.layout.row[i] for i in range(self.strip_bottom, self.strip_top)]))

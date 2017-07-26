@@ -2,7 +2,7 @@ from hoe import color_utils
 from hoe.animation_framework import Scene
 from hoe.animation_framework import EffectDefinition
 from hoe.animation_framework import Effect
-from hoe.animation_framework import FeedbackEffect
+from hoe.animation_framework import CollaborationManager
 import generic_effects
 import debugging_effects
 
@@ -77,7 +77,7 @@ __all__= [
 ]"""
 
 
-class SampleFeedbackEffect(FeedbackEffect):
+class SampleFeedbackEffect(CollaborationManager, Effect):
     def next_frame(self, pixels, t, collaboration_state, osc_data):
         for ii in self.layout.row[0] + self.layout.row[1]:
             pixels[ii] = (0, 255, 0)

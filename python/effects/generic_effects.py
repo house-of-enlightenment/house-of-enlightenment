@@ -2,7 +2,7 @@ from hoe import color_utils
 from hoe.animation_framework import Scene
 from hoe.animation_framework import EffectDefinition
 from hoe.animation_framework import Effect
-from hoe.animation_framework import FeedbackEffect
+from hoe.animation_framework import CollaborationManager
 
 
 class SolidBackground(Effect):
