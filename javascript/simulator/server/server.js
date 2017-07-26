@@ -28,14 +28,14 @@ const yargs = require("yargs")
 const createWebsocket = require("./createWebsocket.js");
 
 // initialize WebSocket
-createWebsocket(server);
+const wss = createWebsocket(server);
 
 
 const buildDirectory = path.resolve(__dirname, "../build");
 const layoutDirectory = path.resolve(__dirname, "../../../layout");
 const layoutFile = path.resolve(process.cwd(), yargs.layout);
 const indexHtml = path.resolve(buildDirectory, "index.html");
-const verbose = yargs.verbose
+
 
 app.use(morgan("dev"));     /* debugging: "default", "short", "tiny", "dev" */
 // app.use(express.json());  // for parsing json
@@ -87,30 +87,29 @@ server.listen(3030, () => {
 // create a socket server to listen to the OPC data
 // it's a buffer, forward to the websocket server (port 3030)
 net.createServer(function (socket) {
-  console.log('Connection made');
+  console.log("socket server created (7890)");
+
+  console.log("creating websocket server at ws://localhost:3030");
+
   // connect to the web server
   const ws = new WebSocket("ws://localhost:3030", { });
 
   ws.on("open", function open() {
 
-    var count = 0
-    var last = Date.now();
     // forward socket messages from python to the browser
     socket.on("data", function (data) {
-      if(verbose) {
-          now = Date.now();
-          elapsed = now - last;
-          last = now;
-          console.log('%s - %s - Received frame %s', now, elapsed, count);
-      }
-      ws.send(data);
-      count += 1;
+      ws.send(data, function ack(error){
+        if (error){
+          console.log("error sending OPC to websocket client (3030)");
+        }
+      });
     });
 
   });
 
   socket.on("close", function() {
-    console.log('Connection closed');
+    console.log("Socket server closed closed");
+    console.log("closing websocket server");
     ws.close();
   });
 
