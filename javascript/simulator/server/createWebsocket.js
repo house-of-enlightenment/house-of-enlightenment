@@ -14,7 +14,17 @@ module.exports = function createWebsocket(server){
       // broadcast to all clients
       wss.clients.forEach(function each(client) {
         if (client !== ws && client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify(byteArray));
+
+          const json = JSON.stringify(byteArray);
+
+          // https://github.com/websockets/ws#error-handling-best-practices
+          client.send(json, function ack(error){
+
+            if (error){
+              console.log("web socket error: ", error);
+            }
+
+          });
         }
       });
 
