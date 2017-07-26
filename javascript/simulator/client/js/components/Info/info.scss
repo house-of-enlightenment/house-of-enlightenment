@@ -1,0 +1,68 @@
+.info {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+}
+
+.info__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #ffc;
+    color: black;
+    border-radius: 50%;
+    height: 18px;
+    width: 18px;
+    cursor: pointer;
+}
+
+.info__popup-holder {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+
+    background-color: rgba(0, 0, 0, 0.6);
+    opacity: 1;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    cursor: pointer;
+    pointer-events: auto;
+
+    transition: opacity 375ms;
+
+    &.is-hidden  {
+        pointer-events: none;
+        opacity: 0;
+    }
+}
+
+.info__popup {
+    width: 600px;
+    max-width: 100%;
+
+    background-color: white;
+    color: black;
+    text-align: center;
+    border-radius: 6px;
+    padding: 20px;
+
+    cursor: auto;
+
+    margin: 20px;
+}
+
+.info__mappings {
+    margin: 0 -6px;
+}
+
+.info__mapping {
+    display: inline-block;
+    white-space: nowrap;
+
+    margin: 4px 6px;
+}

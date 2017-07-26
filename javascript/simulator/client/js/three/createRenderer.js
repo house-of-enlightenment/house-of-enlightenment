@@ -39,7 +39,7 @@ export default function createRenderer(store) {
 function handleResize(container, store) {
 
   // measure the parent
-  const styles = window.getComputedStyle(container.parentNode);
+  const styles = window.getComputedStyle(container);
 
   // we want the inner width, so remove the padding
   const paddingWidth = parseInt(styles.paddingLeft) + parseInt(styles.paddingRight);

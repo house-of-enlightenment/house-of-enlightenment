@@ -8,7 +8,7 @@ export default function createLEDs() {
 
   // see server.js app.get("/layout.json")
   // this is specified via command line --layout
-  return fetch("/layout.json")
+  return fetch("layout.json")
     .then(response => response.json())
     .then(createGeometry);
 
@@ -20,15 +20,8 @@ function createGeometry(layout) {
   // listen to the server for OPC messages
   const socket = new WebSocket("ws://localhost:3030");
 
-  var count = 0
-  var last = Date.now();
   // when we receive an OPC message
   socket.onmessage = function (event) {
-    var now = Date.now();
-    var elapsed = now - last;
-    last = now;
-    console.log('%s - %s - Received frame %s', now, elapsed, count);
-    count += 1;
 
     // http://openpixelcontrol.org/
     const opcArray = JSON.parse(event.data);
@@ -41,6 +34,7 @@ function createGeometry(layout) {
       }),
       R.splitEvery(3) // r, g, b
     )(data);
+
     geometry.attributes.color.needsUpdate = true;
   };
 
@@ -62,13 +56,6 @@ function createGeometry(layout) {
     positions[ j + 2 ] = z;
 
     setRainbowHueForLED(i);
-
-    // if (led.row < 3){
-    //   setHue(i, 0);
-    // }
-    // else {
-    //   setRGB(i, [0,50,0]);
-    // }
 
   };
 
@@ -147,33 +134,6 @@ function createGeometry(layout) {
     const hsl = chroma(rgb).hsl();
 
     return hsl;
-
-  }
-
-  function update() {
-
-
-    // layout.forEach( ( led, i ) => {
-    //   // const [ oldHue ] = getHue(i);
-    //   //
-    //   // // if (i === 0){
-    //   // //   console.log("OLD HUE", oldHue);
-    //   // // }
-    //   //
-    //   // setHue(i, (oldHue + 10) % 256);
-    //   //
-    //
-    //   const j = i * 3;
-    //
-    //   colors[ j ]     = Math.random();
-    //   colors[ j + 1 ] = Math.random();
-    //   colors[ j + 2 ] = Math.random();
-    //
-    //   geometry.attributes.color.needsUpdate = true;
-    //
-    //
-    //
-    // });
 
   }
 
