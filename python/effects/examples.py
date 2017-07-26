@@ -48,21 +48,9 @@ class MovingDot(Effect):
         spark_ii = ((t - self.start_time) * 80) % self.n_pixels
 
         # TODO this should be way faster
-        for ii in range(self.n_pixels):
-            self.moving_dot(pixels, ii, spark_ii, self.n_pixels)
-
-    def moving_dot(self, pixels, ii, spark_ii, n_pixels):
-        """ make a moving white dot showing the order of the pixels in the layout file """
-
-        if pixels[ii]:
-            return
-
-        spark_val = max(
-            0, (self.spark_rad - color_utils.mod_dist(ii, spark_ii, n_pixels)) / self.spark_rad)
-        if spark_val == 0:
-            return
-        spark_val = min(1, spark_val * 2) * 256
-        pixels[ii] = (spark_val, spark_val, spark_val)
+        for ii, c in [(int((spark_ii + x) % self.n_pixels), 255 - x * 128 / self.spark_rad)
+                      for x in range(self.spark_rad)]:
+            pixels[ii] = pixels[ii] if pixels[ii] else (c, c, c)
 
 
 class SampleEffectLauncher(MultiEffect):
