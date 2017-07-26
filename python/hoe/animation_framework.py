@@ -119,7 +119,7 @@ class AnimationFramework(object):
 
     # ---- EFFECT CONTROL METHODS -----
     def change_scene(self):
-        self.queued_scene.start_scene()
+        self.queued_scene.scene_starting()
         self.curr_scene = self.queued_scene
         print '\tScene %s started\n' % self.curr_scene
         self.curr_scene.scene_ended()
@@ -168,7 +168,7 @@ class AnimationFramework(object):
 
             # Create the pixels, set all, then put
             pixels = [None] * self.n_pixels
-            self.curr_scene.next_frame(pixels, t, self.get_osc_frame())
+            self.curr_scene.render(pixels, t, self.get_osc_frame())
             # TODO: Check for None and replace with (0, 0, 0)
             self.opc.put_pixels(pixels, channel=0)
 
@@ -258,10 +258,10 @@ class Effect(object):
         self.layout = layout
         self.n_pixels = n_pixels
 
-    def scene_starting(self, scene):
+    def scene_starting(self):
         pass
 
-    def scene_ended(self, scene):
+    def scene_ended(self):
         pass
 
     def is_completed(self, t, osc_data):
@@ -273,38 +273,45 @@ class MultiEffect(Effect):
         Effect.__init__(self, layout, n_pixels)
         self.effects = list(effects)
 
-    def start_scene(self):
+    def scene_starting(self):
         """Initialize a scene"""
         for e in self.effects:
-            e.scene_starting(self)
+            e.scene_starting()
 
     def scene_ended(self):
         for e in self.effects:
-            e.scene_ended(self)
+            e.scene_ended()
 
     def initialize_layout(self, layout, n_pixels):
+        Effect.initialize_layout(self, layout, n_pixels)
         for effect in self.effects:
             effect.initialize_layout(layout, n_pixels)
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
-        self.before_rendering(pixels, t, osc_data)
+        self.before_rendering(pixels, t, collaboration_state, osc_data)
 
         for e in self.effects:
             e.next_frame(pixels, t, collaboration_state, osc_data)
 
-    def before_rendering(self, pixels, t, osc_data):
-        self.cleanup_terminated_effects(pixels, t, osc_data)
+    def before_rendering(self, pixels, t, collaboration_state, osc_data):
+        self.cleanup_terminated_effects(pixels, t, collaboration_state, osc_data)
 
-    def cleanup_terminated_effects(self, pixels, t, osc_data):
+    def cleanup_terminated_effects(self, pixels, t, collaboration_state, osc_data):
         # TODO Debugging code here?
         self.effects[:] = [e for e in self.effects if not e.is_completed(t, osc_data)]
+
+
+"""
+class EffectLauncher(MultiEffect):
+    def __init__(self, factory, layout=None, n_pixels=None, **kwargs):
+        MultiEffect.__init__(layout, n_pixels)
+"""
 
 
 class Scene(MultiEffect):
     def __init__(self, name, collaboration_manager, *effects):
         # str, CollaborationManager, List[Effect] -> None
         MultiEffect.__init__(self, None, None, *effects)
-        print name, collaboration_manager, effects, self.effects
         self.name = name
         self.collaboration_manager = collaboration_manager
         if isinstance(collaboration_manager, Effect) and collaboration_manager not in self.effects:
@@ -315,14 +322,14 @@ class Scene(MultiEffect):
     def __str__(self):
         return "{}({})".format(self.__class__.__name__, self.name)
 
-    def next_frame(self, pixels, t, osc_data):
+    def render(self, pixels, t, osc_data):
         self.collaboration_state = self.collaboration_manager.compute_state(
             t, self.collaboration_state, osc_data)
         # TODO Why didn't super(MultiEffect, self) work?
-        MultiEffect.next_frame(self, pixels, t, self.collaboration_state, osc_data)
+        self.next_frame(pixels, t, self.collaboration_state, osc_data)
 
 
-class EffectDefinition(object):
+class EffectFactory(object):
     def __init__(self, name, clazz, **kwargs):  # TODO inputs
         # str, class -> None
         self.clazz = clazz

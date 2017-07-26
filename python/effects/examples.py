@@ -1,8 +1,9 @@
 from hoe import color_utils
 from hoe.animation_framework import Scene
-from hoe.animation_framework import EffectDefinition
 from hoe.animation_framework import Effect
 from hoe.animation_framework import CollaborationManager
+from hoe.animation_framework import EffectFactory
+from hoe.animation_framework import MultiEffect
 import generic_effects
 import debugging_effects
 
@@ -38,13 +39,15 @@ class SpatialStripesBackground(Effect):
 
 
 class MovingDot(Effect):
-    def __init__(self, spark_rad=8, layout=None, n_pixels=None):
+    def __init__(self, spark_rad=8, t=0, layout=None, n_pixels=None):
         Effect.__init__(self, layout, n_pixels)
         self.spark_rad = spark_rad
+        self.start_time = t
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
-        spark_ii = (t * 80) % self.n_pixels
+        spark_ii = ((t - self.start_time) * 80) % self.n_pixels
 
+        # TODO this should be way faster
         for ii in range(self.n_pixels):
             self.moving_dot(pixels, ii, spark_ii, self.n_pixels)
 
@@ -60,6 +63,17 @@ class MovingDot(Effect):
             return
         spark_val = min(1, spark_val * 2) * 256
         pixels[ii] = (spark_val, spark_val, spark_val)
+
+
+class SampleEffectLauncher(MultiEffect):
+    def before_rendering(self, pixels, t, collaboration_state, osc_data):
+        if osc_data.stations[0].buttons:
+            self.launch_effect(t)
+
+    def launch_effect(self, t):
+        print "Adding Effect"
+        e = MovingDot(t=t, layout=self.layout, n_pixels=self.n_pixels)
+        self.effects.append(e)
 
 
 """osc_printing_effect = Effect("print osc", PrintOSC)
@@ -95,6 +109,8 @@ moving_dot = MovingDot()
 default_feedback_effect = SampleFeedbackEffect()
 
 __all__ = [
+    Scene("launchdots", default_feedback_effect, osc_printing_effect,
+          SampleEffectLauncher(), generic_effects.SolidBackground((0, 255, 255))),
     Scene("redgreenprinting", default_feedback_effect, osc_printing_effect,
           generic_effects.SolidBackground()),
     Scene("adjustablebackground", default_feedback_effect,
