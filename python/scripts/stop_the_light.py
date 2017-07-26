@@ -86,7 +86,7 @@ class Effect(object):
         end = range(11, 67, 11)
         for suc, s, e in zip(self.successful_sections, start, end):
             if not suc:
-                self.pixels[self.top, :] = 0
+                self.pixels[self.top, s:e] = 0
 
     def next_frame(self, now, pixels):
         self.now = time.time()
@@ -107,6 +107,7 @@ class Effect(object):
                 # people from just spamming the buttons, although
                 # that is not a useful strategy.
                 self.pixels[self.bottom, columns] = (135, 206, 250)
+                self.blackout_unsuccessful_sections()
                 return
             else:
                 self.pixels[self.bottom, columns] = BLUE
@@ -114,6 +115,7 @@ class Effect(object):
                 section = self.queue.get_nowait()
                 if self.successful_sections[section]:
                     # Ignore buttons for already succesful sections
+                    self.blackout_unsuccessful_sections()
                     return
                 target = self.section_centers[section]
                 sprite_idx = self.layout.grid[self.bottom, columns]
@@ -151,6 +153,7 @@ class Effect(object):
                 self.state = State.ACTIVE
         else:
             raise Exception('You are in a bad state: {}'.format(self.state))
+        self.blackout_unsuccessful_sections()
 
     def sleep_until_next_frame(self):
         self.frame_count += 1
