@@ -239,6 +239,12 @@ class StoredOSCData(object):
             station.faders[fader] = value
 
 
+class CollaborationManager(object):
+    def compute_state(self, t, collaboration_state, osc_data):
+        raise NotImplementedError("All feedback effects must implement compute_state")
+        # TODO: use abc
+
+
 class Effect(object):
     def __init__(self, layout=None, n_pixels=None):
         self.layout = layout
@@ -258,11 +264,62 @@ class Effect(object):
     def scene_ended(self, scene):
         pass
 
+    def is_completed(self, t, osc_data):
+        return False
 
-class CollaborationManager(object):
-    def compute_state(self, t, collaboration_state, osc_data):
-        raise NotImplementedError("All feedback effects must implement compute_state")
-        # TODO: use abc
+
+class MultiEffect(Effect):
+    def __init__(self, layout=None, n_pixels=None, *effects):
+        Effect.__init__(self, layout, n_pixels)
+        self.effects = list(effects)
+
+    def start_scene(self):
+        """Initialize a scene"""
+        for e in self.effects:
+            e.scene_starting(self)
+
+    def scene_ended(self):
+        for e in self.effects:
+            e.scene_ended(self)
+
+    def initialize_layout(self, layout, n_pixels):
+        for effect in self.effects:
+            effect.initialize_layout(layout, n_pixels)
+
+    def next_frame(self, pixels, t, collaboration_state, osc_data):
+        self.before_rendering(pixels, t, osc_data)
+
+        for e in self.effects:
+            e.next_frame(pixels, t, collaboration_state, osc_data)
+
+    def before_rendering(self, pixels, t, osc_data):
+        self.cleanup_terminated_effects(pixels, t, osc_data)
+
+    def cleanup_terminated_effects(self, pixels, t, osc_data):
+        # TODO Debugging code here?
+        self.effects[:] = [e for e in self.effects if not e.is_completed(t, osc_data)]
+
+
+class Scene(MultiEffect):
+    def __init__(self, name, collaboration_manager, *effects):
+        # str, CollaborationManager, List[Effect] -> None
+        MultiEffect.__init__(self, None, None, *effects)
+        print name, collaboration_manager, effects, self.effects
+        self.name = name
+        self.collaboration_manager = collaboration_manager
+        if isinstance(collaboration_manager, Effect) and collaboration_manager not in self.effects:
+            # print "WARNING: Scene %s has collaboration manager %s that is an effect but is not part of layers. Inserting as top layer" % (name, collaboration_manager)
+            self.effects = [collaboration_manager] + self.effects
+        self.collaboration_state = {}
+
+    def __str__(self):
+        return "{}({})".format(self.__class__.__name__, self.name)
+
+    def next_frame(self, pixels, t, osc_data):
+        self.collaboration_state = self.collaboration_manager.compute_state(
+            t, self.collaboration_state, osc_data)
+        # TODO Why didn't super(MultiEffect, self) work?
+        MultiEffect.next_frame(self, pixels, t, self.collaboration_state, osc_data)
 
 
 class EffectDefinition(object):
@@ -279,39 +336,3 @@ class EffectDefinition(object):
         # None -> Effect
         print "\tCreating instance of effect %s" % self
         return self.clazz(layout=layout, n_pixels=n_pixels, **self.kwargs)
-
-
-class Scene(object):
-    def __init__(self, name, collaboration_manager, *layer_effects):
-        # str, CollaborationManager, List[Effect] -> None
-        self.name = name
-        self.collaboration_manager = collaboration_manager
-        self.layer_effects = list(layer_effects)
-        if isinstance(collaboration_manager,
-                      Effect) and collaboration_manager not in self.layer_effects:
-            # print "WARNING: Scene %s has collaboration manager %s that is an effect but is not part of layers. Inserting as top layer" % (name, collaboration_manager)
-            self.layer_effects = [collaboration_manager] + self.layer_effects
-        self.collaboration_state = {}
-
-    def __str__(self):
-        return "{}({})".format(self.__class__.__name__, self.name)
-
-    def initialize_layout(self, layout, n_pixels):
-        for layer_effect in self.layer_effects:
-            layer_effect.initialize_layout(layout, n_pixels)
-
-    def start_scene(self):
-        """Initialize a scene"""
-        for layer_effect in self.layer_effects:
-            layer_effect.scene_starting(self)
-
-    def scene_ended(self):
-        for layer_effect in self.layer_effects:
-            layer_effect.scene_ended(self)
-
-    def next_frame(self, pixels, t, osc_data):
-        self.collaboration_state = self.collaboration_manager.compute_state(
-            t, self.collaboration_state, osc_data)
-
-        for layer_effect in self.layer_effects:
-            layer_effect.next_frame(pixels, t, self.collaboration_state, osc_data)
