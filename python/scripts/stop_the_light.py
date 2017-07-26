@@ -42,22 +42,22 @@ def main():
     server = osc_utils.create_osc_server()
     # pylint: disable=no-value-for-parameter
     server.addMsgHandler("/input", lambda *args: add_station_id(osc_queue, *args))
-    render = Render(client, osc_queue, hoe_layout)
+    background = su.Effect(hoe_layout)
+    interaction = Effect(hoe_layout, osc_queue)
+    render = su.Render(client, osc_queue, hoe_layout, [background, interaction])
     render.run_forever()
 
 
-class Render(object):
-    def __init__(self, opc_client, osc_queue, hoe_layout):
+class Effect(object):
+    def __init__(self, hoe_layout, queue):
         self.state = State.ACTIVE
         self.successful_sections = [False] * layout.SECTIONS
         self.fps = 30
         rotation_speed = .5  # rotation / second
         location = 0
         self.sprite = Sprite(location, rotation_speed)
-        self.frame_count = 0
-        self.client = opc_client
-        self.queue = osc_queue
         self.layout = hoe_layout
+        self.queue = queue
 
     def set_target_idx(self):
         unhit_centers = [
@@ -65,46 +65,25 @@ class Render(object):
         ]
         self.target_idx = self.layout.grid[self.bottom, unhit_centers]
 
-    def run_forever(self):
-        self.pixels = np.zeros((len(self.layout.pixels), 3), np.uint8)
+    def start(self, now):
+        #self.pixels = np.zeros((len(self.layout.pixels), 3), np.uint8)
         self.bottom = slice(None, 10, None)
         self.top = slice(10, None, None)
-        self.init_pixels()
+        #self.init_pixels()
         self.section_centers = range(6, 66, 11)
         self.set_target_idx()
-        self.pixels[self.target_idx] = YELLOW
-        self.client.put_pixels(self.pixels)
-        self.now = time.time()
+        # self.pixels[self.target_idx] = YELLOW
+        self.now = now
         self.ignore_buttons_until = self.now + random.random() * 2 + .5
         self.sprite.start(self.now)
 
-        while True:
-            self.now = time.time()
-            self.next_frame()
-            self.sleep_until_next_frame()
-
-            # # when starting a loop, don't want any previous (perhaps old)
-            # # commands to be around, so empty this out
-            # empty_queue(queue)
-            # state =
-            # successful_sections = [False] * layout.SECTIONS
-            # ignore_buttons = False
-            # prev = start
-            # while True:
-            #     self.loop_until_interaction()
-
     def init_pixels(self):
-        self[self.bottom, :] = 32
-        self[self.top, :] = (64, 0, 0)
+        self.pixels[self.bottom, :] = 32
+        #self.pixels[self.top, :] = (64, 0, 0)
 
-    # a convenience method to allow me to do, like:
-    # self[rows, columns] = RED
-    def __setitem__(self, key, value):
-        idx = self.layout.grid[key]
-        self.pixels[idx] = value
-
-    def next_frame(self):
+    def next_frame(self, now, pixels):
         self.now = time.time()
+        self.pixels = pixels
         self.init_pixels()
         if self.state == State.ACTIVE:
             self.sprite.update(self.now)
@@ -120,13 +99,10 @@ class Render(object):
                 # is pressed while the sprite is light blue; this will stop
                 # people from just spamming the buttons, although
                 # that is not a useful strategy.
-                self[self.bottom, columns] = (135, 206, 250)
-                self.client.put_pixels(self.pixels)
+                self.pixels[self.bottom, columns] = (135, 206, 250)
                 return
             else:
-                self[self.bottom, columns] = BLUE
-                self.client.put_pixels(self.pixels)
-
+                self.pixels[self.bottom, columns] = BLUE
             try:
                 section = self.queue.get_nowait()
                 if self.successful_sections[section]:
@@ -151,7 +127,6 @@ class Render(object):
             self.pixels[self.target_idx] = YELLOW
             columns = self.sprite.columns()
             self.flash.render(self.now, self.pixels)
-            self.client.put_pixels(self.pixels)
             if self.now >= self.wait_until:
                 self.sprite.reverse(self.now)
                 self.wait_until = None
@@ -162,7 +137,6 @@ class Render(object):
             self.pixels[self.target_idx] = YELLOW
             columns = self.sprite.columns()
             self.flash.render(self.now, self.pixels)
-            self.client.put_pixels(self.pixels)
             if self.now >= self.wait_until:
                 self.sprite.reverse(self.now)
                 self.wait_until = None

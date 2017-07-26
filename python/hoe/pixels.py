@@ -19,3 +19,6 @@ class Pixels(object):
             self.pixels[idx] = value
         else:
             self.pixels[key] = value
+
+    def put(self, client):
+        client.put_pixels(self.pixels)

@@ -40,28 +40,31 @@ def main():
     server = osc_utils.create_osc_server()
     # pylint: disable=no-value-for-parameter
     server.addMsgHandler("/input", lambda *args: add_station_id(osc_queue, *args))
-    render = Render(client, osc_queue, hoe_layout)
+    effect = Effect(hoe_layout)
+    render = Render(client, osc_queue, hoe_layout, [effect])
     render.run_forever()
 
 
 class Render(object):
-    def __init__(self, opc_client, osc_queue, hoe_layout):
+    def __init__(self, opc_client, osc_queue, hoe_layout, effects):
         self.client = opc_client
         self.queue = osc_queue
         self.layout = hoe_layout
         self.fps = 40
-        self.effect = Effect(self.layout)
+        self.effects = effects
         self.frame_count = 0
 
     def run_forever(self):
         now = time.time()
-        self.effect.start(now)
+        for effect in self.effects:
+            effect.start(now)
         self.pixels = pixels.Pixels(self.layout)
         while True:
             now = time.time()
             self.pixels[:] = 0
-            self.effect.next_frame(now, self.pixels)
-            self.client.put_pixels(self.pixels.pixels)
+            for effect in self.effects:
+                effect.next_frame(now, self.pixels)
+            self.pixels.put(self.client)
             self.sleep_until_next_frame(now)
 
     def sleep_until_next_frame(self, now):
@@ -69,7 +72,8 @@ class Render(object):
         frame_took = time.time() - now
         remaining_until_next_frame = (1 / self.fps) - frame_took
         if remaining_until_next_frame > 0:
-            print time.time(), self.frame_count, frame_took, remaining_until_next_frame
+            print time.time(), self.frame_count, '{:0.2f}%'.format(frame_took * self.fps * 100), \
+                frame_took, remaining_until_next_frame
             time.sleep(remaining_until_next_frame)
         else:
             print "!! Behind !!", remaining_until_next_frame
