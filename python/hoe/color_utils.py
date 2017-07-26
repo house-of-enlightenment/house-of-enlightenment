@@ -130,6 +130,8 @@ def hsv2rgb(hsv):
 
 def rainbow(size, hue_start, hue_end, saturation=255, value=255):
     hsv_pixels = np.zeros((int(size), 3), np.uint8)
+    # converting to uint8 here automatically wraps around
+    # so if we can use something like hue_start = 250 and hue_end = 286 => 30
     hsv_pixels[:, 0] = np.linspace(hue_start, hue_end, size).astype(np.uint8)
     hsv_pixels[:, 1] = saturation
     hsv_pixels[:, 2] = value

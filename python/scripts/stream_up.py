@@ -2,7 +2,6 @@
 flowing and twisting up the House of Enlightenment
 """
 
-
 from __future__ import division
 import json
 import math
@@ -17,6 +16,7 @@ from hoe import color_utils
 from hoe import layout
 from hoe import opc
 from hoe import osc_utils
+from hoe import pixels
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -50,52 +50,75 @@ class Render(object):
         self.queue = osc_queue
         self.layout = hoe_layout
         self.fps = 40
-        self.pixels_per_frame = 3
+        self.effect = Effect(self.layout)
         self.frame_count = 0
+
+    def run_forever(self):
+        now = time.time()
+        self.effect.start(now)
+        self.pixels = pixels.Pixels(self.layout)
+        while True:
+            now = time.time()
+            self.pixels[:] = 0
+            self.effect.next_frame(now, self.pixels)
+            self.client.put_pixels(self.pixels.pixels)
+            self.sleep_until_next_frame(now)
+
+    def sleep_until_next_frame(self, now):
+        self.frame_count += 1
+        frame_took = time.time() - now
+        remaining_until_next_frame = (1 / self.fps) - frame_took
+        if remaining_until_next_frame > 0:
+            print time.time(), self.frame_count, frame_took, remaining_until_next_frame
+            time.sleep(remaining_until_next_frame)
+        else:
+            print "!! Behind !!", remaining_until_next_frame
+
+
+class Effect(object):
+    def __init__(self, layout):
+        self.layout = layout
+        self.pixels_per_frame = 3
         self.rotation_speed = SpeedUpdate(3)
         self.rotation = 0
 
-    def set_rainbow(self):
-        hue = self.hue.update(self.now)
-        sv = self.sv.update(self.now)
-        # mirror the hues so that we don't get any sharp edges
-        self.rainbow = np.concatenate(
-            (color_utils.rainbow(layout.COLUMNS / 2, hue[0], hue[1], sv[0], sv[1]),
-             color_utils.rainbow(layout.COLUMNS / 2, hue[1], hue[0], sv[0], sv[1]), ))
+    def start(self, now):
+        self.sv = SVTransition(now)
+        self.hue = HueTransition(now)
+        # need my own copy of pixels
+        self.pixels = pixels.Pixels(self.layout)
 
-    def run_forever(self):
-        self.now = time.time()
-        self.sv = SVTransition(self.now)
-        self.hue = HueTransition(self.now)
-        self.pixels = np.zeros((len(self.layout.pixels), 3), np.uint8)
-        self.set_rainbow()
-        self[10, :] = self.rainbow
         self.before_idx = self.layout.grid[10:-self.pixels_per_frame:, :]
         a = self.layout.grid[10 + self.pixels_per_frame:, 1:]
         b = self.layout.grid[10 + self.pixels_per_frame:, :1]
         self.after_idx = np.concatenate((a, b), axis=1)
 
-        while True:
-            self.now = time.time()
-            self.next_frame()
-            self.sleep_until_next_frame()
-
-    def next_frame(self):
+    def next_frame(self, now, pixels):
+        rainbow = self.get_rainbow(now)
+        self.rotate(rainbow, now)
         # copy up and rotate
         self.pixels[self.after_idx] = self.pixels[self.before_idx]
         # grab the 10th row and copy up
         for i in range(self.pixels_per_frame):
-            self[10 + i, :] = self[10, :]
-        self.client.put_pixels(self.pixels)
-        self.set_rainbow()
+            self.pixels[10 + i, :] = self.pixels[10, :]
+        pixels[:] = self.pixels[:]
+
+    def get_rainbow(self, now):
+        hue = self.hue.update(now)
+        sat, val = self.sv.update(now)
+        # mirror the hues so that we don't get any sharp edges
+        return np.concatenate((color_utils.rainbow(layout.COLUMNS / 2, hue[0], hue[1], sat, val),
+                               color_utils.rainbow(layout.COLUMNS / 2, hue[1], hue[0], sat, val), ))
+
+    def rotate(self, rainbow, now):
         # vary the rotation speed
-        if np.random.random() < self.rotation_speed.update(self.now):
+        if np.random.random() < self.rotation_speed.update(now):
             self.rotation = (self.rotation + 1) % layout.COLUMNS
         if self.rotation == 0:
-            self[10, :] = self.rainbow
+            self.pixels[10, :] = rainbow
         else:
-            self[10, :-self.rotation] = self.rainbow[self.rotation:]
-            self[10, -self.rotation:] = self.rainbow[:self.rotation]
+            self.pixels[10, :-self.rotation] = rainbow[self.rotation:]
+            self.pixels[10, -self.rotation:] = rainbow[:self.rotation]
 
     def __setitem__(self, key, value):
         idx = self.layout.grid[key]
@@ -104,16 +127,6 @@ class Render(object):
     def __getitem__(self, key):
         idx = self.layout.grid[key]
         return self.pixels[idx]
-
-    def sleep_until_next_frame(self):
-        self.frame_count += 1
-        frame_took = time.time() - self.now
-        remaining_until_next_frame = (1 / self.fps) - frame_took
-        if remaining_until_next_frame > 0:
-            print time.time(), self.frame_count, frame_took, remaining_until_next_frame
-            time.sleep(remaining_until_next_frame)
-        else:
-            print "!! Behind !!", remaining_until_next_frame
 
 
 class SpeedUpdate(object):

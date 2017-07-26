@@ -17,6 +17,9 @@ from hoe import layout
 from hoe import opc
 from hoe import osc_utils
 
+# TODO: fix this. Move the stream_up code somewhere shared
+import stream_up as su
+
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
