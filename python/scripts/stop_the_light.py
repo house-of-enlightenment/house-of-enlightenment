@@ -81,6 +81,13 @@ class Effect(object):
         self.pixels[self.bottom, :] = 32
         #self.pixels[self.top, :] = (64, 0, 0)
 
+    def blackout_unsuccessful_sections(self):
+        start = range(0, 66, 11)
+        end = range(11, 67, 11)
+        for suc, s, e in zip(self.successful_sections, start, end):
+            if not suc:
+                self.pixels[self.top, :] = 0
+
     def next_frame(self, now, pixels):
         self.now = time.time()
         self.pixels = pixels
