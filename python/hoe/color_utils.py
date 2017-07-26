@@ -108,7 +108,7 @@ def hsv2rgb(hsv):
     hsv = hsv.reshape(-1, 3)
     h, s, v = hsv[:, 0] / 255, hsv[:, 1] / 255, hsv[:, 2]
 
-    i = np.uint32(h * 6.0)
+    i = np.uint32(h * 6.0)  # pylint: disable=no-member
     f = (h * 6.0) - i
     p = v * (1.0 - s)
     q = v * (1.0 - s * f)

@@ -66,20 +66,16 @@ class Effect(object):
         self.target_idx = self.layout.grid[self.bottom, unhit_centers]
 
     def start(self, now):
-        #self.pixels = np.zeros((len(self.layout.pixels), 3), np.uint8)
         self.bottom = slice(None, 10, None)
         self.top = slice(10, None, None)
-        #self.init_pixels()
         self.section_centers = range(6, 66, 11)
         self.set_target_idx()
-        # self.pixels[self.target_idx] = YELLOW
         self.now = now
         self.ignore_buttons_until = self.now + random.random() * 2 + .5
         self.sprite.start(self.now)
 
     def init_pixels(self):
         self.pixels[self.bottom, :] = 32
-        #self.pixels[self.top, :] = (64, 0, 0)
 
     def blackout_unsuccessful_sections(self):
         start = range(0, 66, 11)
@@ -154,16 +150,6 @@ class Effect(object):
         else:
             raise Exception('You are in a bad state: {}'.format(self.state))
         self.blackout_unsuccessful_sections()
-
-    def sleep_until_next_frame(self):
-        self.frame_count += 1
-        frame_took = time.time() - self.now
-        remaining_until_next_frame = (1 / self.fps) - frame_took
-        if remaining_until_next_frame > 0:
-            print time.time(), self.frame_count, frame_took, remaining_until_next_frame
-            time.sleep(remaining_until_next_frame)
-        else:
-            print "!! Behind !!", remaining_until_next_frame
 
 
 class Flash(object):

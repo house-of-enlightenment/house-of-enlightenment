@@ -39,7 +39,7 @@ def main():
     osc_queue = Queue.Queue()
     server = osc_utils.create_osc_server()
     # pylint: disable=no-value-for-parameter
-    server.addMsgHandler("/input", lambda *args: add_station_id(osc_queue, *args))
+    server.addMsgHandler("/input", lambda *args: None)
     effect = Effect(hoe_layout)
     render = Render(client, osc_queue, hoe_layout, [effect])
     render.run_forever()
