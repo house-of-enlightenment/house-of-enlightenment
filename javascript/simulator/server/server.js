@@ -107,8 +107,24 @@ net.createServer(function (socket) {
 
   });
 
+  ws.on("close", function(code, reason){
+    console.log("Web socket connectin to 3030 closed");
+    console.log("close code: ", code);
+    console.log("close reason", reason);
+  });
+
+  ws.on("error", function(error){
+    console.log("websocket client error:", error);
+  });
+
+  ws.on("'unexpected-response", function(req, res){
+    console.log("websocket client error!");
+    console.log("request: ", req);
+    console.log("response", res);
+  })
+
   socket.on("close", function() {
-    console.log("Socket server closed closed");
+    console.log("Socket server closed (7890)");
     console.log("closing websocket server");
     ws.close();
   });
