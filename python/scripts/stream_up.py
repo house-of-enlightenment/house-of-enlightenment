@@ -29,7 +29,7 @@ YELLOW = (255, 255, 0)
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--single', action='store_true')
+    parser.add_argument('--row', choices=['single', 'fader', 'rainbow'], default='rainbow')
     args = parser.parse_args()
 
     # TODO: copy and paste is bad, mkay.
@@ -44,11 +44,13 @@ def main():
     osc_queue = Queue.Queue()
     server = osc_utils.create_osc_server()
     # pylint: disable=no-value-for-parameter
-    server.addMsgHandler("/input", lambda *args: None)
-    if args.single:
+    server.addMsgHandler("/input/fader", lambda *args: osc_queue.put(args[2][-1]))
+    if args.row == 'single':
         row = SingleColumn(hoe_layout)
-    else:
+    elif args.row == 'rainbow':
         row = RainbowRow(hoe_layout)
+    elif args.row == 'fader':
+        row = FaderRow(hoe_layout, osc_queue)
     effect = Effect(hoe_layout, row)
     render = Render(client, osc_queue, hoe_layout, [effect])
     render.run_forever()
@@ -112,6 +114,36 @@ class Effect(object):
         # copy everything else up and rotate
         self.pixels[self.after_idx] = self.pixels[self.before_idx]
         pixels[:] = self.pixels[:]
+
+
+class FaderRow(object):
+    """A row that has its color controlled by a slider / fader"""
+    def __init__(self, layout, queue):
+        self.layout = layout
+        self.rotate = Rotate(self.layout.columns)
+        # osc messages go here.
+        self.queue = queue
+        self.color = np.array((255, 255, 255)) # RED in HSV
+
+    def start(self, now):
+        pass
+
+    def __call__(self, now):
+        self.update_color()
+        row = np.zeros((self.layout.columns, 3), np.uint8)
+        row[10, :] = color_utils.hsv2rgb(self.color)
+        return self.rotate(row, now)
+
+    def update_color(self):
+        value = None
+        # this feels like a hacky way to drain the queue and only
+        # get the last entry
+        try:
+            while True:
+                value = self.queue.get_nowait()
+        except:
+            if value is not None:
+                self.color = np.array((value * 255 / 100, 255, 255))
 
 
 class RainbowRow(object):
