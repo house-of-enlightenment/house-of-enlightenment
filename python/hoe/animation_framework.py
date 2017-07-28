@@ -57,7 +57,8 @@ class AnimationFramework(object):
                     for scene in effect_dict.__all__:
                         if (isinstance(scene, Scene)):
                             if scene.name in scenes.keys():
-                                print "Cannot register scene %s. Scene with name already exists" % scene.name
+                                print ("Cannot register scene %s. Scene with name "
+                                       "already exists") % scene.name
                                 continue
                             print "Registering %s" % scene
                             # TODO clean this up
@@ -289,7 +290,9 @@ class Scene(object):
         self.layer_effects = list(layer_effects)
         if isinstance(collaboration_manager,
                       Effect) and collaboration_manager not in self.layer_effects:
-            # print "WARNING: Scene %s has collaboration manager %s that is an effect but is not part of layers. Inserting as top layer" % (name, collaboration_manager)
+            # print ("WARNING: Scene %s has collaboration manager %s that "
+            #        "is an effect but is not part of layers. Inserting as top "
+            #        "layer") % (name, collaboration_manager)
             self.layer_effects = [collaboration_manager] + self.layer_effects
         self.collaboration_state = {}
 
