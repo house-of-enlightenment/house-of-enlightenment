@@ -51,11 +51,11 @@ def main():
 class Effect(object):
     def __init__(self, hoe_layout, queue):
         self.state = State.ACTIVE
-        self.successful_sections = [False] * layout.SECTIONS
+        self.successful_sections = [False] * hoe_layout.sections
         self.fps = 30
         rotation_speed = .5  # rotation / second
         location = 0
-        self.sprite = Sprite(location, rotation_speed)
+        self.sprite = Sprite(hoe_layout, location, rotation_speed)
         self.layout = hoe_layout
         self.queue = queue
 
@@ -180,7 +180,8 @@ class State(object):
 
 
 class Sprite(object):
-    def __init__(self, start_location, rotation_speed, width=3):
+    def __init__(self, layout, start_location, rotation_speed, width=3):
+        self.layout = layout
         self.start_location = start_location
         self.rotation_speed = rotation_speed
         self.location = start_location
@@ -197,17 +198,13 @@ class Sprite(object):
 
     def update(self, now):
         sprite_rotation = (now - self.start_time) * self.rotation_speed
-        location = int(layout.COLUMNS * sprite_rotation) + self.start_location
-        self.location = location % layout.COLUMNS
+        location = int(self.layout.columns * sprite_rotation) + self.start_location
+        self.location = location % self.layout.columns
 
     def columns(self):
         left = int(self.width / 2)
         right = self.width - left
-        return map(colmod, range(self.location - left, self.location + right))
-
-
-def colmod(i):
-    return divmod(i, layout.COLUMNS)[1]
+        return map(self.layout.colmod, range(self.location - left, self.location + right))
 
 
 def empty_queue(queue):

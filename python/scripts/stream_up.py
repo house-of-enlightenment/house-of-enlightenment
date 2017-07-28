@@ -18,6 +18,7 @@ from hoe import opc
 from hoe import osc_utils
 from hoe import pixels
 
+
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
@@ -111,13 +112,14 @@ class Effect(object):
         hue = self.hue.update(now)
         sat, val = self.sv.update(now)
         # mirror the hues so that we don't get any sharp edges
-        return np.concatenate((color_utils.rainbow(layout.COLUMNS / 2, hue[0], hue[1], sat, val),
-                               color_utils.rainbow(layout.COLUMNS / 2, hue[1], hue[0], sat, val), ))
+        return np.concatenate(
+            (color_utils.rainbow(self.layout.columns / 2, hue[0], hue[1], sat, val),
+             color_utils.rainbow(self.layout.columns / 2, hue[1], hue[0], sat, val)))
 
     def rotate(self, rainbow, now):
         # vary the rotation speed
         if np.random.random() < self.rotation_speed.update(now):
-            self.rotation = (self.rotation + 1) % layout.COLUMNS
+            self.rotation = (self.rotation + 1) % self.layout.columns
         if self.rotation == 0:
             self.pixels[10, :] = rainbow
         else:

@@ -3,6 +3,7 @@ import json
 
 import numpy as np
 
+
 _GROUPBY = [
     "address",
     "row",
@@ -32,3 +33,6 @@ class Layout(object):
 
         for attr in _GROUPBY:
             setattr(self, attr, {k: v for k, v in getattr(self, attr).items()})
+
+    def colmod(self, i):
+        return divmod(i, self.columns)[1]
