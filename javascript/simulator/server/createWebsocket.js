@@ -32,5 +32,9 @@ module.exports = function createWebsocket(server){
 
   });
 
+  wss.on("error", function(error){
+    console.log("websocket server error: ", error);
+  });
+
   return wss;
 };

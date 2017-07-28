@@ -3,18 +3,24 @@
 # House of Enlightenment
 # Manager for scene selection
 
+import os.path
+import glob
+import importlib
+import inspect
 import sys
 import time
 from threading import Thread
-from layout import Layout
-from opc import Client
-from OSC import OSCServer
 from functools import partial
 import atexit
 
+from OSC import OSCServer
+
+from hoe.layout import Layout
+from hoe.opc import Client
+
 
 class AnimationFramework(object):
-    def __init__(self, osc, opc, layout, fps):
+    def __init__(self, osc, opc, layout, fps, scenes=None):
         # OSCServer, Client, dict, int -> None
         self.osc_server = osc
         self.opc = opc
@@ -23,7 +29,7 @@ class AnimationFramework(object):
         self.n_pixels = len(layout)
 
         # Load all scenes from effects package. Then set initial index and load it up
-        self.scenes = AnimationFramework.load_scenes(self.layout, self.n_pixels)
+        self.scenes = scenes or load_scenes(self.layout, self.n_pixels)
         self.curr_scene = None
         self.queued_scene = self.scenes[self.scenes.keys()[0]]
         self.change_scene()
@@ -33,46 +39,6 @@ class AnimationFramework(object):
 
         self.osc_data = StoredOSCData()
         self.setup_handlers({0: 50})
-
-    @staticmethod
-    def load_scenes(layout, n_pixels, effects_dir=None):
-        # None -> [Scene]
-
-        from os.path import dirname, join, isdir, abspath, basename
-        from glob import glob
-        import importlib
-        import inspect
-
-        if not effects_dir:
-            pwd = dirname(__file__)
-            effects_dir = pwd + '/../effects/'
-        sys.path.append(effects_dir)
-
-        scenes = {}
-        for f in glob(join(effects_dir, '*.py')):
-            pkg_name = basename(f)[:-3]
-            if not pkg_name.startswith("_"):
-                try:
-                    effect_dict = importlib.import_module(pkg_name)
-                    for scene in effect_dict.__all__:
-                        if (isinstance(scene, Scene)):
-                            if scene.name in scenes.keys():
-                                print "Cannot register scene %s. Scene with name already exists" % scene.name
-                                continue
-                            print "Registering %s" % scene
-                            # TODO clean this up
-                            scene.initialize_layout(layout, n_pixels)
-                            scenes[scene.name] = scene
-                        else:
-                            print "Got scene %s not of type Scene" % scene
-                except ImportError:
-                    print "WARNING: could not load effect %s" % pkg_name
-
-        print "Loaded %s scenes from %s directory\n" % (len(scenes), effects_dir)
-
-        return scenes
-
-    # ----- Handlers -----
 
     def next_scene_handler(self, path, tags, args, source):
         if not args or args[0] == "":
@@ -183,11 +149,42 @@ class AnimationFramework(object):
         self.serve = False
 
 
-# TODO: do the python way
+def load_scenes(layout, n_pixels, effects_dir=None):
+    if not effects_dir:
+        pwd = os.path.dirname(__file__)
+        effects_dir = os.path.abspath(os.path.join(pwd, '..', 'effects'))
+    sys.path.append(effects_dir)
+    scenes = {}
+    for filename in glob.glob(os.path.join(effects_dir, '*.py')):
+        pkg_name = os.path.basename(filename)[:-3]
+        if pkg_name.startswith("_"):
+            continue
+        load_scenes_from_file(pkg_name, scenes)
+    print "Loaded %s scenes from %s directory\n" % (len(scenes), effects_dir)
+    for scene in scenes.values():
+        scene.initialize_layout(layout, n_pixels)
+    return scenes
+
+
+def load_scenes_from_file(pkg_name, scenes):
+    try:
+        effect_dict = importlib.import_module(pkg_name)
+        for scene in effect_dict.__all__:
+            if not isinstance(scene, Scene):
+                print "Got scene %s not of type Scene" % scene
+                continue
+            if scene.name in scenes:
+                print ("Cannot register scene %s. Scene with name "
+                       "already exists") % scene.name
+                continue
+            print "Registering %s" % scene
+            scenes[scene.name] = scene
+    except ImportError:
+        print "WARNING: could not load effect %s" % pkg_name
+
+
 def get_first_non_empty(pixels):
-    for pix in pixels:
-        if pix is not None:
-            return pix
+    return next(pix for pix in pixels if pix is not None)
 
 
 class StoredStationData(object):

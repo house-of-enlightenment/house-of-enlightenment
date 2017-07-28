@@ -17,6 +17,9 @@ from hoe import layout
 from hoe import opc
 from hoe import osc_utils
 
+# TODO: fix this. Move the stream_up code somewhere shared
+import stream_up as su
+
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
@@ -38,23 +41,23 @@ def main():
     osc_queue = Queue.Queue()
     server = osc_utils.create_osc_server()
     # pylint: disable=no-value-for-parameter
-    server.addMsgHandler("/input", lambda *args: add_station_id(osc_queue, *args))
-    render = Render(client, osc_queue, hoe_layout)
+    server.addMsgHandler("/input/button", lambda *args: add_station_id(osc_queue, *args))
+    background = su.Effect(hoe_layout, su.RainbowRow(hoe_layout))
+    interaction = Effect(hoe_layout, osc_queue)
+    render = su.Render(client, osc_queue, hoe_layout, [background, interaction])
     render.run_forever()
 
 
-class Render(object):
-    def __init__(self, opc_client, osc_queue, hoe_layout):
+class Effect(object):
+    def __init__(self, hoe_layout, queue):
         self.state = State.ACTIVE
-        self.successful_sections = [False] * layout.SECTIONS
+        self.successful_sections = [False] * hoe_layout.sections
         self.fps = 30
         rotation_speed = .5  # rotation / second
         location = 0
-        self.sprite = Sprite(location, rotation_speed)
-        self.frame_count = 0
-        self.client = opc_client
-        self.queue = osc_queue
+        self.sprite = Sprite(hoe_layout, location, rotation_speed)
         self.layout = hoe_layout
+        self.queue = queue
 
     def set_target_idx(self):
         unhit_centers = [
@@ -62,46 +65,28 @@ class Render(object):
         ]
         self.target_idx = self.layout.grid[self.bottom, unhit_centers]
 
-    def run_forever(self):
-        self.pixels = np.zeros((len(self.layout.pixels), 3), np.int8)
+    def start(self, now):
         self.bottom = slice(None, 10, None)
         self.top = slice(10, None, None)
-        self.init_pixels()
         self.section_centers = range(6, 66, 11)
         self.set_target_idx()
-        self.pixels[self.target_idx] = YELLOW
-        self.client.put_pixels(self.pixels)
-        self.now = time.time()
+        self.now = now
         self.ignore_buttons_until = self.now + random.random() * 2 + .5
         self.sprite.start(self.now)
 
-        while True:
-            self.now = time.time()
-            self.next_frame()
-            self.sleep_until_next_frame()
-
-            # # when starting a loop, don't want any previous (perhaps old)
-            # # commands to be around, so empty this out
-            # empty_queue(queue)
-            # state =
-            # successful_sections = [False] * layout.SECTIONS
-            # ignore_buttons = False
-            # prev = start
-            # while True:
-            #     self.loop_until_interaction()
-
     def init_pixels(self):
-        self[self.bottom, :] = 32
-        self[self.top, :] = (64, 0, 0)
+        self.pixels[self.bottom, :] = 32
 
-    # a convenience method to allow me to do, like:
-    # self[rows, columns] = RED
-    def __setitem__(self, key, value):
-        idx = self.layout.grid[key]
-        self.pixels[idx] = value
+    def blackout_unsuccessful_sections(self):
+        start = range(0, 66, 11)
+        end = range(11, 67, 11)
+        for suc, s, e in zip(self.successful_sections, start, end):
+            if not suc:
+                self.pixels[self.top, s:e] = 0
 
-    def next_frame(self):
+    def next_frame(self, now, pixels):
         self.now = time.time()
+        self.pixels = pixels
         self.init_pixels()
         if self.state == State.ACTIVE:
             self.sprite.update(self.now)
@@ -117,17 +102,16 @@ class Render(object):
                 # is pressed while the sprite is light blue; this will stop
                 # people from just spamming the buttons, although
                 # that is not a useful strategy.
-                self[self.bottom, columns] = (135, 206, 250)
-                self.client.put_pixels(self.pixels)
+                self.pixels[self.bottom, columns] = (135, 206, 250)
+                self.blackout_unsuccessful_sections()
                 return
             else:
-                self[self.bottom, columns] = BLUE
-                self.client.put_pixels(self.pixels)
-
+                self.pixels[self.bottom, columns] = BLUE
             try:
                 section = self.queue.get_nowait()
                 if self.successful_sections[section]:
                     # Ignore buttons for already succesful sections
+                    self.blackout_unsuccessful_sections()
                     return
                 target = self.section_centers[section]
                 sprite_idx = self.layout.grid[self.bottom, columns]
@@ -148,7 +132,6 @@ class Render(object):
             self.pixels[self.target_idx] = YELLOW
             columns = self.sprite.columns()
             self.flash.render(self.now, self.pixels)
-            self.client.put_pixels(self.pixels)
             if self.now >= self.wait_until:
                 self.sprite.reverse(self.now)
                 self.wait_until = None
@@ -159,7 +142,6 @@ class Render(object):
             self.pixels[self.target_idx] = YELLOW
             columns = self.sprite.columns()
             self.flash.render(self.now, self.pixels)
-            self.client.put_pixels(self.pixels)
             if self.now >= self.wait_until:
                 self.sprite.reverse(self.now)
                 self.wait_until = None
@@ -167,16 +149,7 @@ class Render(object):
                 self.state = State.ACTIVE
         else:
             raise Exception('You are in a bad state: {}'.format(self.state))
-
-    def sleep_until_next_frame(self):
-        self.frame_count += 1
-        frame_took = time.time() - self.now
-        remaining_until_next_frame = (1 / self.fps) - frame_took
-        if remaining_until_next_frame > 0:
-            print time.time(), self.frame_count, frame_took, remaining_until_next_frame
-            time.sleep(remaining_until_next_frame)
-        else:
-            print "!! Behind !!", remaining_until_next_frame
+        self.blackout_unsuccessful_sections()
 
 
 class Flash(object):
@@ -207,7 +180,8 @@ class State(object):
 
 
 class Sprite(object):
-    def __init__(self, start_location, rotation_speed, width=3):
+    def __init__(self, layout, start_location, rotation_speed, width=3):
+        self.layout = layout
         self.start_location = start_location
         self.rotation_speed = rotation_speed
         self.location = start_location
@@ -224,17 +198,13 @@ class Sprite(object):
 
     def update(self, now):
         sprite_rotation = (now - self.start_time) * self.rotation_speed
-        location = int(layout.COLUMNS * sprite_rotation) + self.start_location
-        self.location = location % layout.COLUMNS
+        location = int(self.layout.columns * sprite_rotation) + self.start_location
+        self.location = location % self.layout.columns
 
     def columns(self):
         left = int(self.width / 2)
         right = self.width - left
-        return map(colmod, range(self.location - left, self.location + right))
-
-
-def colmod(i):
-    return divmod(i, layout.COLUMNS)[1]
+        return map(self.layout.colmod, range(self.location - left, self.location + right))
 
 
 def empty_queue(queue):
@@ -247,7 +217,7 @@ def empty_queue(queue):
 
 def add_station_id(queue, address, types, payload, *args):
     print address, types, payload, args
-    station_id, control_type, control_id, value = payload
+    station_id, control_id  = payload
     queue.put(station_id)
 
 
