@@ -15,21 +15,19 @@ import atexit
 
 from OSC import OSCServer
 
-from hoe.layout import Layout
+from hoe.layout import layout
 from hoe.opc import Client
 
 
 class AnimationFramework(object):
-    def __init__(self, osc, opc, layout, fps, scenes=None):
+    def __init__(self, osc, opc, fps, scenes=None):
         # OSCServer, Client, dict, int -> None
         self.osc_server = osc
         self.opc = opc
-        self.layout = Layout(layout)
         self.fps = fps
-        self.n_pixels = len(layout)
 
         # Load all scenes from effects package. Then set initial index and load it up
-        self.scenes = scenes or load_scenes(self.layout, self.n_pixels)
+        self.scenes = scenes or load_scenes()
         self.curr_scene = None
         self.queued_scene = self.scenes[self.scenes.keys()[0]]
         self.change_scene()
@@ -133,7 +131,7 @@ class AnimationFramework(object):
             target_frame_end_time = frame_start_time + fps_frame_time
 
             # Create the pixels, set all, then put
-            pixels = [None] * self.n_pixels
+            pixels = [None] * layout().n_pixels
             self.curr_scene.render(pixels, t, self.get_osc_frame())
             # TODO: Check for None and replace with (0, 0, 0)
             self.opc.put_pixels(pixels, channel=0)
@@ -149,7 +147,7 @@ class AnimationFramework(object):
         self.serve = False
 
 
-def load_scenes(layout, n_pixels, effects_dir=None):
+def load_scenes(effects_dir=None):
     if not effects_dir:
         pwd = os.path.dirname(__file__)
         effects_dir = os.path.abspath(os.path.join(pwd, '..', 'effects'))
@@ -161,8 +159,6 @@ def load_scenes(layout, n_pixels, effects_dir=None):
             continue
         load_scenes_from_file(pkg_name, scenes)
     print "Loaded %s scenes from %s directory\n" % (len(scenes), effects_dir)
-    for scene in scenes.values():
-        scene.initialize_layout(layout, n_pixels)
     return scenes
 
 
@@ -243,17 +239,12 @@ class CollaborationManager(object):
 
 
 class Effect(object):
-    def __init__(self, layout=None, n_pixels=None):
-        self.layout = layout
-        self.n_pixels = n_pixels
+    def __init__(self):
+        pass
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
         raise NotImplementedError("All effects must implement next_frame")
         # TODO: Use abc
-
-    def initialize_layout(self, layout, n_pixels):
-        self.layout = layout
-        self.n_pixels = n_pixels
 
     def scene_starting(self):
         pass
@@ -266,8 +257,8 @@ class Effect(object):
 
 
 class MultiEffect(Effect):
-    def __init__(self, layout=None, n_pixels=None, *effects):
-        Effect.__init__(self, layout, n_pixels)
+    def __init__(self, *effects):
+        Effect.__init__(self)
         self.effects = list(effects)
 
     def scene_starting(self):
@@ -278,11 +269,6 @@ class MultiEffect(Effect):
     def scene_ended(self):
         for e in self.effects:
             e.scene_ended()
-
-    def initialize_layout(self, layout, n_pixels):
-        Effect.initialize_layout(self, layout, n_pixels)
-        for effect in self.effects:
-            effect.initialize_layout(layout, n_pixels)
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
         self.before_rendering(pixels, t, collaboration_state, osc_data)
@@ -308,7 +294,7 @@ class EffectLauncher(MultiEffect):
 class Scene(MultiEffect):
     def __init__(self, name, collaboration_manager, *effects):
         # str, CollaborationManager, List[Effect] -> None
-        MultiEffect.__init__(self, None, None, *effects)
+        MultiEffect.__init__(self, *effects)
         self.name = name
         self.collaboration_manager = collaboration_manager
         if isinstance(collaboration_manager, Effect) and collaboration_manager not in self.effects:
@@ -336,7 +322,7 @@ class EffectFactory(object):
     def __str__(self):
         return "{}({})".format(self.__class__.__name__, self.name)
 
-    def create_effect(self, layout, n_pixels):
+    def create_effect(self):
         # None -> Effect
         print "\tCreating instance of effect %s" % self
-        return self.clazz(layout=layout, n_pixels=n_pixels, **self.kwargs)
+        return self.clazz(**self.kwargs)

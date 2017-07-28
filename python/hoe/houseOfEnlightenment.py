@@ -10,6 +10,8 @@ from time import sleep
 from hoe import opc
 from hoe import osc_utils
 from hoe import animation_framework as AF
+from hoe.layout import Layout
+from hoe.layout import init_layout
 
 
 # -------------------------------------------------------------------------------
@@ -19,7 +21,7 @@ def parse_command_line():
     parser.add_option(
         '-l',
         '--layout',
-        dest='raw_layout',
+        dest='layout_file',
         default='../layout/hoeLayout.json',
         action='store',
         type='string',
@@ -37,7 +39,7 @@ def parse_command_line():
 
     options, args = parser.parse_args()
 
-    if not options.raw_layout:
+    if not options.layout_file:
         parser.print_help()
         print
         print('ERROR: you must specify a layout file using '
@@ -45,7 +47,7 @@ def parse_command_line():
         print
         sys.exit(1)
 
-    options.layout = parse_layout(options.raw_layout)
+    init_layout(Layout(parse_layout(options.layout_file)))
 
     return options
 
@@ -55,23 +57,14 @@ def parse_command_line():
 
 # parse layout file.
 # TODO: groups, strips, clients, channels
-def parse_layout(layout):
+def parse_layout(layout_file):
 
     print
     print '    parsing layout file'
     print
-    """
-    Old:
-    coordinates = []
-    for item in json.load(open(layout)):
-        if 'point' in item:
-            coordinates.append(tuple(item['point']))
-
-    return coordinates
-    """
 
     # Just use a dictionary as loaded
-    return json.load(open(layout))
+    return json.load(open(layout_file))
 
 
 # -------------------------------------------------------------------------------
@@ -91,7 +84,7 @@ def start_opc(server):
 
 def init_animation_framework(osc_server, opc_client, config):
     # OSCServer, Client, dict -> SceneManager, Thread
-    mgr = AF.AnimationFramework(osc_server, opc_client, config.layout, config.fps)
+    mgr = AF.AnimationFramework(osc_server, opc_client, config.fps)
     return mgr
 
 

@@ -17,6 +17,7 @@ _GROUPBY = [
 class Layout(object):
     def __init__(self, pixels, rows=216, columns=66, sections=6):
         self.pixels = pixels
+        self.n_pixels = len(pixels)
         self.rows = rows
         self.columns = columns
         self.grid = np.zeros((rows, columns), np.int)
@@ -35,3 +36,18 @@ class Layout(object):
 
     def colmod(self, i):
         return divmod(i, self.columns)[1]
+
+
+# Global Layout for all effects to reference
+_layout = None
+
+
+def init_layout(new_layout):
+    global _layout
+    if _layout:
+        raise RuntimeError("Layout is already initialized")
+    _layout = new_layout
+
+
+def layout():
+    return _layout

@@ -5,7 +5,7 @@ the player has to hit the button to stop the light at a target.
 
 from __future__ import division
 
-from hoe.layout import Layout
+from hoe.layout import layout
 
 from hoe.animation_framework import Scene
 from hoe.animation_framework import Effect
@@ -21,8 +21,8 @@ BLACK = (0, 0, 0)
 
 
 class StopTheLight(CollaborationManager, Effect):
-    def __init__(self, strip_bottom=5, strip_top=20, layout=None, n_pixels=None):
-        Effect.__init__(self, layout, n_pixels)
+    def __init__(self, strip_bottom=5, strip_top=20):
+        Effect.__init__(self)
         self.target_location = 15  # Moved to not deal with wrap-around case at 2am
         # self.rotation_speed = .5 # rotation / second
         self.sprite_location = 20
@@ -34,14 +34,12 @@ class StopTheLight(CollaborationManager, Effect):
         self.strip_bottom = strip_bottom
         self.strip_top = strip_top
 
-    def initialize_layout(self, layout, n_pixels):
-        Effect.initialize_layout(self, layout, n_pixels)
         self.bottom_rows = set(
             reduce(lambda a, b: a + b,
-                   [self.layout.row[i] for i in range(self.strip_bottom, self.strip_top)]))
-        self.target_idx = self.bottom_rows & set(self.layout.slice[self.target_location])
+                   [layout().row[i] for i in range(self.strip_bottom, self.strip_top)]))
+        self.target_idx = self.bottom_rows & set(layout().slice[self.target_location])
 
-        self.max_slice = max(self.layout.slice)
+        self.max_slice = max(layout().slice)
 
     def compute_state(self, t, collaboration_state, osc_data):
         if not "count" in collaboration_state.keys():
@@ -75,7 +73,7 @@ class StopTheLight(CollaborationManager, Effect):
             self.sprite_color = BLUE
 
         sprite_idx = (self.bottom_rows & set.union(*[
-            set(self.layout.slice[i % (self.max_slice + 1)])
+            set(layout().slice[i % (self.max_slice + 1)])
             for i in (self.sprite_location - 1, self.sprite_location, self.sprite_location + 1)
         ]))
 
@@ -94,10 +92,8 @@ class CollaborationCountBasedBackground(Effect):
                  color=(0, 255, 0),
                  max_count=6,
                  bottom_row=3,
-                 max_row=216,
-                 layout=None,
-                 n_pixels=None):
-        Effect.__init__(self, layout, n_pixels)
+                 max_row=216):
+        Effect.__init__(self)
         self.color = color
         self.bottom_row = bottom_row
         self.top_row_dict = {
@@ -116,7 +112,7 @@ class CollaborationCountBasedBackground(Effect):
 
         for ii in set(
                 reduce(lambda a, b: a + b,
-                       [self.layout.row[i] for i in range(self.bottom_row, self.current_level)])):
+                       [layout().row[i] for i in range(self.bottom_row, self.current_level)])):
             pixels[ii] = pixels[ii] if pixels[ii] else self.color
 
 

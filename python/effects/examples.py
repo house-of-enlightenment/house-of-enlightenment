@@ -4,13 +4,14 @@ from hoe.animation_framework import Effect
 from hoe.animation_framework import CollaborationManager
 from hoe.animation_framework import EffectFactory
 from hoe.animation_framework import MultiEffect
+from hoe.layout import layout
 import generic_effects
 import debugging_effects
 
 
 class SpatialStripesBackground(Effect):
     def next_frame(self, pixels, t, collaboration_state, osc_data):
-        for ii, coord in enumerate(self.layout.pixels):
+        for ii, coord in enumerate(layout().pixels):
             self.spatial_stripes(pixels, t, coord, ii)
 
     #-------------------------------------------------------------------------------
@@ -39,16 +40,15 @@ class SpatialStripesBackground(Effect):
 
 
 class MovingDot(Effect):
-    def __init__(self, spark_rad=8, t=0, layout=None, n_pixels=None):
-        Effect.__init__(self, layout, n_pixels)
+    def __init__(self, spark_rad=8, t=0):
+        Effect.__init__(self)
         self.spark_rad = spark_rad
         self.start_time = t
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
-        spark_ii = ((t - self.start_time) * 80) % self.n_pixels
+        spark_ii = ((t - self.start_time) * 80) % layout().n_pixels
 
-        # TODO this should be way faster
-        for ii, c in [(int((spark_ii + x) % self.n_pixels), 255 - x * 128 / self.spark_rad)
+        for ii, c in [(int((spark_ii + x) % layout().n_pixels), 255 - x * 128 / self.spark_rad)
                       for x in range(self.spark_rad)]:
             pixels[ii] = pixels[ii] if pixels[ii] else (c, c, c)
 
@@ -60,28 +60,13 @@ class SampleEffectLauncher(MultiEffect):
 
     def launch_effect(self, t):
         print "Adding Effect"
-        e = MovingDot(t=t, layout=self.layout, n_pixels=self.n_pixels)
+        e = MovingDot(t=t)
         self.effects.append(e)
-
-
-"""osc_printing_effect = Effect("print osc", PrintOSC)
-red_effect=EffectDefinition("all red", DadJokes)
-spatial_background=EffectDefinition("spatial background", SpatialStripesBackground)
-moving_dot = EffectDefinition("moving dot", MovingDot)
-green_fill = EffectDefinition("green fill", AdjustableFillFromBottom)
-
-__all__= [
-    SceneDefinition("red printing scene", osc_printing_effect, red_effect),
-    SceneDefinition("red with green bottom", osc_printing_effect, green_fill, red_effect),
-    SceneDefinition("spatial scene", spatial_background),
-    SceneDefinition("red scene with dot", moving_dot, red_effect),
-    SceneDefinition("spatial scene with dot", moving_dot, spatial_background)
-]"""
 
 
 class SampleFeedbackEffect(CollaborationManager, Effect):
     def next_frame(self, pixels, t, collaboration_state, osc_data):
-        for ii in self.layout.row[0] + self.layout.row[1]:
+        for ii in layout().row[0] + layout().row[1]:
             pixels[ii] = (0, 255, 0)
 
     def compute_state(self, t, collaboration_state, osc_data):
