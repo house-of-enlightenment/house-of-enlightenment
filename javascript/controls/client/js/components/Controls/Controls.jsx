@@ -15,9 +15,19 @@ const Controls = ({ onButtonClick, onFaderChange }) => {
 
   return (
     <div className="controls">
-      <Button id="left" onClick={() => onButtonClick(0)} />
-      <Fader id="middle" onChange={onFaderChange(0)} />
-      <Button id="right" onClick={() => onButtonClick(1)} />
+      <div className="buttonSection">
+        <Button id="0" onClick={() => onButtonClick(0)} />
+        <Button id="1" onClick={() => onButtonClick(1)} />
+        <Button id="2" onClick={() => onButtonClick(2)} />
+        <Button id="3" onClick={() => onButtonClick(3)} />
+        <Button id="4" onClick={() => onButtonClick(4)} />
+      </div>
+      <div className="faderSection">
+        <Fader id="0" onChange={onFaderChange(0)} />
+        <Fader id="1" onChange={onFaderChange(1)} />
+        <Fader id="2" onChange={onFaderChange(2)} />
+        <Fader id="3" onChange={onFaderChange(2)} />
+      </div>
     </div>
   );
 

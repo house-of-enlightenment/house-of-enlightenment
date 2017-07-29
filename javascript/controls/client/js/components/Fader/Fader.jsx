@@ -15,7 +15,7 @@ const Fader = ({ onChange }) => {
   };
 
   return (
-    <input type="range" orient="vertical" onChange={onFaderChange} />
+    <input type="range" orient="horizontal" onChange={onFaderChange} />
   );
 
 };
