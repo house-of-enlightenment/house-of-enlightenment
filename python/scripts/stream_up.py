@@ -108,9 +108,6 @@ class Effect(object):
         self.pixels = pixels.Pixels(self.layout)
 
     def next_frame(self, now, pixels):
-        # this runs faster / slower depending on the FPS
-        # TODO: should set a target speed and only shift when appropriate
-        elapsed = (now - self.last_time)
         pixels_up = self.up_speed(now)
         pixels_rotate = self.rotate_speed(now)
         rainbow = self.row(now)
