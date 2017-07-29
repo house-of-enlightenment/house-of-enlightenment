@@ -297,7 +297,9 @@ class Scene(MultiEffect):
         self.name = name
         self.collaboration_manager = collaboration_manager
         if isinstance(collaboration_manager, Effect) and collaboration_manager not in self.effects:
-            # print "WARNING: Scene %s has collaboration manager %s that is an effect but is not part of layers. Inserting as top layer" % (name, collaboration_manager)
+            # print "WARNING: Scene %s has collaboration manager %s
+            # that is an effect but is not part of layers. Inserting
+            # as top layer" % (name, collaboration_manager)
             self.effects = [collaboration_manager] + self.effects
         self.collaboration_state = {}
 
