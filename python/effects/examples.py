@@ -5,6 +5,7 @@ from hoe.animation_framework import CollaborationManager
 from hoe.animation_framework import EffectFactory
 from hoe.animation_framework import MultiEffect
 from hoe.layout import layout
+from random import randrange
 import generic_effects
 import debugging_effects
 
@@ -39,28 +40,43 @@ class SpatialStripesBackground(Effect):
         pixels[ii] = (r * 256, g * 256, b * 256)
 
 
-class MovingDot(Effect):
-    def __init__(self, spark_rad=8, t=0):
-        Effect.__init__(self)
-        self.spark_rad = spark_rad
-        self.start_time = t
+class ColumnStreak(Effect):
+    def __init__(self, column, color=(255, 255, 255), streak_length=5, row_start=2):
+        self.column = column
+        self.streak_length = streak_length
+        self.bottom_row = row_start
+        self.row = row_start
+
+        self.colors = [(color[0] - i * color[0] / 4, color[1] - i * color[1] / 4,
+                        color[2] - i * color[2] / 4) for i in range(streak_length)]
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
-        spark_ii = ((t - self.start_time) * 80) % layout().n_pixels
+        for i, r in enumerate(
+                range(self.row, max(self.row - self.streak_length, self.bottom_row), -1)):
+            # TODO Use slice
+            ii = layout().grid[r][self.column]
+            pixels[ii] = pixels[ii] if pixels[ii] else self.colors[i]
+            #print i, r, layout().grid[r][self.column], self.colors[i], pixels[layout().grid[r][self.column]]
 
-        for ii, c in [(int((spark_ii + x) % layout().n_pixels), 255 - x * 128 / self.spark_rad)
-                      for x in range(self.spark_rad)]:
-            pixels[ii] = pixels[ii] if pixels[ii] else (c, c, c)
+        self.row += 1
+
+    def is_completed(self, t, osc_data):
+        # TODO run off the top
+        return self.row >= layout().rows
 
 
 class SampleEffectLauncher(MultiEffect):
     def before_rendering(self, pixels, t, collaboration_state, osc_data):
-        if osc_data.stations[0].buttons:
-            self.launch_effect(t)
+        MultiEffect.before_rendering(self, pixels, t, collaboration_state, osc_data)
+        for s in range(layout().sections):
+            if osc_data.stations[s].buttons:
+                self.launch_effect(t, s)
 
-    def launch_effect(self, t):
+    def launch_effect(self, t, s):
         print "Adding Effect"
-        e = MovingDot(t=t)
+        per_section = int(layout().columns / layout().sections)
+        e = ColumnStreak(
+            column=randrange(0 + s * per_section, (s + 1) * per_section), color=(255, 0, 0))
         self.effects.append(e)
 
 
@@ -77,13 +93,13 @@ osc_printing_effect = debugging_effects.PrintOSC()
 spatial_background = SpatialStripesBackground()
 red_background = generic_effects.SolidBackground((255, 0, 0))
 blue_background = generic_effects.SolidBackground((0, 0, 255))
-moving_dot = MovingDot()
+moving_dot = debugging_effects.MovingDot()
 
 default_feedback_effect = SampleFeedbackEffect()
 
 __all__ = [
     Scene("launchdots", default_feedback_effect, osc_printing_effect,
-          SampleEffectLauncher(), generic_effects.SolidBackground((0, 255, 255))),
+          SampleEffectLauncher(), generic_effects.SolidBackground((100, 100, 100))),
     Scene("redgreenprinting", default_feedback_effect, osc_printing_effect,
           generic_effects.SolidBackground()),
     Scene("adjustablebackground", default_feedback_effect,

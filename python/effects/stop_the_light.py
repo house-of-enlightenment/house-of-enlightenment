@@ -88,11 +88,7 @@ class StopTheLight(CollaborationManager, Effect):
 
 
 class CollaborationCountBasedBackground(Effect):
-    def __init__(self,
-                 color=(0, 255, 0),
-                 max_count=6,
-                 bottom_row=3,
-                 max_row=216):
+    def __init__(self, color=(0, 255, 0), max_count=6, bottom_row=3, max_row=216):
         Effect.__init__(self)
         self.color = color
         self.bottom_row = bottom_row
