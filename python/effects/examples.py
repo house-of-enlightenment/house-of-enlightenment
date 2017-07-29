@@ -48,12 +48,9 @@ class ColumnStreak(Effect):
                         color[2] - i * color[2] / 4) for i in range(streak_length)]
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
-        for i, r in enumerate(
-                range(self.row, max(self.row - self.streak_length, self.bottom_row), -1)):
-            # TODO Use slice
-            ii = layout().grid[r][self.column]
-            pixels[ii] = self.colors[i]
-            #print i, r, layout().grid[r][self.column], self.colors[i], pixels[layout().grid[r][self.column]]
+        tail = max(self.row - self.streak_length + 1, self.bottom_row)
+        # print self.row, tail, pixels[tail:self.row+1,self.column], self.colors[self.row-tail::-1]
+        pixels[tail:self.row + 1, self.column] = self.colors[self.row - tail::-1]
 
         self.row += 1
 
