@@ -94,29 +94,64 @@ class Render(object):
 class Effect(object):
     def __init__(self, layout, row):
         self.layout = layout
-        self.pixels_per_frame = 3
+        self.up_speed = SpeedToPixels(100)  # rows / second
+        # is this redundant with the bottom row also rotating?
+        self.rotate_speed = SpeedToPixels(40)  # columns / second
         self.row = row
 
     def start(self, now):
+        self.last_time = now
         self.row.start(now)
+        self.up_speed.start(now)
+        self.rotate_speed.start(now)
         # need my own copy of pixels
         self.pixels = pixels.Pixels(self.layout)
-
-        self.before_idx = self.layout.grid[10:-self.pixels_per_frame:, :]
-        a = self.layout.grid[10 + self.pixels_per_frame:, 1:]
-        b = self.layout.grid[10 + self.pixels_per_frame:, :1]
-        self.after_idx = np.concatenate((a, b), axis=1)
 
     def next_frame(self, now, pixels):
         # this runs faster / slower depending on the FPS
         # TODO: should set a target speed and only shift when appropriate
+        elapsed = (now - self.last_time)
+        pixels_up = self.up_speed(now)
+        pixels_rotate = self.rotate_speed(now)
         rainbow = self.row(now)
         # copy to the first few rows
-        for i in range(self.pixels_per_frame):
+        # TODO: can I do this not in a loop?
+        for i in range(pixels_up):
             self.pixels[10 + i, :] = rainbow
         # copy everything else up and rotate
-        self.pixels[self.after_idx] = self.pixels[self.before_idx]
+        self.up_and_rotate(pixels_up, pixels_rotate)
         pixels[:] = self.pixels[:]
+
+    def up_and_rotate(self, up, rotate):
+        if up == 0 and rotate == 0:
+            return
+        if up == 0:
+            before_idx = self.layout.grid[10:, :]
+        else:
+            before_idx = self.layout.grid[10:-up, :]
+        if rotate == 0:
+            after_idx = self.layout.grid[10 + up:, :]
+        else:
+            a = self.layout.grid[10 + up:, rotate:]
+            b = self.layout.grid[10 + up:, :rotate]
+            after_idx = np.concatenate((a, b), axis=1)
+        self.pixels[after_idx] = self.pixels[before_idx]
+
+
+class SpeedToPixels(object):
+    def __init__(self, speed):
+        self.speed = speed
+        self.residual = 0
+
+    def start(self, now):
+        self.last_time = now
+
+    def __call__(self, now):
+        elapsed = now - self.last_time
+        self.last_time = now
+        distance = self.speed * elapsed + self.residual
+        px, self.residual = divmod(distance, 1)
+        return int(px)
 
 
 class FaderRow(object):
