@@ -170,7 +170,7 @@ def load_scenes_from_file(pkg_name, scenes):
                 print "Got scene %s not of type Scene" % scene
                 continue
             if scene.name in scenes:
-                print("Cannot register scene %s. Scene with name " "already exists") % scene.name
+                print("Cannot register scene %s. Scene with name already exists") % scene.name
                 continue
             print "Registering %s" % scene
             scenes[scene.name] = scene

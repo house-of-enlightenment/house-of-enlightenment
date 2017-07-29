@@ -28,6 +28,7 @@ YELLOW = (255, 255, 0)
 
 
 def main():
+    global ROTATION_SPEED
     parser = argparse.ArgumentParser()
     parser.add_argument('--row', choices=['single', 'fader', 'rainbow'], default='rainbow')
     args = parser.parse_args()
@@ -61,7 +62,7 @@ class Render(object):
         self.client = opc_client
         self.queue = osc_queue
         self.layout = hoe_layout
-        self.fps = 40
+        self.fps = 30
         self.effects = effects
         self.frame_count = 0
 
@@ -107,6 +108,8 @@ class Effect(object):
         self.after_idx = np.concatenate((a, b), axis=1)
 
     def next_frame(self, now, pixels):
+        # this runs faster / slower depending on the FPS
+        # TODO: should set a target speed and only shift when appropriate
         rainbow = self.row(now)
         # copy to the first few rows
         for i in range(self.pixels_per_frame):
@@ -118,15 +121,16 @@ class Effect(object):
 
 class FaderRow(object):
     """A row that has its color controlled by a slider / fader"""
+
     def __init__(self, layout, queue):
         self.layout = layout
         self.rotate = Rotate(self.layout.columns)
         # osc messages go here.
         self.queue = queue
-        self.color = np.array((255, 255, 255)) # RED in HSV
+        self.color = np.array((255, 255, 255))  # RED in HSV
 
     def start(self, now):
-        pass
+        self.rotate.start(now)
 
     def __call__(self, now):
         self.update_color()
@@ -155,11 +159,13 @@ class RainbowRow(object):
 
     The speed of the transitions and rotations vary randomly.
     """
+
     def __init__(self, layout):
         self.layout = layout
         self.rotate = Rotate(self.layout.columns)
 
     def start(self, now):
+        self.rotate.start(now)
         self.sv = SVTransition(now)
         self.hue = HueTransition(now)
 
@@ -181,12 +187,13 @@ class SingleColumn(object):
 
     Can be useful to see how the shape flows up the HoE.
     """
+
     def __init__(self, layout):
         self.layout = layout
         self.rotate = Rotate(layout.columns)
 
     def start(self, now):
-        pass
+        self.rotate.start(now)
 
     def __call__(self, now):
         row = np.zeros((self.layout.columns, 3), np.uint8)
@@ -196,40 +203,30 @@ class SingleColumn(object):
 
 class Rotate(object):
     def __init__(self, n):
-        self.rotation_speed = SpeedUpdate(3)
         self.rotation = 0
         self.n = n
 
+    def start(self, now):
+        self.last_time = now
+        self.rotation_speed = SpeedTransition(now)
+
     def __call__(self, arr, now):
         # vary the rotation speed
-        if np.random.random() < self.rotation_speed.update(now):
-            self.rotation = (self.rotation + 1) % self.n
-        if self.rotation == 0:
-            return arr
-        else:
-            # using negative rotation here seems to be less impressive
-            # I think its because it matches with the rotation of
-            # the entire structure.
-            return rotate(arr, self.rotation)
+        delta = (now - self.last_time) * self.rotation_speed.update(now)
+        self.last_time = now
+        self.rotation = (self.rotation + delta) % self.n
+        # using negative rotation here seems to be less impressive
+        # I think its because it matches with the rotation of
+        # the entire structure.
+        return rotate(arr, int(self.rotation))
 
 
 # idx can be negative
 def rotate(arr, idx):
-    return np.concatenate((arr[idx:], arr[:idx]))
-
-
-class SpeedUpdate(object):
-    """Every `delay` seconds, pick a new random value"""
-    def __init__(self, delay):
-        self.next_update = 0
-        self.delay = delay
-        self.value = None
-
-    def update(self, now):
-        if now >= self.next_update:
-            self.next_update = now + self.delay
-            self.value = np.random.rand() * 0.7 + .3
-        return self.value
+    if idx == 0:
+        return arr
+    else:
+        return np.concatenate((arr[idx:], arr[:idx]))
 
 
 class Transition(object):
@@ -237,22 +234,39 @@ class Transition(object):
         self.end = self.rnd_pt()
         self._reset(now)
 
-    def _reset(self, now):
-        self.start = self.end
-        self.end = self.rnd_pt()
-        self.length = np.random.rand() * 3 + 1
-        self.start_time = now
-
     def update(self, now):
+        self.reset_if_needed(now)
+        delta = (self.end - self.start) * (now - self.start_time) / self.length
+        return self.start + delta
+
+    def reset_if_needed(self, now):
         elapsed = now - self.start_time
         if elapsed > self.length:
             self._reset(now)
-        delta = (self.end - self.start) * (now - self.start_time) / self.length
-        return self.start + delta
+
+    def _reset(self, now):
+        self.start = self.end
+        self.end = self.rnd_pt()
+        self.length = self.transition_period()
+        self.start_time = now
+
+    def transition_period(self):
+        return np.random.rand() * 3 + 1
+
+    def rnd_pt(self):
+        pass
+
+
+class SpeedTransition(Transition):
+    """Every `delay` seconds, pick a new random value"""
+
+    def rnd_pt(self):
+        return np.random.randint(5, 55)
 
 
 class SVTransition(Transition):
     """Transition from one plane in Saturation-Value space to another"""
+
     def rnd_pt(self):
         # pick a saturation between 128-256 (128 is very pastel, 256 is full saturation)
         # pick a value between 192-256 (probably a very minor effect)
