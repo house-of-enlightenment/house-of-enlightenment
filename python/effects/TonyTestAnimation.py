@@ -32,6 +32,6 @@ class Background1(Effect):
 
 
 __all__ = [
-    Scene("tony's scene", SampleFeedbackEffect(), TonyEffect()),
-    Scene("tony's next scene", SampleFeedbackEffect(), Background1())
+    # Scene("tony's scene", SampleFeedbackEffect(), TonyEffect()),
+    # Scene("tony's next scene", SampleFeedbackEffect(), Background1())
 ]

@@ -35,7 +35,8 @@ def parse_command_line():
         type='string',
         help='ip and port of server')
     parser.add_option(
-        '-f', '--fps', dest='fps', default=20, action='store', type='int', help='frames per second')
+        '-f', '--fps', dest='fps', default=30, action='store', type='int', help='frames per second')
+    parser.add_option('-v', '--verbose', dest='verbose', default=False, action='store_true')
 
     options, args = parser.parse_args()
 
@@ -71,8 +72,8 @@ def parse_layout(layout_file):
 # connect to OPC server
 
 
-def start_opc(server):
-    client = opc.Client(server)
+def start_opc(server, verbose=False):
+    client = opc.Client(server_ip_port=server, verbose=verbose)
     if client.can_connect():
         print '    connected to %s' % server
     else:
@@ -127,7 +128,7 @@ def launch():
     config = parse_command_line()
     osc_server = osc_utils.create_osc_server()
 
-    opc = start_opc(config.server)
+    opc = start_opc(config.server, config.verbose)
     framework = init_animation_framework(osc_server, opc, config)
 
     keyboard_thread = Thread(

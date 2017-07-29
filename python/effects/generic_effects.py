@@ -14,8 +14,7 @@ class SolidBackground(Effect):
         print "Created with color", self.color
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
-        for ii in range(layout().n_pixels):
-            pixels[ii] = pixels[ii] if pixels[ii] else self.color
+        pixels[:] = self.color
 
 
 class AdjustableFillFromBottom(Effect):
@@ -30,7 +29,7 @@ class AdjustableFillFromBottom(Effect):
 
     def fill(self, pixels, time, coord, ii, osc_data):
         # TODO Check for existance of fade
-        if not pixels[ii] and osc_data.stations[5].faders[0] * self.row_scale > coord["row"]:
+        if osc_data.stations[5].faders[0] * self.row_scale > coord["row"]:
             pixels[ii] = tuple(
                 [int(osc_data.stations[i].faders[0] * self.color_scale) for i in range(3)])
 

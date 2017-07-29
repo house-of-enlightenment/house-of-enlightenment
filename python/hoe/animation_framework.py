@@ -10,6 +10,7 @@ import inspect
 import sys
 import time
 from threading import Thread
+from pixels import Pixels
 from functools import partial
 import atexit
 
@@ -120,9 +121,11 @@ class AnimationFramework(object):
         self.serve = True
 
         start_time = time.time()
-        fps_frame_time = 1 / self.fps
+        fps_frame_time = 1.0 / self.fps
+
         print '\tsending pixels forever (quit or control-c to exit)...'
         self.is_running = True
+        pixels = Pixels(layout())
 
         while self.serve:
             # TODO : Does this create lots of GC?
@@ -131,13 +134,15 @@ class AnimationFramework(object):
             target_frame_end_time = frame_start_time + fps_frame_time
 
             # Create the pixels, set all, then put
-            pixels = [None] * layout().n_pixels
+            pixels[:] = 0
             self.curr_scene.render(pixels, t, self.get_osc_frame())
             # TODO: Check for None and replace with (0, 0, 0)
-            self.opc.put_pixels(pixels, channel=0)
+            self.opc.put_pixels(pixels.pixels, channel=0)
 
             # Crude way of trying to hit target fps
-            time.sleep(max(0, target_frame_end_time - time.time()))
+            wait_for_next_frame(
+                target_frame_end_time, )
+
             # TODO: channel?
 
         self.is_running = False
@@ -145,6 +150,10 @@ class AnimationFramework(object):
 
     def shutdown(self):
         self.serve = False
+
+
+def wait_for_next_frame(wait_until):
+    time.sleep(max(0, wait_until - time.time()))
 
 
 def load_scenes(effects_dir=None):
@@ -300,7 +309,7 @@ class Scene(MultiEffect):
             # print "WARNING: Scene %s has collaboration manager %s
             # that is an effect but is not part of layers. Inserting
             # as top layer" % (name, collaboration_manager)
-            self.effects = [collaboration_manager] + self.effects
+            self.effects = self.effects + [collaboration_manager]
         self.collaboration_state = {}
 
     def __str__(self):
