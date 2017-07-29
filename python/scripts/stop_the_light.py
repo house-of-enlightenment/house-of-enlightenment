@@ -217,7 +217,7 @@ def empty_queue(queue):
 
 def add_station_id(queue, address, types, payload, *args):
     print address, types, payload, args
-    station_id, control_id  = payload
+    station_id, control_id = payload
     queue.put(station_id)
 
 
