@@ -26,7 +26,7 @@ class MovingDot(Effect):
 
         for ii, c in [(int((spark_ii + x) % layout().n_pixels), 255 - x * 128 / self.spark_rad)
                       for x in range(self.spark_rad)]:
-            pixels[ii] = pixels[ii] if pixels[ii] else (c, c, c)
+            pixels[ii] = (c, c, c)
 
 
 __all__ = []

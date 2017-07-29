@@ -20,5 +20,8 @@ class Pixels(object):
         else:
             self.pixels[key] = value
 
+    def __len__(self):
+        return len(self.pixels)
+
     def put(self, client):
         client.put_pixels(self.pixels)

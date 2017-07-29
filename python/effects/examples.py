@@ -28,9 +28,6 @@ class SpatialStripesBackground(Effect):
         Returns an (r, g, b) tuple in the range 0-255
 
         """
-        if pixels[ii]:
-            return
-
         # make moving stripes for x, y, and z
         x, y, z = coord["point"]
         r = color_utils.scaled_cos(x, offset=t / 4, period=1, minn=0, maxx=0.7)
@@ -55,7 +52,7 @@ class ColumnStreak(Effect):
                 range(self.row, max(self.row - self.streak_length, self.bottom_row), -1)):
             # TODO Use slice
             ii = layout().grid[r][self.column]
-            pixels[ii] = pixels[ii] if pixels[ii] else self.colors[i]
+            pixels[ii] = self.colors[i]
             #print i, r, layout().grid[r][self.column], self.colors[i], pixels[layout().grid[r][self.column]]
 
         self.row += 1
@@ -82,8 +79,7 @@ class SampleEffectLauncher(MultiEffect):
 
 class SampleFeedbackEffect(CollaborationManager, Effect):
     def next_frame(self, pixels, t, collaboration_state, osc_data):
-        for ii in layout().row[0] + layout().row[1]:
-            pixels[ii] = (0, 255, 0)
+        pixels[0:2, :] = (0, 255, 0)
 
     def compute_state(self, t, collaboration_state, osc_data):
         pass
@@ -98,12 +94,12 @@ moving_dot = debugging_effects.MovingDot()
 default_feedback_effect = SampleFeedbackEffect()
 
 __all__ = [
-    Scene("launchdots", default_feedback_effect, osc_printing_effect,
-          SampleEffectLauncher(), generic_effects.SolidBackground((100, 100, 100))),
+    Scene("launchdots", default_feedback_effect,
+          generic_effects.SolidBackground((100, 100, 100)), SampleEffectLauncher()),
     Scene("redgreenprinting", default_feedback_effect, osc_printing_effect,
           generic_effects.SolidBackground()),
-    Scene("adjustablebackground", default_feedback_effect,
-          generic_effects.AdjustableFillFromBottom(), red_background),
-    Scene("bluewithdot", default_feedback_effect, moving_dot, blue_background),
+    Scene("adjustablebackground", default_feedback_effect, red_background,
+          generic_effects.AdjustableFillFromBottom()),
+    Scene("bluewithdot", default_feedback_effect, blue_background, moving_dot),
     Scene("spatial scene", default_feedback_effect, spatial_background)
 ]
