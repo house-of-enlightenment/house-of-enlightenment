@@ -1,10 +1,12 @@
 from OSC import ThreadingOSCServer
 from OSC import OSCClient
 from OSC import OSCMessage
+from OSC import OSCBundle
 from threading import Thread
 import atexit
 
 defaults = {'address': '0.0.0.0', 'port': 7000}
+button_path = "/button"
 
 
 def create_osc_server(host=defaults['address'], port=defaults['port']):
@@ -38,3 +40,30 @@ def send_simple_message(client, path, data=[], timeout=None):
     for d in data:
         msg.append(d)
     client.send(msg, timeout)
+
+
+def update_buttons(client, updates, timeout=None):
+    """ OSCClient, { int : int}, float -> None
+    Given a feedback client, update buttons. Update should be a button id mapped to one of [0,1,2] where:
+    0: Turn off
+    1: Turn on
+    2: Toggle
+    """
+    if not updates:
+        return
+
+    if len(updates) == 1:
+        client.send(
+            create_button_update_msg(id=updates.items()[0][0], update=updates.items()[0][1]))
+    else:
+        bundle = OSCBundle()
+        for id, up in updates.items():
+            bundle.append(create_button_update_msg(id=id, update=up))
+        client.send(msg=bundle, timeout=timeout)
+
+
+def create_button_update_msg(id, update):
+    msg = OSCMessage(button_path)
+    msg.append(id)
+    msg.append(update)
+    return msg
