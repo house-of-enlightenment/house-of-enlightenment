@@ -7,6 +7,9 @@ import atexit
 
 defaults = {'address': '0.0.0.0', 'port': 7000}
 button_path = "/button"
+BUTTON_OFF = 0
+BUTTON_ON = 1
+BUTTON_TOGGLE = 2
 
 
 def create_osc_server(host=defaults['address'], port=defaults['port']):
@@ -48,6 +51,7 @@ def update_buttons(client, updates, timeout=None):
     0: Turn off
     1: Turn on
     2: Toggle
+    However, it is recommended you use BUTTON_ON, BUTTON_OFF, BUTTON_TOGGLE
     """
     if not updates:
         return

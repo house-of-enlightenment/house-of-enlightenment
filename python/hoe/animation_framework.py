@@ -201,6 +201,7 @@ class StoredStationData(object):
         else:
             # TODO Check with python folks. Is this a memory leak?
             self.faders = last_data.faders
+            self.client = last_data.client
         self.contains_change = False
 
     def __str__(self):

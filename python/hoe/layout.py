@@ -50,4 +50,5 @@ def init_layout(new_layout):
 
 
 def layout():
+    """ None -> Layout """
     return _layout
