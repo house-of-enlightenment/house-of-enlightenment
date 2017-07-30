@@ -55,7 +55,7 @@ export default class Info extends React.Component {
             <h3>2017 House of Enlightenment</h3>
 
             <p><a target="_blank" href="https://douglasruuska.com/tower-of-light/">https://douglasruuska.com/tower-of-light/</a></p>
-            <p></p>
+            <p />
             <p>Click/drag with mouse to look around like a first person shooter video game.</p>
             <p>
               Use
@@ -76,7 +76,7 @@ export default class Info extends React.Component {
               <span className="info__mapping"><span className="key">R</span>=up</span>
               <span className="info__mapping"><span className="key">F</span>=down</span>
             </p>
-            <p></p>
+            <p />
             <p style={{ fontSize: "0.8em" }}>
               (This is an open source project on&nbsp;
               <a target="_blank" href="https://github.com/house-of-enlightenment/house-of-enlightenment">github</a>)
