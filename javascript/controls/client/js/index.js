@@ -12,3 +12,7 @@ ws.onopen = function (event) {
     document.querySelector(".js-controls-mount")
   );
 };
+
+ws.onmessage = function (event) {
+  console.log(event.data);
+}

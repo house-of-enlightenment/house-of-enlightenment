@@ -131,6 +131,18 @@ udpPort.on("ready", function () {
   });
 });
 
+// Listen for incoming OSC bundles.
+udpPort.on("bundle", function (oscBundle, timeTag, info) {
+    console.log("An OSC bundle just arrived for time tag", timeTag, ":", oscBundle);
+    console.log("Remote info is: ", info);
+});
+
+// Listen for incoming OSC bundles.
+udpPort.on("message", function (oscMessage, timeTag, info) {
+    console.log("An OSC bundle just arrived for time tag", timeTag, ":", oscMessage);
+    console.log("Remote info is: ", info);
+});
+
 udpPort.on("error", function (error) {
     console.log("udpPort error occurred: ", error.message);
 });
