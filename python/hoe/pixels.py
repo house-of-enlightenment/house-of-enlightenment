@@ -15,6 +15,11 @@ class Pixels(object):
 
     def __setitem__(self, key, value):
         if isinstance(key, tuple):
+            # TODO: deal with wrap-around slices
+            #       for the columns
+            # r, c = key
+            # if isinstance(c, slice):
+            #     if is_wrap_around_slice(c):
             idx = self.layout.grid[key]
             self.pixels[idx] = value
         else:
@@ -25,3 +30,10 @@ class Pixels(object):
 
     def put(self, client):
         client.put_pixels(self.pixels)
+
+
+def is_wrap_around_slice(sl):
+    if sl.start is not None and sl.stop is not None:
+        return sl.start > sl.stop
+    else:
+        return False

@@ -30,7 +30,8 @@ YELLOW = (255, 255, 0)
 def main():
     global ROTATION_SPEED
     parser = argparse.ArgumentParser()
-    parser.add_argument('--row', choices=['single', 'fader', 'rainbow'], default='rainbow')
+    parser.add_argument(
+        '--row', choices=['sine', 'single', 'fader', 'rainbow', 'linear'], default='rainbow')
     args = parser.parse_args()
 
     # TODO: copy and paste is bad, mkay.
@@ -52,7 +53,12 @@ def main():
         row = RainbowRow(hoe_layout)
     elif args.row == 'fader':
         row = FaderRow(hoe_layout, osc_queue)
-    effect = Effect(hoe_layout, row)
+    elif args.row == 'sine':
+        row = SineRow(hoe_layout)
+    elif args.row == 'linear':
+        row = LinearBrightness(hoe_layout)
+    effect = UpAndRotateEffect(hoe_layout, row)
+    #effect = UpAndExpandEffect(hoe_layout)
     render = Render(client, osc_queue, hoe_layout, [effect])
     render.run_forever()
 
@@ -91,12 +97,12 @@ class Render(object):
             print "!! Behind !!", remaining_until_next_frame
 
 
-class Effect(object):
+class UpAndRotateEffect(object):
     def __init__(self, layout, row):
         self.layout = layout
         self.up_speed = SpeedToPixels(100)  # rows / second
         # is this redundant with the bottom row also rotating?
-        self.rotate_speed = SpeedToPixels(40)  # columns / second
+        self.rotate_speed = SpeedToPixels(0)  # columns / second
         self.row = row
 
     def start(self, now):
@@ -135,6 +141,46 @@ class Effect(object):
         self.pixels[after_idx] = self.pixels[before_idx]
 
 
+class UpAndExpandEffect(object):
+    def __init__(self, layout):
+        self.layout = layout
+        self.count = 0
+        # track a color and width
+        self.center = 40
+        self.color = np.zeros((216, 3), np.uint8)
+        self.width = np.zeros(216, np.float)
+        self.speed = SpeedToPixels(50)
+
+    def start(self, now):
+        self.speed.start(now)
+        self.color[0] = (255, 0, 0)
+        self.width[0] = 1
+        self.clr = 0
+
+    def next_frame(self, now, pixels):
+        # This has a jitter to it at the edges. I think its a result of
+        # the way I am mapping speed to pxs. 
+        for row, (color, width) in enumerate(zip(self.color, self.width)):
+            width = int(width)
+            if (2 * width) + 1 > self.layout.columns:
+                pixels[row, :] = color
+                continue
+            start = (self.center - width) % self.layout.columns
+            end = (self.center + width + 1) % self.layout.columns
+            if start < end:
+                pixels[row, start:end] = color
+            else:
+                pixels[row, start:] = color
+                pixels[row, :end] = color
+        px = self.speed(now)
+        if px > 0:
+            self.color[px:] = self.color[:-px]
+            self.color[:px] = (self.clr, 0, 0)
+            self.clr = color_utils.remap(np.sin(2*np.pi*time.time()), -1, 1, 0, 255)
+            self.width[px:] = self.width[:-px] + .25
+            self.width[px] = 1
+
+
 class SpeedToPixels(object):
     def __init__(self, speed):
         self.speed = speed
@@ -149,6 +195,62 @@ class SpeedToPixels(object):
         distance = self.speed * elapsed + self.residual
         px, self.residual = divmod(distance, 1)
         return int(px)
+
+
+class _Row(object):
+    def __init__(self, layout):
+        self.layout = layout
+
+    def start(self, now):
+        pass
+
+    def __call__(self, now):
+        return np.zeros((self.layout.columns, 3), np.uint8)
+
+
+class SineRow(_Row):
+    def __call__(self, now):
+        v = np.sin(np.pi*now)
+        val = color_utils.remap(v, -1, 1, 0, 255)
+        color = color_utils.hsv2rgb((0, 255, val))
+        color = (val, 0, 0)
+        return np.array([color]*self.layout.columns)
+
+
+# Perception of LED brightness is not linear. This applies a correction
+# so that we get approximately 32 equal steps of brightness
+#
+# Lookup table from:
+# https://ledshield.wordpress.com/2012/11/13/led-brightness-to-your-eye-gamma-correction-no/
+#
+BRIGHTNESS_A = [
+    0, 1, 2, 3, 4, 5, 7, 9, 12, 15, 18, 22, 27, 32, 38, 44, 51, 58,
+    67, 76, 86, 96, 108, 120, 134, 148, 163, 180, 197, 216, 235, 255
+]
+
+# Using this, as a comparison
+#
+BRIGHTNESS_B = np.linspace(0, 255, 32).astype(int)
+
+class LinearBrightness(_Row):
+    def start(self, now):
+        self.idx = 0
+        self.delta = 1
+
+    def __call__(self, now):
+        v = np.sin(np.pi*now)
+        c = color_utils.remap(v, -1, 1, 0, 31)
+        color_a = (BRIGHTNESS_A[int(c)], 0, 0)
+        color_b = (0, BRIGHTNESS_B[int(c)], 0)
+        color_a = (BRIGHTNESS_A[self.idx], 0, 0)
+        color_b = (0, BRIGHTNESS_B[self.idx], 0)
+        self.idx += self.delta
+        if self.idx == 0 or self.idx == 31:
+            self.delta *= -1
+        n = int(self.layout.columns / 4)
+        return np.array(
+            [color_a] * n + [(0, 0, 0)] * (n + 1) +
+            [color_b] * n + [(0, 0, 0)] * (n + 1))
 
 
 class FaderRow(object):
