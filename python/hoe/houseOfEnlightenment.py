@@ -33,7 +33,17 @@ def parse_command_line():
         default='127.0.0.1:7890',
         action='store',
         type='string',
-        help='ip and port of server')
+        help='ip and port of target opc server')
+    parser.add_option(
+        '-b',
+        '--feedback_servers',
+        dest='feedback_servers',
+        default=[],
+        action='append',
+        nargs=2,
+        type='string',
+        help='osc feedback server for buttons. Can be specified more than once')
+
     parser.add_option(
         '-f', '--fps', dest='fps', default=30, action='store', type='int', help='frames per second')
     parser.add_option('-v', '--verbose', dest='verbose', default=False, action='store_true')
@@ -72,7 +82,7 @@ def parse_layout(layout_file):
 # connect to OPC server
 
 
-def start_opc(server, verbose=False):
+def create_opc_client(server, verbose=False):
     client = opc.Client(server_ip_port=server, verbose=verbose)
     if client.can_connect():
         print '    connected to %s' % server
@@ -124,12 +134,22 @@ def listen_for_keyboard(scene):
         sleep(.1)
 
 
+def create_osc_stations(servers):
+    if servers:
+        print "Creating OSC clients to", servers
+
+    stations = [osc_utils.get_osc_client(host=s, port=int(p), say_hello=True) for s, p in servers]
+
+    return stations
+
+
 def launch():
     config = parse_command_line()
     osc_server = osc_utils.create_osc_server()
+    opc_client = create_opc_client(config.server, config.verbose)
+    stations = create_osc_stations(config.feedback_servers)
 
-    opc = start_opc(config.server, config.verbose)
-    framework = init_animation_framework(osc_server, opc, config)
+    framework = init_animation_framework(osc_server, opc_client, config)
 
     keyboard_thread = Thread(
         target=listen_for_keyboard, args=(framework, ), name="KeyboardListeningThread")
@@ -141,7 +161,7 @@ def launch():
     # TODO: This was deadlocking
     # osc_server.shutdown()
 
-    opc.disconnect()
+    opc_client.disconnect()
 
 
 if __name__ == '__main__':

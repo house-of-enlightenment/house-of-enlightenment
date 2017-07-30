@@ -19,11 +19,16 @@ def create_osc_server(host=defaults['address'], port=defaults['port']):
     return server
 
 
-def get_osc_client(host='localhost', port=defaults['port']):
+def get_osc_client(host='localhost', port=defaults['port'], say_hello=False):
     # String, int -> OSCClient
 
     client = OSCClient()
     client.connect((host, port))
+
+    # TODO Make this work
+    if say_hello:
+        send_simple_message(client, "/hello", timeout=None)
+
     return client
 
 

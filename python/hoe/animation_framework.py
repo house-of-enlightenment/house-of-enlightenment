@@ -21,10 +21,11 @@ from hoe.opc import Client
 
 
 class AnimationFramework(object):
-    def __init__(self, osc, opc, fps, scenes=None):
+    def __init__(self, osc_server, opc_client, fps, osc_station_clients=[], scenes=None):
         # OSCServer, Client, dict, int -> None
-        self.osc_server = osc
-        self.opc = opc
+        self.osc_server = osc_server
+        self.opc_client = opc_client
+        self.osc_station_clients = osc_station_clients
         self.fps = fps
 
         # Load all scenes from effects package. Then set initial index and load it up
@@ -137,7 +138,7 @@ class AnimationFramework(object):
             pixels[:] = 0
             self.curr_scene.render(pixels, t, self.get_osc_frame())
             # TODO: Check for None and replace with (0, 0, 0)
-            self.opc.put_pixels(pixels.pixels, channel=0)
+            self.opc_client.put_pixels(pixels.pixels, channel=0)
 
             # Crude way of trying to hit target fps
             wait_for_next_frame(
