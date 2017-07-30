@@ -37,7 +37,7 @@ class AnimationFramework(object):
         self.serve = False
         self.is_running = False
 
-        self.osc_data = StoredOSCData()
+        self.osc_data = StoredOSCData(clients=osc_station_clients)
         self.setup_handlers({0: 50})
 
     def next_scene_handler(self, path, tags, args, source):
@@ -223,7 +223,7 @@ class StoredOSCData(object):
         self.stations = [
             StoredStationData(
                 last_data=last_data.stations[i] if last_data else None,
-                client=clients[i] if clients and clients[i] else None) for i in range(num_stations)
+                client=clients[i] if clients and i < len(clients) else None) for i in range(num_stations)
         ]
         self.contains_change = False
 

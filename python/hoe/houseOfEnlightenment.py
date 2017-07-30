@@ -93,9 +93,9 @@ def create_opc_client(server, verbose=False):
     return client
 
 
-def init_animation_framework(osc_server, opc_client, config):
+def init_animation_framework(osc_server, opc_client, config, osc_stations):
     # OSCServer, Client, dict -> SceneManager, Thread
-    mgr = AF.AnimationFramework(osc_server, opc_client, config.fps)
+    mgr = AF.AnimationFramework(osc_server=osc_server, opc_client=opc_client, osc_station_clients=osc_stations, fps=config.fps)
     return mgr
 
 
@@ -138,9 +138,7 @@ def create_osc_stations(servers):
     if servers:
         print "Creating OSC clients to", servers
 
-    stations = [osc_utils.get_osc_client(host=s, port=int(p), say_hello=True) for s, p in servers]
-
-    return stations
+    return [osc_utils.get_osc_client(host=s, port=int(p), say_hello=True) for s, p in servers]
 
 
 def launch():
@@ -149,7 +147,7 @@ def launch():
     opc_client = create_opc_client(config.server, config.verbose)
     stations = create_osc_stations(config.feedback_servers)
 
-    framework = init_animation_framework(osc_server, opc_client, config)
+    framework = init_animation_framework(osc_server, opc_client, config, stations)
 
     keyboard_thread = Thread(
         target=listen_for_keyboard, args=(framework, ), name="KeyboardListeningThread")
