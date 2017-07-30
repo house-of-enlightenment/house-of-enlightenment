@@ -92,7 +92,7 @@ class AnimationFramework(object):
 
     def get_osc_frame(self, clear=True):
         last_frame = self.osc_data
-        self.osc_data = StoredOSCData(last_frame)
+        self.osc_data = StoredOSCData(last_data=last_frame)
         return last_frame
 
     def next_scene(self, increment=1):
@@ -193,10 +193,11 @@ def get_first_non_empty(pixels):
 
 
 class StoredStationData(object):
-    def __init__(self, last_data=None):
+    def __init__(self, client=None, last_data=None):
         self.buttons = {}
         if last_data is None:
             self.faders = {}
+            self.client = client
         else:
             # TODO Check with python folks. Is this a memory leak?
             self.faders = last_data.faders
@@ -217,10 +218,11 @@ class StoredStationData(object):
 
 
 class StoredOSCData(object):
-    def __init__(self, last_data=None, num_stations=6):
+    def __init__(self, clients=None, last_data=None, num_stations=6):
         self.stations = [
-            StoredStationData(last_data.stations[i] if last_data else None)
-            for i in range(num_stations)
+            StoredStationData(
+                last_data=last_data.stations[i] if last_data else None,
+                client=clients[i] if clients and clients[i] else None) for i in range(num_stations)
         ]
         self.contains_change = False
 
