@@ -46,11 +46,14 @@ def send_simple_message(client, path, data=[], timeout=None):
 
 
 def update_buttons(client, updates, timeout=None):
-    """ OSCClient, { int : int}, float -> None
-    Given a feedback client, update buttons. Update should be a button id mapped to one of [0,1,2] where:
+    """Given a feedback client, update buttons.
+
+    Update should be a button id mapped to one of [0,1,2] where:
+
     0: Turn off
     1: Turn on
     2: Toggle
+
     However, it is recommended you use BUTTON_ON, BUTTON_OFF, BUTTON_TOGGLE
     """
     if not updates:

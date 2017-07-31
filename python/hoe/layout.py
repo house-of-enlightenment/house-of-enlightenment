@@ -3,7 +3,6 @@ import json
 
 import numpy as np
 
-
 _GROUPBY = [
     "address",
     "row",

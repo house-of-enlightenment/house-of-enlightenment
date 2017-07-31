@@ -3,11 +3,15 @@
 Things like layout and FPS are pretty universal, so
 for convenience, just load up a global
 """
+
+
 # http://www.aleax.it/Python/5ep.html
 class Borg(object):
     _shared_state = {}
+
     def __init__(self):
         self.__dict__ = self._shared_state
+
 
 #
 # Any instance of GlobalState()

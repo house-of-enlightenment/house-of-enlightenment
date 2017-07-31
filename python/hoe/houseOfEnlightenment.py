@@ -96,8 +96,7 @@ def create_opc_client(server, verbose=False):
 def init_animation_framework(osc_server, opc_client, osc_stations):
     # OSCServer, Client, dict -> SceneManager, Thread
     mgr = AF.AnimationFramework(
-        osc_server=osc_server, opc_client=opc_client,
-        osc_station_clients=osc_stations)
+        osc_server=osc_server, opc_client=opc_client, osc_station_clients=osc_stations)
     return mgr
 
 

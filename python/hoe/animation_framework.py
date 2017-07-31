@@ -223,7 +223,8 @@ class StoredOSCData(object):
         self.stations = [
             StoredStationData(
                 last_data=last_data.stations[i] if last_data else None,
-                client=clients[i] if clients and i < len(clients) else None) for i in range(num_stations)
+                client=clients[i] if clients and i < len(clients) else None)
+            for i in range(num_stations)
         ]
         self.contains_change = False
 
