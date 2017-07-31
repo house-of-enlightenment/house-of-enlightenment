@@ -2,53 +2,52 @@
 
 from __future__ import division
 import json
-import optparse
+import argparse
 import sys
 from threading import Thread
 from time import sleep
 
+from hoe import animation_framework as AF
 from hoe import opc
 from hoe import osc_utils
-from hoe import animation_framework as AF
 from hoe.layout import Layout
-from hoe.layout import init_layout
+from hoe.state import STATE
 
 
 # -------------------------------------------------------------------------------
 # command line
 def parse_command_line():
-    parser = optparse.OptionParser()
-    parser.add_option(
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
         '-l',
         '--layout',
         dest='layout_file',
         default='../layout/hoeLayout.json',
         action='store',
-        type='string',
+        type=str,
         help='layout file')
-    parser.add_option(
+    parser.add_argument(
         '-s',
         '--server',
         dest='server',
         default='127.0.0.1:7890',
         action='store',
-        type='string',
+        type=str,
         help='ip and port of target opc server')
-    parser.add_option(
+    parser.add_argument(
         '-b',
         '--feedback_servers',
         dest='feedback_servers',
         default=[],
         action='append',
         nargs=2,
-        type='string',
+        type=str,
         help='osc feedback server for buttons. Can be specified more than once')
+    parser.add_argument(
+        '-f', '--fps', dest='fps', default=30, action='store', type=int, help='frames per second')
+    parser.add_argument('-v', '--verbose', dest='verbose', default=False, action='store_true')
 
-    parser.add_option(
-        '-f', '--fps', dest='fps', default=30, action='store', type='int', help='frames per second')
-    parser.add_option('-v', '--verbose', dest='verbose', default=False, action='store_true')
-
-    options, args = parser.parse_args()
+    options = parser.parse_args()
 
     if not options.layout_file:
         parser.print_help()
@@ -58,7 +57,7 @@ def parse_command_line():
         print
         sys.exit(1)
 
-    init_layout(Layout(parse_layout(options.layout_file)))
+    STATE.layout = Layout(parse_layout(options.layout_file))
 
     return options
 
@@ -75,7 +74,8 @@ def parse_layout(layout_file):
     print
 
     # Just use a dictionary as loaded
-    return json.load(open(layout_file))
+    with open(layout_file) as f:
+        return json.load(f)
 
 
 # -------------------------------------------------------------------------------
@@ -93,9 +93,10 @@ def create_opc_client(server, verbose=False):
     return client
 
 
-def init_animation_framework(osc_server, opc_client, config, osc_stations):
+def init_animation_framework(osc_server, opc_client, osc_stations):
     # OSCServer, Client, dict -> SceneManager, Thread
-    mgr = AF.AnimationFramework(osc_server=osc_server, opc_client=opc_client, osc_station_clients=osc_stations, fps=config.fps)
+    mgr = AF.AnimationFramework(
+        osc_server=osc_server, opc_client=opc_client, osc_station_clients=osc_stations)
     return mgr
 
 
@@ -147,7 +148,8 @@ def launch():
     opc_client = create_opc_client(config.server, config.verbose)
     stations = create_osc_stations(config.feedback_servers)
 
-    framework = init_animation_framework(osc_server, opc_client, config, stations)
+    STATE.fps = config.fps
+    framework = init_animation_framework(osc_server, opc_client, stations)
 
     keyboard_thread = Thread(
         target=listen_for_keyboard, args=(framework, ), name="KeyboardListeningThread")

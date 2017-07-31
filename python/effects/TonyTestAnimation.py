@@ -1,7 +1,8 @@
 from hoe import color_utils
 from hoe.animation_framework import Scene
 from hoe.animation_framework import Effect
-from hoe.layout import layout
+from hoe.state import STATE
+
 from examples import SampleFeedbackEffect
 
 
@@ -9,14 +10,14 @@ class TonyEffect(Effect):
     """Always return red"""
 
     def next_frame(self, pixels, t, collaborative_state, osc_data):
-        for ii, coord in enumerate(layout().pixels):
+        for ii, coord in enumerate(STATE.layout.pixels):
             pixels[ii] = (0, 255, 0)
 
 
 # a simple effect for the bottom of the ring in red
 class Background1(Effect):
     def next_frame(self, pixels, t, collaborative_state, osc_data):
-        for ii, coord in enumerate(layout().pixels):
+        for ii, coord in enumerate(STATE.layout.pixels):
             self.gentle_glow(pixels, t, coord, ii)
 
     def gentle_glow(self, pixels, t, coord, ii):

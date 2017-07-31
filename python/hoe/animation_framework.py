@@ -16,17 +16,17 @@ import atexit
 
 from OSC import OSCServer
 
-from hoe.layout import layout
+from hoe.state import STATE
 from hoe.opc import Client
 
 
 class AnimationFramework(object):
-    def __init__(self, osc_server, opc_client, fps, osc_station_clients=[], scenes=None):
+    def __init__(self, osc_server, opc_client, osc_station_clients=[], scenes=None):
         # OSCServer, Client, dict, int -> None
         self.osc_server = osc_server
         self.opc_client = opc_client
         self.osc_station_clients = osc_station_clients
-        self.fps = fps
+        self.fps = STATE.fps
 
         # Load all scenes from effects package. Then set initial index and load it up
         self.scenes = scenes or load_scenes()
@@ -126,7 +126,7 @@ class AnimationFramework(object):
 
         print '\tsending pixels forever (quit or control-c to exit)...'
         self.is_running = True
-        pixels = Pixels(layout())
+        pixels = Pixels(STATE.layout)
 
         while self.serve:
             # TODO : Does this create lots of GC?
@@ -223,7 +223,8 @@ class StoredOSCData(object):
         self.stations = [
             StoredStationData(
                 last_data=last_data.stations[i] if last_data else None,
-                client=clients[i] if clients and i < len(clients) else None) for i in range(num_stations)
+                client=clients[i] if clients and i < len(clients) else None)
+            for i in range(num_stations)
         ]
         self.contains_change = False
 

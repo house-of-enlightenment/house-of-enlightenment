@@ -2,7 +2,7 @@ from hoe import color_utils
 from hoe.animation_framework import Scene
 from hoe.animation_framework import Effect
 from hoe.animation_framework import CollaborationManager
-from hoe.layout import layout
+from hoe.state import STATE
 
 
 class PrintOSC(Effect):
@@ -22,9 +22,9 @@ class MovingDot(Effect):
         self.start_time = t
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
-        spark_ii = ((t - self.start_time) * 80) % layout().n_pixels
+        spark_ii = ((t - self.start_time) * 80) % STATE.layout.n_pixels
 
-        for ii, c in [(int((spark_ii + x) % layout().n_pixels), 255 - x * 128 / self.spark_rad)
+        for ii, c in [(int((spark_ii + x) % STATE.layout.n_pixels), 255 - x * 128 / self.spark_rad)
                       for x in range(self.spark_rad)]:
             pixels[ii] = (c, c, c)
 
