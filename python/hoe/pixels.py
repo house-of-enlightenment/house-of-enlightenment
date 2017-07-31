@@ -15,6 +15,7 @@ class Pixels(object):
 
     def __setitem__(self, key, value):
         if isinstance(key, tuple):
+            print key
             # TODO: deal with wrap-around slices
             #       for the columns
             # r, c = key

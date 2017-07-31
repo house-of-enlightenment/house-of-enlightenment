@@ -19,6 +19,7 @@ from hoe import opc
 from hoe import osc_utils
 from hoe import pixels
 
+
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
@@ -102,7 +103,7 @@ class UpAndRotateEffect(object):
         self.layout = layout
         self.up_speed = SpeedToPixels(100)  # rows / second
         # is this redundant with the bottom row also rotating?
-        self.rotate_speed = SpeedToPixels(0)  # columns / second
+        self.rotate_speed = SpeedToPixels(50)  # columns / second
         self.row = row
 
     def start(self, now):
@@ -159,7 +160,7 @@ class UpAndExpandEffect(object):
 
     def next_frame(self, now, pixels):
         # This has a jitter to it at the edges. I think its a result of
-        # the way I am mapping speed to pxs. 
+        # the way I am mapping speed to pxs.
         for row, (color, width) in enumerate(zip(self.color, self.width)):
             width = int(width)
             if (2 * width) + 1 > self.layout.columns:
@@ -181,7 +182,55 @@ class UpAndExpandEffect(object):
             self.width[px] = 1
 
 
-class SpeedToPixels(object):
+# Here are two modes for calculating distance. The accurate method
+# allows for a variable number of pixels per frame, so if you want
+# to travel 100 pixels in a second, it will. This method also keeps
+# a consistent speed regardless of the frame rate
+#
+# The consistent method only allows for movements in a fixed amount.
+# That means that if you want to move 100 pixels a second at 30fps,
+# you'll actually end up going 3pixels / frame or 90 pixels per second.
+#
+# The accurate method can cause a flicker.
+def consistent_speed_to_pixels(speed, fps):
+    # only one of these will have a value, depending
+    # on whether we move fast or slow
+    frames_per_pixel = fps // speed
+    pixels_per_framae = speed // fps
+    assert not (frames_per_pixel and pixels_per_frame)
+    if frames_per_pixel:
+        return FramesPerPixel(frames_per_pixel)
+    else:
+        return PixelsPerFrame(pixels_per_frame)
+
+
+class FramesPerPixel(object):
+    def __init__(self, frames_per_pixel):
+        self.frames_per_pixel = self.frames_per_pixel
+        self.count = 0
+
+    def start(self, now):
+        pass
+
+    def __call__(self, now):
+        self.count += 1
+        if self.count >= self.frames_per_pixel:
+            self.count = 0
+            return 1
+
+
+class PixelsPerFrame(object):
+    def __init__(self, pixels_per_frame):
+        self.pixels_per_frame = pixels_per_frame
+
+    def start(self, now):
+        pass
+
+    def __call__(self, now):
+        return self.pixels_per_frame
+
+
+class AccurateSpeedToPixels(object):
     def __init__(self, speed):
         self.speed = speed
         self.residual = 0
@@ -231,6 +280,7 @@ BRIGHTNESS_A = [
 # Using this, as a comparison
 #
 BRIGHTNESS_B = np.linspace(0, 255, 32).astype(int)
+
 
 class LinearBrightness(_Row):
     def start(self, now):
@@ -413,7 +463,7 @@ class HueTransition(Transition):
         start = np.random.randint(0, 256)
         # pick how much of the color wheel we're going to take
         # a longer slice will have more colors
-        length = np.random.randint(32, 256)
+        length = np.random.randint(32, 35)
         end = start + length
         return np.array([start, end])
 
