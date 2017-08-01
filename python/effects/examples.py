@@ -4,7 +4,7 @@ from hoe.animation_framework import Effect
 from hoe.animation_framework import CollaborationManager
 from hoe.animation_framework import EffectFactory
 from hoe.animation_framework import MultiEffect
-from hoe.layout import layout
+from hoe.state import STATE
 from random import randrange
 import generic_effects
 import debugging_effects
@@ -12,7 +12,7 @@ import debugging_effects
 
 class SpatialStripesBackground(Effect):
     def next_frame(self, pixels, t, collaboration_state, osc_data):
-        for ii, coord in enumerate(layout().pixels):
+        for ii, coord in enumerate(STATE.layout.pixels):
             self.spatial_stripes(pixels, t, coord, ii)
 
     #-------------------------------------------------------------------------------
@@ -56,19 +56,19 @@ class ColumnStreak(Effect):
 
     def is_completed(self, t, osc_data):
         # TODO run off the top
-        return self.row >= layout().rows
+        return self.row >= STATE.layout.rows
 
 
 class SampleEffectLauncher(MultiEffect):
     def before_rendering(self, pixels, t, collaboration_state, osc_data):
         MultiEffect.before_rendering(self, pixels, t, collaboration_state, osc_data)
-        for s in range(layout().sections):
+        for s in range(STATE.layout.sections):
             if osc_data.stations[s].buttons:
                 self.launch_effect(t, s)
 
     def launch_effect(self, t, s):
         print "Adding Effect"
-        per_section = int(layout().columns / layout().sections)
+        per_section = int(STATE.layout.columns / STATE.layout.sections)
         e = ColumnStreak(
             column=randrange(0 + s * per_section, (s + 1) * per_section), color=(255, 0, 0))
         self.effects.append(e)

@@ -4,7 +4,7 @@ from hoe.animation_framework import Effect
 from hoe.animation_framework import CollaborationManager
 from hoe.animation_framework import EffectFactory
 from hoe.animation_framework import MultiEffect
-from hoe.layout import layout
+from hoe.state import STATE
 from random import choice
 from random import randint
 from itertools import product
@@ -98,8 +98,8 @@ class RotatingWedge(Effect):
             else:
                 pixels[:, self.start_col:] = self.color
                 pixels[:, :self.end_col] = self.color
-        self.start_col = (self.start_col + self.direction) % layout().columns
-        self.end_col = (self.end_col + self.direction) % layout().columns
+        self.start_col = (self.start_col + self.direction) % STATE.layout.columns
+        self.end_col = (self.end_col + self.direction) % STATE.layout.columns
 
 def button_launch_checker(t, collaboration_state, osc_data):
     for i in range(len(osc_data.stations)):

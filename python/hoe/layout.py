@@ -37,20 +37,3 @@ class Layout(object):
     def colmod(self, i):
         return divmod(i, self.columns)[1]
 
-
-# Global Layout for all effects to reference
-_layout = None
-
-
-def init_layout(new_layout):
-    global _layout
-    if _layout:
-        raise RuntimeError("Layout is already initialized")
-    _layout = new_layout
-
-
-def layout():
-    """
-    :rtype: Layout
-    """
-    return _layout
