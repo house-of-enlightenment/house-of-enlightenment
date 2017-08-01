@@ -56,7 +56,7 @@ class RisingTide(Effect):
 
         self.colors = [start_color]
         self.color_inc = tuple(
-            map(lambda t, s: (0.0 + t - s) / (self.top_row - self.bottom_row), target_color,
+            map(lambda t, s: (0.0 + t - s) / (self.top_row - self.bottom_row) + 30, target_color,
                 start_color))
         print self.start_color, self.target_color, self.color_inc
 

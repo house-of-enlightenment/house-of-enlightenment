@@ -50,5 +50,7 @@ def init_layout(new_layout):
 
 
 def layout():
-    """ None -> Layout """
+    """
+    :rtype: Layout
+    """
     return _layout
