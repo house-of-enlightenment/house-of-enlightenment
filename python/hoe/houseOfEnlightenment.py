@@ -71,9 +71,7 @@ def parse_command_line():
 # TODO: groups, strips, clients, channels
 def parse_json_file(filename):
     # type: (str) -> dict
-    print
     print '    parsing file', filename
-    print
 
     # Just use a dictionary as loaded
     with open(filename) as f:
@@ -129,9 +127,9 @@ def listen_for_keyboard(scene):
             osc_utils.send_simple_message(osc_client, "/scene/select", [args[1]])
         else:
             args = key.split(" ")
-            if (len(args) == 1):
+            if len(args) == 1:
                 osc_utils.send_simple_message(osc_client, args[0])
-            elif (len(args) >= 2):
+            elif len(args) >= 2:
                 osc_utils.send_simple_message(osc_client, args[0], args[1:])
 
         sleep(.1)
@@ -143,7 +141,11 @@ def create_osc_stations(servers):
         return
 
     if servers["mode"] == "single":
-        servers["servers"]
+        client = osc_utils.get_osc_client(
+            host=servers["servers"][0]["host"],
+            port=int(servers["servers"][0]["port"]),
+            say_hello=True)
+        return [client for _ in range(STATE.layout.sections)]
         pass
     else:
         return [
