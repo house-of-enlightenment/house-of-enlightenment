@@ -5,12 +5,13 @@ the player has to hit the button to stop the light at a target.
 
 from __future__ import division
 
-from hoe.layout import layout
-
 from hoe.animation_framework import Scene
 from hoe.animation_framework import Effect
 from hoe.animation_framework import CollaborationManager
+from hoe.state import STATE
+
 from generic_effects import SolidBackground
+
 
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
@@ -36,10 +37,10 @@ class StopTheLight(CollaborationManager, Effect):
 
         self.bottom_rows = set(
             reduce(lambda a, b: a + b,
-                   [layout().row[i] for i in range(self.strip_bottom, self.strip_top)]))
-        self.target_idx = self.bottom_rows & set(layout().slice[self.target_location])
+                   [STATE.layout.row[i] for i in range(self.strip_bottom, self.strip_top)]))
+        self.target_idx = self.bottom_rows & set(STATE.layout.slice[self.target_location])
 
-        self.max_slice = max(layout().slice)
+        self.max_slice = max(STATE.layout.slice)
 
     def compute_state(self, t, collaboration_state, osc_data):
         if not "count" in collaboration_state.keys():
@@ -73,7 +74,7 @@ class StopTheLight(CollaborationManager, Effect):
             self.sprite_color = BLUE
 
         sprite_idx = (self.bottom_rows & set.union(*[
-            set(layout().slice[i % (self.max_slice + 1)])
+            set(STATE.layout.slice[i % (self.max_slice + 1)])
             for i in (self.sprite_location - 1, self.sprite_location, self.sprite_location + 1)
         ]))
 
@@ -107,7 +108,7 @@ class CollaborationCountBasedBackground(Effect):
 
         for ii in set(
                 reduce(lambda a, b: a + b,
-                       [layout().row[i] for i in range(self.bottom_row, self.current_level)])):
+                       [STATE.layout.row[i] for i in range(self.bottom_row, self.current_level)])):
             pixels[ii] = self.color
 
 

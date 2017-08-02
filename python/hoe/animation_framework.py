@@ -16,17 +16,17 @@ import atexit
 
 from OSC import OSCServer
 
-from hoe.layout import layout
+from hoe.state import STATE
 from hoe.opc import Client
 
 
 class AnimationFramework(object):
-    def __init__(self, osc_server, opc_client, fps, osc_station_clients=[], scenes=None):
+    def __init__(self, osc_server, opc_client, osc_station_clients=[], scenes=None):
         # OSCServer, Client, dict, int -> None
         self.osc_server = osc_server
         self.opc_client = opc_client
         self.osc_station_clients = osc_station_clients
-        self.fps = fps
+        self.fps = STATE.fps
 
         # Load all scenes from effects package. Then set initial index and load it up
         self.scenes = scenes or load_scenes()
@@ -38,7 +38,7 @@ class AnimationFramework(object):
         self.is_running = False
 
         self.osc_data = StoredOSCData(clients=osc_station_clients)
-        self.setup_handlers({0: 50})
+        self.setup_osc_input_handlers({0: 50})
 
     def next_scene_handler(self, path, tags, args, source):
         if not args or args[0] == "":
@@ -54,7 +54,7 @@ class AnimationFramework(object):
         else:
             self.pick_scene(args[0])
 
-    def setup_handlers(self, faders={}):
+    def setup_osc_input_handlers(self, faders={}):
         """
         :param faders: Dictionary of faders and their default values for each station
         :return:
@@ -126,7 +126,7 @@ class AnimationFramework(object):
 
         print '\tsending pixels forever (quit or control-c to exit)...'
         self.is_running = True
-        pixels = Pixels(layout())
+        pixels = Pixels(STATE.layout)
 
         while self.serve:
             # TODO : Does this create lots of GC?
@@ -223,7 +223,8 @@ class StoredOSCData(object):
         self.stations = [
             StoredStationData(
                 last_data=last_data.stations[i] if last_data else None,
-                client=clients[i] if clients and i < len(clients) else None) for i in range(num_stations)
+                client=clients[i] if clients and i < len(clients) else None)
+            for i in range(num_stations)
         ]
         self.contains_change = False
 
@@ -255,6 +256,13 @@ class Effect(object):
         pass
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
+        # type: (Pixels, long, {}, StoredOscData) -> None
+        """ Implement this method to render the next frame.
+        Modify the pixels in place.
+        t represents the time
+        collaboration_state is (currently) a dictionary that can be modified by a CollaborationManager before any effects apply
+        OSC Data contains the data sent in since the last frame (for buttons), as well as store fader states
+        Use the osc data to get station clients if you need to send button feedback """
         raise NotImplementedError("All effects must implement next_frame")
         # TODO: Use abc
 
@@ -292,9 +300,17 @@ class MultiEffect(Effect):
         self.cleanup_terminated_effects(pixels, t, collaboration_state, osc_data)
 
     def cleanup_terminated_effects(self, pixels, t, collaboration_state, osc_data):
+        # type: (Pixel, long, {}, OscStoredData) -> None
         # TODO Debugging code here?
         self.effects[:] = [e for e in self.effects if not e.is_completed(t, osc_data)]
 
+    def add_effect(self, effect, before=False):
+        # type: (Effect) -> None
+        if effect: # Ignore None
+            if before:
+                self.effects.insert(0, effect)
+            else:
+                self.effects.append(effect)
 
 """
 class EffectLauncher(MultiEffect):

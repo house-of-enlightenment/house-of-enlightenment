@@ -1,10 +1,9 @@
-from hoe import color_utils
 from hoe.animation_framework import Scene
 from hoe.animation_framework import Effect
 from hoe.animation_framework import CollaborationManager
 from hoe.animation_framework import MultiEffect
 from random import getrandbits
-from hoe.layout import layout
+from hoe.state import STATE
 from hoe.osc_utils import update_buttons
 from debugging_effects import PrintOSC
 
@@ -28,7 +27,7 @@ class AdjustableFillFromBottom(Effect):
         self.row_scale = 216.0 / max_in
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
-        for ii, coord in enumerate(layout().pixels):
+        for ii, coord in enumerate(STATE.layout.pixels):
             self.fill(pixels, t, coord, ii, osc_data)
 
     def fill(self, pixels, time, coord, ii, osc_data):
@@ -58,7 +57,7 @@ class RisingTide(Effect):
 
         self.colors = [start_color]
         self.color_inc = tuple(
-            map(lambda t, s: (0.0 + t - s) / (self.top_row - self.bottom_row), target_color,
+            map(lambda t, s: (0.0 + t - s) / (self.top_row - self.bottom_row) + 30, target_color,
                 start_color))
         print self.start_color, self.target_color, self.color_inc
 
@@ -85,12 +84,12 @@ class RisingTide(Effect):
 class TideLauncher(MultiEffect):
     def before_rendering(self, pixels, t, collaboration_state, osc_data):
         MultiEffect.before_rendering(self, pixels, t, collaboration_state, osc_data)
-        for s in range(layout().sections):
+        for s in range(STATE.layout.sections):
             if osc_data.stations[s].buttons:
                 self.launch_effect(t, s)
 
     def launch_effect(self, t, s):
-        per_section = int(layout().columns / layout().sections)
+        per_section = int(STATE.layout.columns / STATE.layout.sections)
         c = (bool(getrandbits(1)), bool(getrandbits(1)), bool(getrandbits(1)))
         print c
         if not any(c):  #  Deal with all 0's case
