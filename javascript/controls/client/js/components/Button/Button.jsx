@@ -1,21 +1,25 @@
 import React from "react";
 import classNames from "classnames";
-import { func, oneOf } from "prop-types";
+import { bool, func, number, oneOf } from "prop-types";
 
 
 const propTypes = {
-  id: oneOf(["0", "1", "2", "3", "4"]),
-  onClick: func.isRequired
+  id: number.isRequired,
+  onClick: func.isRequired,
+  isDisabled: bool,
+  color: oneOf(["red", "green", "blue", "yellow", "white"])
+};
+
+const defaultProps = {
+  color: "white"
 };
 
 
-const Button = ({ id, onClick }) => {
+const Button = ({ id, onClick, color, isDisabled }) => {
 
-  const buttonClasses = classNames(getButtonColorClass(id), {
-    "is-disabled": Math.random() > 0.5
+  const buttonClasses = classNames(`button--${color}`, {
+    "is-disabled": isDisabled
   });
-
-
 
   return (
     <button onClick={onClick} className={buttonClasses}>
@@ -25,27 +29,7 @@ const Button = ({ id, onClick }) => {
 
 };
 
-
-function getButtonColorClass(id){
-
-  console.log("ID", id);
-
-  switch (id){
-    case "0":
-      return "button--red";
-    case "1":
-      return "button--green";
-    case "2":
-      return "button--blue";
-    case "3":
-      return "button--yellow";
-    default:
-      return "button--white";
-
-  }
-
-}
-
 Button.propTypes = propTypes;
+Button.defaultProps = defaultProps;
 
 export default Button;
