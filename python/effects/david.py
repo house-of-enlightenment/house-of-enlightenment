@@ -43,7 +43,8 @@ class ButtonChaseController(Effect, CollaborationManager):
         if self.next[1] in osc_data.stations[self.next[0]].buttons:
             client = osc_data.stations[self.next[0]].client
             if client:
-                hoe.osc_utils.update_buttons(client=client, updates={self.next[1]:hoe.osc_utils.BUTTON_ON})
+                hoe.osc_utils.update_buttons(
+                    client=client, updates={self.next[1]: hoe.osc_utils.BUTTON_ON})
             else:
                 print "Hit, but client is not initialized"
             self.pick_next()
@@ -77,35 +78,57 @@ class ButtonChaseController(Effect, CollaborationManager):
 
 
 class RotatingWedge(Effect):
-    def __init__(self, color=(255,255,0), width=5, direction=1, angle=1, start_col=0, additive=False):
+    def __init__(self,
+                 color=(255, 255, 0),
+                 width=5,
+                 direction=1,
+                 angle=1,
+                 start_col=0,
+                 additive=False,
+                 scale_ratio=True):
         self.color = np.asarray(color, np.uint8)
+        self.width = width
         self.direction = direction
-        self.angle = angle
+        self.angle = angle * 1.0 * STATE.layout.columns / STATE.layout.rows if scale_ratio else angle
         self.start_col = 0
-        self.end_col = start_col+width
+        self.end_col = start_col + width
         self.additive = additive
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
-        if self.start_col < self.end_col:
-            if self.additive:
-                pixels[:,self.start_col:self.end_col] += self.color
+        if self.angle == 0:
+            if self.start_col < self.end_col:
+                self.update_pixels(
+                    pixels=pixels, slices=[(slice(None), slice(self.start_col, self.end_col))])
             else:
-                pixels[:, self.start_col:self.end_col] = self.color
+                self.update_pixels(
+                    pixels=pixels,
+                    slices=[(slice(None), slice(self.start_col, None)), (slice(None), slice(
+                        None, self.end_col))])
         else:
-            if self.additive:
-                pixels[:,self.start_col:] += self.color
-                pixels[:,:self.end_col] += self.color
-            else:
-                pixels[:, self.start_col:] = self.color
-                pixels[:, :self.end_col] = self.color
+            # TODO Combine Slices or get Indexes?
+            slices = [(slice(r, min(r + self.width, STATE.layout.rows)),
+                       int(c) % STATE.layout.columns)
+                      for r, c in enumerate(
+                          np.arange(self.start_col, self.start_col + self.angle * STATE.layout.rows,
+                                    self.angle))]
+            self.update_pixels(pixels=pixels, slices=slices)
         self.start_col = (self.start_col + self.direction) % STATE.layout.columns
         self.end_col = (self.end_col + self.direction) % STATE.layout.columns
+
+    def update_pixels(self, pixels, slices):
+        for r, c in slices:
+            if self.additive:
+                pixels[r, c] += self.color
+            else:
+                pixels[r, c] = self.color
+
 
 def button_launch_checker(t, collaboration_state, osc_data):
     for i in range(len(osc_data.stations)):
         if osc_data.stations[i].buttons:
             return True
     return False
+
 
 class GenericStatelessLauncher(MultiEffect):
     def __init__(self, factory_method, launch_checker=button_launch_checker, **kwargs):
@@ -117,19 +140,31 @@ class GenericStatelessLauncher(MultiEffect):
     def before_rendering(self, pixels, t, collaboration_state, osc_data):
         # TODO : Performance
         if self.launch_checker(t=t, collaboration_state=collaboration_state, osc_data=osc_data):
-            self.add_effect(self.factory_method(pixels=pixels, t=t, collaboration_state=collaboration_state, osc_data=osc_data, **self.factory_args))
+            self.add_effect(
+                self.factory_method(
+                    pixels=pixels,
+                    t=t,
+                    collaboration_state=collaboration_state,
+                    osc_data=osc_data,
+                    **self.factory_args))
+            print "Effect count", len(self.effects)
 
 
 def wedge_factory(**kwargs):
     varnames = RotatingWedge.__init__.__func__.__code__.co_varnames
-    args = { n : kwargs[n] for n in varnames if n in kwargs }
+    args = {n: kwargs[n] for n in varnames if n in kwargs}
     if "color" not in args:
-        args["color"] = (randint(0,255), randint(0,255), randint(0,255))
+        args["color"] = (randint(0, 255), randint(0, 255), randint(0, 255))
     if "direction" not in args:
-        args["direction"] = randint(0,1)*2-1 # Cheap way to get -1 or 1
+        args["direction"] = randint(0, 1) * 2 - 1  # Cheap way to get -1 or 1
+    if "angle" not in args:
+        args["angle"] = randint(-1, 1)
     return RotatingWedge(**args)
+
 
 __all__ = [
     Scene("buttonchaser", ButtonChaseController(draw_bottom_layer=True), SolidBackground()),
-    Scene("wedges", NoOpCollaborationManager(), RotatingWedge(), GenericStatelessLauncher(wedge_factory, width=3, additive=True))
+    Scene("wedges",
+          NoOpCollaborationManager(),
+          RotatingWedge(), GenericStatelessLauncher(wedge_factory, width=3, additive=False))
 ]
