@@ -135,19 +135,21 @@ def listen_for_keyboard(scene):
         sleep(.1)
 
 
-def create_osc_stations(servers):
+def create_osc_station_clients(servers):
     if not servers or "servers" not in servers:
         print "OSC stations addressed not specified. No feedback will be sent"
         return
 
-    if servers["mode"] == "single":
+    if "mode" in servers and servers["mode"] == "single":
+        print "Establishing single OSC client to stations at ", servers["servers"]
         client = osc_utils.get_osc_client(
             host=servers["servers"][0]["host"],
             port=int(servers["servers"][0]["port"]),
             say_hello=True)
         return [client for _ in range(STATE.layout.sections)]
-        pass
     else:
+        assert len(servers["servers"]) == STATE.layout.sections, "Wrong number of servers specified"
+        print "Establishing OSC clients to stations at", servers["servers"]
         return [
             osc_utils.get_osc_client(host=server["host"], port=int(server["port"]), say_hello=True)
             for server in servers["servers"]
@@ -161,7 +163,7 @@ def launch():
         port=int(STATE.servers["hosting"]["osc_server"]["port"]))
     opc_client = create_opc_client(
         server=STATE.servers["remote"]["opc_server"], verbose=config.verbose)
-    stations = create_osc_stations(servers=STATE.servers["remote"]["osc_controls"])
+    stations = create_osc_station_clients(servers=STATE.servers["remote"]["osc_controls"])
     framework = init_animation_framework(osc_server, opc_client, stations)
 
     keyboard_thread = Thread(
