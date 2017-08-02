@@ -4,6 +4,7 @@ from __future__ import division
 import json
 import argparse
 import sys
+import os
 from threading import Thread
 from time import sleep
 
@@ -17,12 +18,14 @@ from hoe.state import STATE
 # -------------------------------------------------------------------------------
 # command line
 def parse_command_line():
+    root_dir = find_root()
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '-l',
         '--layout',
         dest='layout_file',
-        default='../layout/hoeLayout.json',
+        default=os.path.join(root_dir, 'layout', 'hoeLayout.json'),
         action='store',
         type=str,
         help='layout file')
@@ -30,19 +33,10 @@ def parse_command_line():
         '-s',
         '--servers',
         dest='servers',
-        default='../layout/servers_local.json',
+        default=os.path.join(root_dir, 'layout', 'servers_local.json'),
         action='store',
         type=str,
         help='json file for server addresses')
-    parser.add_argument(
-        '-b',
-        '--feedback_servers',
-        dest='feedback_servers',
-        default=[],
-        action='append',
-        nargs=2,
-        type=str,
-        help='osc feedback server for buttons. Can be specified more than once')
     parser.add_argument(
         '-f', '--fps', dest='fps', default=30, action='store', type=int, help='frames per second')
     parser.add_argument('-v', '--verbose', dest='verbose', default=False, action='store_true')
@@ -64,7 +58,25 @@ def parse_command_line():
     return options
 
 
-# -------------------------------------------------------------------------------
+def find_root(start_dirs=[], look_for=set(["layout", "python"])):
+    # type: ([str], set([str])) -> str
+    """
+    Find the root directory of the project by looking for some common directories
+    :return: the root directory
+    """
+    # Handle symlinks
+    start_dirs = [] + [
+        os.path.dirname(os.path.abspath(__file__)),
+        os.path.dirname(os.path.realpath(__file__))
+    ]
+    for curr_dir in start_dirs:
+        while curr_dir != os.path.dirname(curr_dir):
+            curr_dir = os.path.dirname(curr_dir)
+            if look_for.issubset(os.listdir(curr_dir)):
+                print "    Found root directory of", curr_dir
+                return curr_dir
+
+    print "Could not find %s in parent dirs of %s. Root will be none" % (look_for, start_dirs)
 
 
 # parse layout file.
