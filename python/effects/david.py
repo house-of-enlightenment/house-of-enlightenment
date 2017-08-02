@@ -43,7 +43,7 @@ class ButtonChaseController(Effect, CollaborationManager):
         if self.next[1] in osc_data.stations[self.next[0]].buttons:
             client = osc_data.stations[self.next[0]].client
             if client:
-                hoe.osc_utils.update_buttons(client=client, updates={self.next[1]:hoe.osc_utils.BUTTON_ON})
+                hoe.osc_utils.update_buttons(station_id=self.next[0], client=client, updates={self.next[1]:hoe.osc_utils.BUTTON_ON})
             else:
                 print "Hit, but client is not initialized"
             self.pick_next()
