@@ -5,6 +5,8 @@ from hoe.animation_framework import CollaborationManager
 from hoe.animation_framework import MultiEffect
 from random import getrandbits
 from hoe.layout import layout
+from hoe.osc_utils import update_buttons
+from debugging_effects import PrintOSC
 
 
 class SolidBackground(Effect):
@@ -106,9 +108,20 @@ class TideLauncher(MultiEffect):
         self.effects.append(e)
 
 
+class ButtonToggleResponderManager(CollaborationManager):
+    def compute_state(self, t, collaboration_state, osc_data):
+        for station in osc_data.stations:
+            for b in station.buttons:
+                if station.client:
+                    update_buttons(client=station.client, updates={b: 2}, timeout=1)
+
+
 class NoOpCollaborationManager(CollaborationManager):
     def compute_state(self, t, collaboration_state, osc_data):
         pass
 
 
-__all__ = [Scene("risingtide", NoOpCollaborationManager(), SolidBackground(), TideLauncher())]
+__all__ = [
+    Scene("risingtide", NoOpCollaborationManager(), SolidBackground(), TideLauncher()),
+    Scene("buttontoggler", ButtonToggleResponderManager(), SolidBackground(), PrintOSC())
+]
