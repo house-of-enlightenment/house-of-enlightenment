@@ -28,12 +28,12 @@ def parse_command_line():
         help='layout file')
     parser.add_argument(
         '-s',
-        '--server',
-        dest='server',
-        default='127.0.0.1:7890',
+        '--servers',
+        dest='servers',
+        default='../layout/servers_local.json',
         action='store',
         type=str,
-        help='ip and port of target opc server')
+        help='json file for server addresses')
     parser.add_argument(
         '-b',
         '--feedback_servers',
@@ -57,7 +57,9 @@ def parse_command_line():
         print
         sys.exit(1)
 
-    STATE.layout = Layout(parse_layout(options.layout_file))
+    STATE.layout = Layout(parse_json_file(options.layout_file))
+    STATE.servers = parse_json_file(options.servers)
+    STATE.fps = options.fps
 
     return options
 
@@ -67,14 +69,14 @@ def parse_command_line():
 
 # parse layout file.
 # TODO: groups, strips, clients, channels
-def parse_layout(layout_file):
-
+def parse_json_file(filename):
+    # type: (str) -> dict
     print
-    print '    parsing layout file'
+    print '    parsing file', filename
     print
 
     # Just use a dictionary as loaded
-    with open(layout_file) as f:
+    with open(filename) as f:
         return json.load(f)
 
 
@@ -136,19 +138,28 @@ def listen_for_keyboard(scene):
 
 
 def create_osc_stations(servers):
-    if servers:
-        print "Creating OSC clients to", servers
+    if not servers or "servers" not in servers:
+        print "OSC stations addressed not specified. No feedback will be sent"
+        return
 
-    return [osc_utils.get_osc_client(host=s, port=int(p), say_hello=True) for s, p in servers]
+    if servers["mode"] == "single":
+        servers["servers"]
+        pass
+    else:
+        return [
+            osc_utils.get_osc_client(host=server["host"], port=int(server["port"]), say_hello=True)
+            for server in servers["servers"]
+        ]
 
 
 def launch():
     config = parse_command_line()
-    osc_server = osc_utils.create_osc_server()
-    opc_client = create_opc_client(config.server, config.verbose)
-    stations = create_osc_stations(config.feedback_servers)
-
-    STATE.fps = config.fps
+    osc_server = osc_utils.create_osc_server(
+        host=STATE.servers["hosting"]["osc_server"]["host"],
+        port=int(STATE.servers["hosting"]["osc_server"]["port"]))
+    opc_client = create_opc_client(
+        server=STATE.servers["remote"]["opc_server"], verbose=config.verbose)
+    stations = create_osc_stations(servers=STATE.servers["remote"]["osc_controls"])
     framework = init_animation_framework(osc_server, opc_client, stations)
 
     keyboard_thread = Thread(

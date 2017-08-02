@@ -24,6 +24,7 @@ class Global(Borg):
     def __init__(self):
         Borg.__init__(self)
         self.layout = None
+        self.servers = None
         self.fps = None
 
 
