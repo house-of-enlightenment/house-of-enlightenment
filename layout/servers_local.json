@@ -1,0 +1,14 @@
+{
+  "hosting" : {
+    "osc_server":"0.0.0.0:7000"
+  },
+  "remote" : {
+    "opc_server":"127.0.0.1:7890",
+    "osc_controls" {
+      "mode":"single",
+      "servers": [
+        "127.0.0.1:57121"
+      ]
+    }
+  }
+}
