@@ -69,7 +69,7 @@ class ButtonChaseController(Effect, CollaborationManager):
         for s, b in self.on:
             # TODO: Calculate based on section size and span 2 columns
             c = s * 11 + b * 2
-            pixels[0:2,c:c+2] = self.button_colors[b]
+            pixels[0:2,c:c+2+b/4] = self.button_colors[b]
 
     def scene_starting(self):
         self.on = []
@@ -115,20 +115,26 @@ class ContinuousTide(Effect):
     def __init__(self, bottom_row=2, top_row=STATE.layout.rows):
         self.bottom_row = bottom_row
         self.top_row = top_row
-        self.start_timers = [None] * STATE.layout.columns
+        self.column_success = None
+        self.column_bases = None
+        self.frame = 0
 
     def scene_starting(self):
-        self.start_timers = [None] * STATE.layout.columns
+        self.column_success = np.concatenate(
+            (color_utils.rainbow(STATE.layout.columns / 2, 0, 255, 255-30, 255-30),
+             color_utils.rainbow(STATE.layout.columns / 2, 255, 0, 255-30, 255-30)))
+        print self.column_success
+        self.column_bases = np.full(shape=(STATE.layout.columns,3), fill_value=0, dtype=np.uint8)
+        self.frame = 0
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
         if "last_hit_button" in collaboration_state and "last_hit_time" in collaboration_state:
             s,b = collaboration_state["last_hit_button"]
             col = s * 11 + b * 2
-            self.start_timers[col] = collaboration_state["last_hit_time"]
-            # self.start_timers[col] = 1
-            print self.start_timers, t
+            self.column_bases[col:col+2+b/4] = self.column_success[col:col+2+b/4]
 
-        row_offset = (self.top_row - self.bottom_row) / 15.0
+        self.frame += 1
+        """row_offset = (self.top_row - self.bottom_row) / 15.0
         for c,start_t in enumerate(self.start_timers):
             if start_t:
                 color_offset = (start_t-t) * 256 * 2
@@ -140,6 +146,12 @@ class ContinuousTide(Effect):
                 # TODO: array manipulation to 1-op
                 pixels[self.bottom_row:self.top_row,c] = rows
                 pixels[self.bottom_row:self.top_row,c+1] = rows
+        """
+        pixels[self.bottom_row:self.top_row,:] = self.column_bases
+        for r in range(10):
+            pixels[self.bottom_row+r:self.top_row:10,:] /= ((self.frame-r)%10)+1
+        pixels[self.bottom_row:self.top_row,:] += 30
+
 
 
 class RotatingWedge(Effect):
