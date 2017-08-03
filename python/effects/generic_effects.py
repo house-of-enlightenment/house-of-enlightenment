@@ -11,13 +11,14 @@ from debugging_effects import PrintOSC
 class SolidBackground(Effect):
     """Always return a color"""
 
-    def __init__(self, color=(255, 0, 0)):
+    def __init__(self, color=(255, 0, 0), start_col=0, end_col=None, start_row=0, end_row=None):
         Effect.__init__(self)
         self.color = color
+        self.slice = (slice(start_row, end_row), slice(start_col, end_col))
         print "Created with color", self.color
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
-        pixels[:] = self.color
+        pixels[self.slice] = self.color
 
 
 class AdjustableFillFromBottom(Effect):

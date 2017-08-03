@@ -10,6 +10,7 @@ from random import randint
 from itertools import product
 from generic_effects import SolidBackground
 from generic_effects import NoOpCollaborationManager
+import time
 import numpy as np
 import debugging_effects
 import hoe.osc_utils
@@ -33,15 +34,30 @@ class ButtonChaseController(Effect, CollaborationManager):
         self.num_stations = num_stations
         self.button_colors = buttons_colors
         self.num_buttons = len(buttons_colors)
-        self.next = None
+        self.next_button = None
         self.on = None
         self.all_combos = [c for c in product(range(num_stations), buttons_colors.keys())]
         self.off = []
         self.draw_bottom_layer = draw_bottom_layer
+        self.flash_timer=0
 
     def compute_state(self, t, collaboration_state, osc_data):
-        if self.next[1] in osc_data.stations[self.next[0]].buttons:
+        self.flash_timer = (self.flash_timer+1) % 10
+        if self.flash_timer == 0:
+            self.send_update(self.next_button, hoe.osc_utils.BUTTON_TOGGLE)
+
+        if self.next_button[1] in osc_data.stations[self.next_button[0]].buttons:
+            collaboration_state["last_hit_button"] = self.next_button
+            collaboration_state["last_hit_time"] = t
             self.pick_next()
+        else:
+            collaboration_state.pop("last_hit_button", None)
+            collaboration_state.pop("last_hit_time", None)
+
+        collaboration_state["on"] = self.on
+        collaboration_state["off"] = self.off
+        collaboration_state["next"] = self.next_button
+        return collaboration_state
         # TODO Fail on miss
         # TODO Put into collaboration_state
 
@@ -52,7 +68,8 @@ class ButtonChaseController(Effect, CollaborationManager):
         pixels[0:2, :] = (0, 0, 0)
         for s, b in self.on:
             # TODO: Calculate based on section size and span 2 columns
-            pixels[0:2, s * 11 + b * 2] = self.button_colors[b]
+            c = s * 11 + b * 2
+            pixels[0:2,c:c+2] = self.button_colors[b]
 
     def scene_starting(self):
         self.on = []
@@ -71,22 +88,58 @@ class ButtonChaseController(Effect, CollaborationManager):
         if len(self.on) == self.num_stations * len(self.button_colors):  # TODO: Standardize this
             print "Finished!"
             self.on = []
+        last_button = self.next_button
         local_next = choice(self.off)
-        self.next = local_next
+        self.next_button = local_next
         self.off.remove(local_next)
         self.on.append(local_next)  # Surprisingly this is not by-ref, and thus safe, so that's nice
 
-        client = STATE.station_osc_clients[self.next[0]]
-        if client:
-            hoe.osc_utils.update_buttons(
-                station_id=self.next[0],
-                client=client,
-                updates={self.next[1]: hoe.osc_utils.BUTTON_ON})
-        else:
-            print "Hit, but client is not initialized"
+        if last_button:
+            self.send_update(last_button, hoe.osc_utils.BUTTON_ON)
 
+        self.send_update(self.next_button, hoe.osc_utils.BUTTON_ON)
         # TODO Update the controller with the new next!
         print "Next is now", local_next
+
+    def send_update(self, button, update):
+        client = STATE.station_osc_clients[self.next_button[0]]
+        if client:
+            hoe.osc_utils.update_buttons(
+                station_id=button[0],
+                client=client,
+                updates={button[1]: update}
+            )
+
+
+class ContinuousTide(Effect):
+    def __init__(self, bottom_row=2, top_row=STATE.layout.rows):
+        self.bottom_row = bottom_row
+        self.top_row = top_row
+        self.start_timers = [None] * STATE.layout.columns
+
+    def scene_starting(self):
+        self.start_timers = [None] * STATE.layout.columns
+
+    def next_frame(self, pixels, t, collaboration_state, osc_data):
+        if "last_hit_button" in collaboration_state and "last_hit_time" in collaboration_state:
+            s,b = collaboration_state["last_hit_button"]
+            col = s * 11 + b * 2
+            self.start_timers[col] = collaboration_state["last_hit_time"]
+            # self.start_timers[col] = 1
+            print self.start_timers, t
+
+        row_offset = (self.top_row - self.bottom_row) / 15.0
+        for c,start_t in enumerate(self.start_timers):
+            if start_t:
+                color_offset = (start_t-t) * 256 * 2
+                # TODO : cache row changes
+                rows = [(color_offset+row_offset*r, color_offset+row_offset*r, color_offset+row_offset*r)
+                            for r in range(self.bottom_row, self.top_row)]
+                # self.start_timers[c] += 1  # TODO : use numpy
+
+                # TODO: array manipulation to 1-op
+                pixels[self.bottom_row:self.top_row,c] = rows
+                pixels[self.bottom_row:self.top_row,c+1] = rows
 
 
 class RotatingWedge(Effect):
@@ -175,7 +228,7 @@ def wedge_factory(**kwargs):
 
 
 __all__ = [
-    Scene("buttonchaser", ButtonChaseController(draw_bottom_layer=True), SolidBackground()),
+    Scene("buttonchaser", ButtonChaseController(draw_bottom_layer=True), SolidBackground(), ContinuousTide()),
     Scene("wedges",
           NoOpCollaborationManager(),
           RotatingWedge(), GenericStatelessLauncher(wedge_factory, width=3, additive=False))
