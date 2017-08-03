@@ -41,11 +41,6 @@ class ButtonChaseController(Effect, CollaborationManager):
 
     def compute_state(self, t, collaboration_state, osc_data):
         if self.next[1] in osc_data.stations[self.next[0]].buttons:
-            client = osc_data.stations[self.next[0]].client
-            if client:
-                hoe.osc_utils.update_buttons(station_id=self.next[0], client=client, updates={self.next[1]:hoe.osc_utils.BUTTON_ON})
-            else:
-                print "Hit, but client is not initialized"
             self.pick_next()
         # TODO Fail on miss
         # TODO Put into collaboration_state
@@ -63,49 +58,75 @@ class ButtonChaseController(Effect, CollaborationManager):
         self.on = []
         self.off = [c for c in self.all_combos]
         self.pick_next()
+        for s, client in enumerate(STATE.station_osc_clients):
+            hoe.osc_utils.update_buttons(
+                client=client,
+                station_id=s,
+                updates={
+                    b: hoe.osc_utils.BUTTON_ON if (s, b) in self.on else hoe.osc_utils.BUTTON_OFF
+                    for b in range(STATE.button_count)
+                })
 
     def pick_next(self):
         if len(self.on) == self.num_stations * len(self.button_colors):  # TODO: Standardize this
             print "Finished!"
             self.on = []
-        next = choice(self.off)
-        self.next = next
-        self.off.remove(next)
-        self.on.append(next)  # Surprisingly this is not by-ref, and thus safe, so that's nice
+        local_next = choice(self.off)
+        self.next = local_next
+        self.off.remove(local_next)
+        self.on.append(local_next)  # Surprisingly this is not by-ref, and thus safe, so that's nice
+
+        client = STATE.station_osc_clients[self.next[0]]
+        if client:
+            hoe.osc_utils.update_buttons(
+                station_id=self.next[0],
+                client=client,
+                updates={self.next[1]: hoe.osc_utils.BUTTON_ON})
+        else:
+            print "Hit, but client is not initialized"
+
         # TODO Update the controller with the new next!
-        print "Next is now", next
+        print "Next is now", local_next
 
 
 class RotatingWedge(Effect):
-    def __init__(self, color=(255,255,0), width=5, direction=1, angle=1, start_col=0, additive=False):
+    def __init__(self,
+                 color=(255, 255, 0),
+                 width=5,
+                 direction=1,
+                 angle=1,
+                 start_col=0,
+                 additive=False):
         self.color = np.asarray(color, np.uint8)
         self.direction = direction
         self.angle = angle
         self.start_col = 0
-        self.end_col = start_col+width
+        self.end_col = start_col + width
         self.additive = additive
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
         if self.start_col < self.end_col:
             if self.additive:
-                pixels[:,self.start_col:self.end_col] += self.color
+                pixels[:, self.start_col:self.end_col] += self.color
             else:
                 pixels[:, self.start_col:self.end_col] = self.color
         else:
             if self.additive:
-                pixels[:,self.start_col:] += self.color
-                pixels[:,:self.end_col] += self.color
+                pixels[:, self.start_col:] += self.color
+                pixels[:, :self.end_col] += self.color
             else:
                 pixels[:, self.start_col:] = self.color
                 pixels[:, :self.end_col] = self.color
         self.start_col = (self.start_col + self.direction) % STATE.layout.columns
         self.end_col = (self.end_col + self.direction) % STATE.layout.columns
 
+
 def button_launch_checker(t, collaboration_state, osc_data):
     for i in range(len(osc_data.stations)):
         if osc_data.stations[i].buttons:
             return True
     return False
+
 
 class GenericStatelessLauncher(MultiEffect):
     def __init__(self, factory_method, launch_checker=button_launch_checker, **kwargs):
@@ -117,19 +138,28 @@ class GenericStatelessLauncher(MultiEffect):
     def before_rendering(self, pixels, t, collaboration_state, osc_data):
         # TODO : Performance
         if self.launch_checker(t=t, collaboration_state=collaboration_state, osc_data=osc_data):
-            self.add_effect(self.factory_method(pixels=pixels, t=t, collaboration_state=collaboration_state, osc_data=osc_data, **self.factory_args))
+            self.add_effect(
+                self.factory_method(
+                    pixels=pixels,
+                    t=t,
+                    collaboration_state=collaboration_state,
+                    osc_data=osc_data,
+                    **self.factory_args))
 
 
 def wedge_factory(**kwargs):
     varnames = RotatingWedge.__init__.__func__.__code__.co_varnames
-    args = { n : kwargs[n] for n in varnames if n in kwargs }
+    args = {n: kwargs[n] for n in varnames if n in kwargs}
     if "color" not in args:
-        args["color"] = (randint(0,255), randint(0,255), randint(0,255))
+        args["color"] = (randint(0, 255), randint(0, 255), randint(0, 255))
     if "direction" not in args:
-        args["direction"] = randint(0,1)*2-1 # Cheap way to get -1 or 1
+        args["direction"] = randint(0, 1) * 2 - 1  # Cheap way to get -1 or 1
     return RotatingWedge(**args)
+
 
 __all__ = [
     Scene("buttonchaser", ButtonChaseController(draw_bottom_layer=True), SolidBackground()),
-    Scene("wedges", NoOpCollaborationManager(), RotatingWedge(), GenericStatelessLauncher(wedge_factory, width=3, additive=True))
+    Scene("wedges",
+          NoOpCollaborationManager(),
+          RotatingWedge(), GenericStatelessLauncher(wedge_factory, width=3, additive=True))
 ]

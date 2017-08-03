@@ -25,7 +25,9 @@ class Global(Borg):
         Borg.__init__(self)
         self.layout = None
         self.servers = None
+        self.station_osc_clients = None
         self.fps = None
+        self.button_count = 5
 
 
 STATE = Global()
