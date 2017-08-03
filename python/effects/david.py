@@ -41,12 +41,6 @@ class ButtonChaseController(Effect, CollaborationManager):
 
     def compute_state(self, t, collaboration_state, osc_data):
         if self.next[1] in osc_data.stations[self.next[0]].buttons:
-            client = osc_data.stations[self.next[0]].client
-            if client:
-                hoe.osc_utils.update_buttons(
-                    client=client, updates={self.next[1]: hoe.osc_utils.BUTTON_ON})
-            else:
-                print "Hit, but client is not initialized"
             self.pick_next()
         # TODO Fail on miss
         # TODO Put into collaboration_state
@@ -64,17 +58,35 @@ class ButtonChaseController(Effect, CollaborationManager):
         self.on = []
         self.off = [c for c in self.all_combos]
         self.pick_next()
+        for s, client in enumerate(STATE.station_osc_clients):
+            hoe.osc_utils.update_buttons(
+                client=client,
+                station_id=s,
+                updates={
+                    b: hoe.osc_utils.BUTTON_ON if (s, b) in self.on else hoe.osc_utils.BUTTON_OFF
+                    for b in range(STATE.button_count)
+                })
 
     def pick_next(self):
         if len(self.on) == self.num_stations * len(self.button_colors):  # TODO: Standardize this
             print "Finished!"
             self.on = []
-        next = choice(self.off)
-        self.next = next
-        self.off.remove(next)
-        self.on.append(next)  # Surprisingly this is not by-ref, and thus safe, so that's nice
+        local_next = choice(self.off)
+        self.next = local_next
+        self.off.remove(local_next)
+        self.on.append(local_next)  # Surprisingly this is not by-ref, and thus safe, so that's nice
+
+        client = STATE.station_osc_clients[self.next[0]]
+        if client:
+            hoe.osc_utils.update_buttons(
+                station_id=self.next[0],
+                client=client,
+                updates={self.next[1]: hoe.osc_utils.BUTTON_ON})
+        else:
+            print "Hit, but client is not initialized"
+
         # TODO Update the controller with the new next!
-        print "Next is now", next
+        print "Next is now", local_next
 
 
 class RotatingWedge(Effect):

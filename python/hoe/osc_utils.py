@@ -45,7 +45,7 @@ def send_simple_message(client, path, data=[], timeout=None):
     client.send(msg, timeout)
 
 
-def update_buttons(client, updates, timeout=None):
+def update_buttons(client, station_id, updates, timeout=None):
     """Given a feedback client, update buttons.
 
     Update should be a button id mapped to one of [0,1,2] where:
@@ -61,16 +61,17 @@ def update_buttons(client, updates, timeout=None):
 
     if len(updates) == 1:
         client.send(
-            create_button_update_msg(id=updates.items()[0][0], update=updates.items()[0][1]))
+            create_button_update_msg(station=station_id, id=updates.items()[0][0], update=updates.items()[0][1]))
     else:
         bundle = OSCBundle()
         for id, up in updates.items():
-            bundle.append(create_button_update_msg(id=id, update=up))
+            bundle.append(create_button_update_msg(station=station_id, id=id, update=up))
         client.send(msg=bundle, timeout=timeout)
 
 
-def create_button_update_msg(id, update):
+def create_button_update_msg(station, id, update):
     msg = OSCMessage(button_path)
+    msg.append(station)
     msg.append(id)
     msg.append(update)
     return msg

@@ -109,10 +109,10 @@ class TideLauncher(MultiEffect):
 
 class ButtonToggleResponderManager(CollaborationManager):
     def compute_state(self, t, collaboration_state, osc_data):
-        for station in osc_data.stations:
+        for s, station in enumerate(osc_data.stations):
             for b in station.buttons:
                 if station.client:
-                    update_buttons(client=station.client, updates={b: 2}, timeout=1)
+                    update_buttons(station_id=s, client=station.client, updates={b: 2}, timeout=1)
 
 
 class NoOpCollaborationManager(CollaborationManager):

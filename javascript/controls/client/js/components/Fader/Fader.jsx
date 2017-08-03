@@ -1,21 +1,28 @@
 import React from "react";
-import { func, string } from "prop-types";
+import { func, number } from "prop-types";
 
 
 const propTypes = {
-  id: string.isRequired,
-  onChange: func.isRequired
+  id: number.isRequired,
+  onChange: func.isRequired,
+  value: number.isRequired
 };
 
 
-const Fader = ({ onChange }) => {
+const Fader = ({ onChange, value }) => {
 
   const onFaderChange = (e) => {
-    onChange(e.target.value);
+    onChange(Number(e.target.value));
   };
 
   return (
-    <input className="fader" type="range" orient="horizontal" onChange={onFaderChange} />
+    <input
+      className="fader"
+      type="range"
+      orient="horizontal"
+      onChange={onFaderChange}
+      value={value}
+    />
   );
 
 };

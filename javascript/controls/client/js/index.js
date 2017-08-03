@@ -14,5 +14,5 @@ ws.onopen = function (event) {
 };
 
 ws.onmessage = function (event) {
-  console.log(event.data);
-}
+  console.log("websocket message", event.data);
+};
