@@ -79,7 +79,11 @@ class AnimationFramework(object):
             station, button_id, value = map(int, args)
             self.osc_data.fader_changed(station, button_id, value)
 
+        def print_incoming(path, tags, args, source):
+            print path, tags, args, source
+
         self.osc_server.addMsgHandler("/input/fader", handle_fader)
+        self.osc_server.addMsgHandler("/lidar", print_incoming)
 
         print "Registered all OSC Handlers"
 
