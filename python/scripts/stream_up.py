@@ -84,8 +84,8 @@ class Render(object):
         frame_took = time.time() - now
         remaining_until_next_frame = (1 / self.fps) - frame_took
         if remaining_until_next_frame > 0:
-            print time.time(), self.frame_count, '{:0.2f}%'.format(frame_took * self.fps * 100), \
-                frame_took, remaining_until_next_frame
+            # print time.time(), self.frame_count, '{:0.2f}%'.format(frame_took * self.fps * 100), \
+            #     frame_took, remaining_until_next_frame
             time.sleep(remaining_until_next_frame)
         else:
             print "!! Behind !!", remaining_until_next_frame
