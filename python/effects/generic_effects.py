@@ -6,7 +6,8 @@ from random import getrandbits
 from hoe.state import STATE
 from hoe.osc_utils import update_buttons
 from debugging_effects import PrintOSC
-
+import hoe.color_utils
+import numpy as np
 
 class SolidBackground(Effect):
     """Always return a color"""
@@ -19,6 +20,65 @@ class SolidBackground(Effect):
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
         pixels[self.slice] = self.color
+
+
+class Rainbow(Effect):
+    def __init__(self, hue_start, hue_end, saturation=255, max_value=255,
+                 start_col=0, end_col=None, start_row=0, end_row=None):
+        self.slice = (slice(start_row, end_row), slice(start_col, end_col))
+        size = (end_col if end_col else STATE.layout.columns) - start_col
+        self.rainbow = hoe.color_utils.bi_rainbow(size, hue_start=hue_start, hue_end=hue_end, saturation=saturation, value=max_value)
+
+
+    def next_frame(self, pixels, t, collaboration_state, osc_data):
+        pixels[self.slice] = self.rainbow
+
+
+class FrameRotator(Effect):
+    """Rotate the entire frame each frame based on the rate"""
+    def __init__(self, rate=1, bottom_row=0, top_row=None):
+        Effect.__init__(self)
+        self.frame=0
+        self.rate = rate
+        self.row_slice = slice(bottom_row, top_row)
+
+    def next_frame(self, pixels, t, collaboration_state, osc_data):
+        self.frame = (self.frame + self.rate) % STATE.layout.columns
+        real_shift = int(self.frame)
+        pixels[self.row_slice,:] = np.concatenate((pixels[self.row_slice,real_shift:], pixels[self.row_slice,:real_shift]), axis=1)
+
+
+class FunctionFrameRotator(Effect):
+    @staticmethod
+    def sample_rolling_offset(offsets, t, start_t, frame):
+        """A sample function. Just increment the offsets by 1 each time.
+        A good way to see this in effect is by passing in a range for your initial offsets"""
+        offsets[:] = (offsets[:] + 1) % STATE.layout.columns
+
+    """Rotate the entire frame each frame based on a function"""
+    def __init__(self, func, bottom_row=0, top_row=None, start_offsets=None):
+        self.update_offsets_func = func
+        self.bottom_row = bottom_row
+        self.top_row = top_row if top_row else STATE.layout.rows
+        self.offsets = np.array(start_offsets) if start_offsets else np.zeros(self.top_row-self.bottom_row)
+        self.frame = 0
+        self.start_t = None
+
+    def scene_starting(self):
+        self.frame = 0
+        self.start_t = None
+
+    def next_frame(self, pixels, t, collaboration_state, osc_data):
+        if not self.start_t:
+            self.start_t = t
+
+        self.frame += 1
+
+        self.update_offsets_func(offsets=self.offsets, t=t, start_t=self.start_t, frame=self.frame)
+
+        for r,offset in zip(range(self.bottom_row,self.top_row), self.offsets):
+            #print r, offset, pixels[r,int(offset):].shape, pixels[r,:int(offset)].shape
+            pixels[r,:] = np.concatenate((pixels[r,int(offset):], pixels[r,:int(offset)]), axis=0)
 
 
 class AdjustableFillFromBottom(Effect):
@@ -122,6 +182,6 @@ class NoOpCollaborationManager(CollaborationManager):
 
 
 __all__ = [
-    Scene("risingtide", NoOpCollaborationManager(), SolidBackground(), TideLauncher()),
+    Scene("risingtide", NoOpCollaborationManager(), SolidBackground(), TideLauncher(), FrameRotator()),
     Scene("buttontoggler", ButtonToggleResponderManager(), SolidBackground(), PrintOSC())
 ]

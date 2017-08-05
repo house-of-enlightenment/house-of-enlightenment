@@ -92,7 +92,7 @@ default_feedback_effect = SampleFeedbackEffect()
 
 __all__ = [
     Scene("launchdots", default_feedback_effect,
-          generic_effects.SolidBackground((100, 100, 100)), SampleEffectLauncher()),
+          generic_effects.SolidBackground((100, 100, 100)), SampleEffectLauncher(), generic_effects.FrameRotator(rate=.5)),
     Scene("redgreenprinting", default_feedback_effect, osc_printing_effect,
           generic_effects.SolidBackground()),
     Scene("adjustablebackground", default_feedback_effect, red_background,

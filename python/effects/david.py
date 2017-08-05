@@ -9,7 +9,10 @@ from random import choice
 from random import randint
 from itertools import product
 from generic_effects import SolidBackground
+from generic_effects import Rainbow
 from generic_effects import NoOpCollaborationManager
+from generic_effects import FrameRotator
+from generic_effects import FunctionFrameRotator
 import time
 import numpy as np
 import debugging_effects
@@ -319,5 +322,7 @@ __all__ = [
     ),
     Scene("wedges",
           NoOpCollaborationManager(),
-          RotatingWedge(), GenericStatelessLauncher(wedge_factory, width=3, additive=False))
+          RotatingWedge(), GenericStatelessLauncher(wedge_factory, width=3, additive=False)),
+    Scene("rotatingrainbow", NoOpCollaborationManager(), Rainbow(hue_start=0, hue_end=255), FrameRotator(rate=.75)),
+    Scene("funkrainbow", NoOpCollaborationManager(), Rainbow(hue_start=0, hue_end=255), FunctionFrameRotator(func=FunctionFrameRotator.sample_rolling_offset, start_offsets=range(STATE.layout.rows)))
 ]
