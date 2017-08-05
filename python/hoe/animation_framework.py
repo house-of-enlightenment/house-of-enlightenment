@@ -6,13 +6,13 @@
 import os.path
 import glob
 import importlib
-import inspect
 import sys
 import time
 from threading import Thread
 from pixels import Pixels
 from functools import partial
 import atexit
+from collections import OrderedDict
 
 from OSC import OSCServer
 
@@ -21,8 +21,13 @@ from hoe.opc import Client
 
 
 class AnimationFramework(object):
-    def __init__(self, osc_server, opc_client, osc_station_clients=[], scenes=None):
-        # OSCServer, Client, dict, int -> None
+    def __init__(self,
+                 osc_server,
+                 opc_client,
+                 osc_station_clients=[],
+                 scenes=None,
+                 first_scene=None):
+        # type: (OSCServer, Client, List(OSCClient), {str, Scene}) -> None
         self.osc_server = osc_server
         self.opc_client = opc_client
         self.osc_station_clients = osc_station_clients
@@ -31,7 +36,7 @@ class AnimationFramework(object):
         # Load all scenes from effects package. Then set initial index and load it up
         self.scenes = scenes or load_scenes()
         self.curr_scene = None
-        self.queued_scene = self.scenes[self.scenes.keys()[0]]
+        self.queued_scene = self.scenes[first_scene if first_scene else self.scenes.keys()[0]]
         self.change_scene()
 
         self.serve = False
@@ -158,11 +163,12 @@ def wait_for_next_frame(wait_until):
 
 
 def load_scenes(effects_dir=None):
+    # type: (str) -> {str, Scene}
     if not effects_dir:
         pwd = os.path.dirname(__file__)
         effects_dir = os.path.abspath(os.path.join(pwd, '..', 'effects'))
     sys.path.append(effects_dir)
-    scenes = {}
+    scenes = OrderedDict()
     for filename in glob.glob(os.path.join(effects_dir, '*.py')):
         pkg_name = os.path.basename(filename)[:-3]
         if pkg_name.startswith("_"):
@@ -173,6 +179,7 @@ def load_scenes(effects_dir=None):
 
 
 def load_scenes_from_file(pkg_name, scenes):
+    # type: (str, {str, Scene}) -> None
     try:
         effect_dict = importlib.import_module(pkg_name)
         for scene in effect_dict.__all__:
