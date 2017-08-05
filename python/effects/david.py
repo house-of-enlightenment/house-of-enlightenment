@@ -176,7 +176,13 @@ class ButtonChaseController(Effect, CollaborationManager):
 
 
 class ButtonRainbow(Effect):
-    def __init__(self, bottom_row=2, top_row=STATE.layout.rows, hue_start=0, hue_end=255, saturation=255, max_value=255):
+    def __init__(self,
+                 bottom_row=2,
+                 top_row=STATE.layout.rows,
+                 hue_start=0,
+                 hue_end=255,
+                 saturation=255,
+                 max_value=255):
         self.bottom_row = bottom_row
         self.top_row = top_row
         self.hue_start = hue_start
@@ -187,10 +193,12 @@ class ButtonRainbow(Effect):
         self.frame = 0
 
     def scene_starting(self):
-        self.column_success = color_utils.bi_rainbow(STATE.layout.columns,
-                                                     hue_start=self.hue_start,
-                                                     hue_end=self.hue_end, saturation=self.saturation,
-                                                     value=self.max_value)
+        self.column_success = color_utils.bi_rainbow(
+            STATE.layout.columns,
+            hue_start=self.hue_start,
+            hue_end=self.hue_end,
+            saturation=self.saturation,
+            value=self.max_value)
         self.frame = 0
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
@@ -217,7 +225,8 @@ class Pulser(Effect):
     def next_frame(self, pixels, t, collaboration_state, osc_data):
         self.frame += 1
         for r in range(self.pulse_length):
-            pixels[self.bottom_row + r:self.top_row:self.pulse_length, :] /= ((self.frame - r) % self.pulse_length) + 1
+            pixels[self.bottom_row + r:self.top_row:self.pulse_length, :] /= (
+                (self.frame - r) % self.pulse_length) + 1
         pixels[self.bottom_row:self.top_row, :] += self.after_fill
 
 
@@ -305,29 +314,47 @@ def wedge_factory(**kwargs):
         args["angle"] = randint(-1, 1)
     return RotatingWedge(**args)
 
+
 def distortion_rotation(offsets, t, start_t, frame):
     offsets *= frame
     print offsets
+
 
 __all__ = [
     Scene(
         "buttonchaser",
         ButtonChaseController(draw_bottom_layer=True),
         SolidBackground(),
-        ButtonRainbow(max_value=255-30),
-        Pulser()
-    ),
+        ButtonRainbow(max_value=255 - 30),
+        Pulser()),
     Scene("buttonloser",
           ButtonChaseController(draw_bottom_layer=True, backwards_progress=True),
-          SolidBackground(),
-          ButtonRainbow(),
-          Pulser()
-    ),
+          SolidBackground(), ButtonRainbow(), Pulser()),
     Scene("wedges",
           NoOpCollaborationManager(),
           RotatingWedge(), GenericStatelessLauncher(wedge_factory, width=3, additive=False)),
-    Scene("rotatingrainbow", NoOpCollaborationManager(), Rainbow(hue_start=0, hue_end=255), FrameRotator(rate=.75)),
-    Scene("funkrainbow", NoOpCollaborationManager(), Rainbow(hue_start=0, hue_end=255), FunctionFrameRotator(func=FunctionFrameRotator.sample_rotating_offset, start_offsets=range(STATE.layout.rows))),
-    Scene("sinerainbow", NoOpCollaborationManager(), Rainbow(hue_start=0, hue_end=255), FunctionFrameRotator(func=FunctionFrameRotator.sample_roll_offset, start_offsets=5*np.sin(np.linspace(0, 8*np.pi, STATE.layout.rows)))),
-    Scene("sinedots", NoOpCollaborationManager(), SolidBackground((100, 100, 100)), examples.SampleEffectLauncher(), FunctionFrameRotator(func=FunctionFrameRotator.no_op, start_offsets=5*np.sin(np.linspace(0, 8*np.pi, STATE.layout.rows))))
+    Scene(
+        "rotatingrainbow",
+        NoOpCollaborationManager(),
+        Rainbow(hue_start=0, hue_end=255),
+        FrameRotator(rate=.75)),
+    Scene("funkrainbow",
+          NoOpCollaborationManager(),
+          Rainbow(hue_start=0, hue_end=255),
+          FunctionFrameRotator(
+              func=FunctionFrameRotator.sample_rotating_offset,
+              start_offsets=range(STATE.layout.rows))),
+    Scene("sinerainbow",
+          NoOpCollaborationManager(),
+          Rainbow(hue_start=0, hue_end=255),
+          FunctionFrameRotator(
+              func=FunctionFrameRotator.sample_roll_offset,
+              start_offsets=5 * np.sin(np.linspace(0, 8 * np.pi, STATE.layout.rows)))),
+    Scene("sinedots",
+          NoOpCollaborationManager(),
+          SolidBackground((100, 100, 100)),
+          examples.SampleEffectLauncher(),
+          FunctionFrameRotator(
+              func=FunctionFrameRotator.no_op,
+              start_offsets=5 * np.sin(np.linspace(0, 8 * np.pi, STATE.layout.rows))))
 ]
