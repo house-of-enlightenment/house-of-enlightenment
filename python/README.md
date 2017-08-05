@@ -22,21 +22,15 @@ python ./python/houseOfEnlightenment.py -v
 
 # Interaction
 The python application allows for some command prompt input to assist in development and scene control. Currently the following are supported:
-```
-# Exit (Recommended Method)
-quit
-# Change to next scene
-next 
-# Change to a specific scene
-scene <scene name>
-# Send a simple OSC message:
-/my/path arg1 arg2 arg3
-# Common OSC messages:
-/input/button <station> <button>
-/input/button 3 4
-/input/fader <station> <fader> <value>
-/input/fader 0 1 100
-```
+
+| Command | Description | Syntax | Example |
+| ------- | ----------- | ------ | ------- |
+| quit | exit the application | quit | N/A |
+| next | change to the 'next' scene | next | N/A |
+| scene | change to a specific scene | scene <scene_name> | scene funkrainbow |
+| osc msg | anything else is sent as an osc message | /osc/path [arg1] [arg2] ... [argN] | See below |
+| osc button | simulate pressing a button | /input/button <station> <button> | /input/button 1 2 |
+| osc fader | simulate changing a fader | /input/fader <station> <fader> <value> | /input/fader 2 0 57 |
 
 # Contributing
 ## Before you commit
