@@ -50,17 +50,29 @@ class FrameRotator(Effect):
 
 class FunctionFrameRotator(Effect):
     @staticmethod
-    def sample_rolling_offset(offsets, t, start_t, frame):
+    def no_op(offsets, t, start_t, frame):
+        pass
+
+    @staticmethod
+    def sample_rotating_offset(offsets, t, start_t, frame):
         """A sample function. Just increment the offsets by 1 each time.
         A good way to see this in effect is by passing in a range for your initial offsets"""
         offsets[:] = (offsets[:] + 1) % STATE.layout.columns
+
+    @staticmethod
+    def sample_roll_offset(offsets, t, start_t, frame):
+        """A sample function. Just increment the offsets by 1 each time.
+        A good way to see this in effect is by passing in a range for your initial offsets"""
+        offsets[:] = np.roll(offsets, 1)
+
+
 
     """Rotate the entire frame each frame based on a function"""
     def __init__(self, func, bottom_row=0, top_row=None, start_offsets=None):
         self.update_offsets_func = func
         self.bottom_row = bottom_row
         self.top_row = top_row if top_row else STATE.layout.rows
-        self.offsets = np.array(start_offsets) if start_offsets else np.zeros(self.top_row-self.bottom_row)
+        self.offsets = np.array(start_offsets, dtype=np.float) if start_offsets is not None else np.zeros(self.top_row-self.bottom_row, dtype=np.float)
         self.frame = 0
         self.start_t = None
 

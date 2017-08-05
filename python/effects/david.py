@@ -13,7 +13,7 @@ from generic_effects import Rainbow
 from generic_effects import NoOpCollaborationManager
 from generic_effects import FrameRotator
 from generic_effects import FunctionFrameRotator
-import time
+import examples
 import numpy as np
 import debugging_effects
 import hoe.osc_utils
@@ -305,6 +305,9 @@ def wedge_factory(**kwargs):
         args["angle"] = randint(-1, 1)
     return RotatingWedge(**args)
 
+def distortion_rotation(offsets, t, start_t, frame):
+    offsets *= frame
+    print offsets
 
 __all__ = [
     Scene(
@@ -324,5 +327,7 @@ __all__ = [
           NoOpCollaborationManager(),
           RotatingWedge(), GenericStatelessLauncher(wedge_factory, width=3, additive=False)),
     Scene("rotatingrainbow", NoOpCollaborationManager(), Rainbow(hue_start=0, hue_end=255), FrameRotator(rate=.75)),
-    Scene("funkrainbow", NoOpCollaborationManager(), Rainbow(hue_start=0, hue_end=255), FunctionFrameRotator(func=FunctionFrameRotator.sample_rolling_offset, start_offsets=range(STATE.layout.rows)))
+    Scene("funkrainbow", NoOpCollaborationManager(), Rainbow(hue_start=0, hue_end=255), FunctionFrameRotator(func=FunctionFrameRotator.sample_rotating_offset, start_offsets=range(STATE.layout.rows))),
+    Scene("sinerainbow", NoOpCollaborationManager(), Rainbow(hue_start=0, hue_end=255), FunctionFrameRotator(func=FunctionFrameRotator.sample_roll_offset, start_offsets=5*np.sin(np.linspace(0, 8*np.pi, STATE.layout.rows)))),
+    Scene("sinedots", NoOpCollaborationManager(), SolidBackground((100, 100, 100)), examples.SampleEffectLauncher(), FunctionFrameRotator(func=FunctionFrameRotator.no_op, start_offsets=5*np.sin(np.linspace(0, 8*np.pi, STATE.layout.rows))))
 ]
