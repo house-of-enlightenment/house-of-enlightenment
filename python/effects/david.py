@@ -42,9 +42,12 @@ class ButtonChaseController(Effect, CollaborationManager):
         self.flash_timer=0
 
     def compute_state(self, t, collaboration_state, osc_data):
-        self.flash_timer = (self.flash_timer+1) % 10
+        self.flash_timer = (self.flash_timer + 1) % 20
+
         if self.flash_timer == 0:
-            self.send_update(self.next_button, hoe.osc_utils.BUTTON_TOGGLE)
+            self.send_update(self.next_button, hoe.osc_utils.BUTTON_ON)
+        elif self.flash_timer==10:
+            self.send_update(self.next_button, hoe.osc_utils.BUTTON_OFF)
 
         if self.next_button[1] in osc_data.stations[self.next_button[0]].buttons:
             collaboration_state["last_hit_button"] = self.next_button
@@ -71,9 +74,19 @@ class ButtonChaseController(Effect, CollaborationManager):
             c = s * 11 + b * 2
             pixels[0:2,c:c+2+b/4] = self.button_colors[b]
 
-    def scene_starting(self):
+        # Flash the target
+        if self.flash_timer < 10:
+            c = self.next_button[0] * 11 + self.next_button[1] * 2
+            pixels[0:2, c:c + 2 + self.next_button[1] / 4] = self.button_colors[self.next_button[1]]
+
+    def reset_state(self):
         self.on = []
         self.off = [c for c in self.all_combos]
+        self.next_button = None
+        self.flash_timer = 0
+
+    def scene_starting(self):
+        self.reset_state()
         self.pick_next()
         for s, client in enumerate(STATE.station_osc_clients):
             hoe.osc_utils.update_buttons(
@@ -87,12 +100,16 @@ class ButtonChaseController(Effect, CollaborationManager):
     def pick_next(self):
         if len(self.on) == self.num_stations * len(self.button_colors):  # TODO: Standardize this
             print "Finished!"
-            self.on = []
+            # TODO: FINISH THIS
+            # self.on = []
+
         last_button = self.next_button
+        if last_button:
+            self.on.append(last_button)  # Surprisingly this is not by-ref, and thus safe, so that's nice
+
         local_next = choice(self.off)
         self.next_button = local_next
         self.off.remove(local_next)
-        self.on.append(local_next)  # Surprisingly this is not by-ref, and thus safe, so that's nice
 
         if last_button:
             self.send_update(last_button, hoe.osc_utils.BUTTON_ON)
