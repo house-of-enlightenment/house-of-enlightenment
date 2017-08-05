@@ -136,3 +136,12 @@ def rainbow(size, hue_start, hue_end, saturation=255, value=255):
     hsv_pixels[:, 1] = saturation
     hsv_pixels[:, 2] = value
     return hsv2rgb(hsv_pixels)
+
+
+def bi_rainbow(size, hue_start, hue_end, saturation=255, value=255):
+    """Create a rainbow using color_utils.rainbow that returns to the start value"""
+    # TODO allow offset/rotation from base value
+    return np.concatenate(
+        (rainbow(size=(size+1)/2, hue_start=hue_start, hue_end=hue_end, saturation=saturation, value=value),
+         rainbow(size=size/2, hue_start=hue_end, hue_end=hue_start, saturation=saturation, value=value))
+    )

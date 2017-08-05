@@ -172,48 +172,50 @@ class ButtonChaseController(Effect, CollaborationManager):
                 station_id=button[0], client=client, updates={button[1]: update})
 
 
-class ContinuousTide(Effect):
-    def __init__(self, bottom_row=2, top_row=STATE.layout.rows):
+class ButtonRainbow(Effect):
+    def __init__(self, bottom_row=2, top_row=STATE.layout.rows, hue_start=0, hue_end=255, saturation=255, max_value=255):
         self.bottom_row = bottom_row
         self.top_row = top_row
+        self.hue_start = hue_start
+        self.hue_end = hue_end
+        self.saturation = saturation
+        self.max_value = max_value
         self.column_success = None
-        self.column_bases = None
         self.frame = 0
 
     def scene_starting(self):
-        self.column_success = np.concatenate(
-            (color_utils.rainbow(STATE.layout.columns / 2, 0, 255, 255 - 30, 255 - 30),
-             color_utils.rainbow(STATE.layout.columns / 2, 255, 0, 255 - 30, 255 - 30)))
+        self.column_success = color_utils.bi_rainbow(STATE.layout.columns,
+                                                     hue_start=self.hue_start,
+                                                     hue_end=self.hue_end, saturation=self.saturation,
+                                                     value=self.max_value)
         self.frame = 0
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
-        #if "last_hit_button" in collaboration_state and "last_hit_time" in collaboration_state:
-        #    s, b = collaboration_state["last_hit_button"]
+        self.frame += 1
 
-        # Do this each time so we avoid storing state
+        # Do this each time so we avoid storing bases state
         column_bases = np.full(shape=(STATE.layout.columns, 3), fill_value=0, dtype=np.uint8)
         for s, b in collaboration_state["on"]:
             col = s * 11 + b * 2
             column_bases[col:col + 2 + b / 4] = self.column_success[col:col + 2 + b / 4]
 
-        self.frame += 1
-        """row_offset = (self.top_row - self.bottom_row) / 15.0
-        for c,start_t in enumerate(self.start_timers):
-            if start_t:
-                color_offset = (start_t-t) * 256 * 2
-                # TODO : cache row changes
-                rows = [(color_offset+row_offset*r, color_offset+row_offset*r, color_offset+row_offset*r)
-                            for r in range(self.bottom_row, self.top_row)]
-                # self.start_timers[c] += 1  # TODO : use numpy
-
-                # TODO: array manipulation to 1-op
-                pixels[self.bottom_row:self.top_row,c] = rows
-                pixels[self.bottom_row:self.top_row,c+1] = rows
-        """
         pixels[self.bottom_row:self.top_row, :] = column_bases
+
+
+class Pulser(Effect):
+    def __init__(self, pulse_length=10, bottom_row=2, top_row=None, after_fill=30):
+        self.pulse_length = pulse_length
+        self.bottom_row = bottom_row
+        self.top_row = top_row if top_row else STATE.layout.rows
+        self.after_fill = after_fill
+
+        self.frame = 0
+
+    def next_frame(self, pixels, t, collaboration_state, osc_data):
+        self.frame += 1
         for r in range(10):
             pixels[self.bottom_row + r:self.top_row:10, :] /= ((self.frame - r) % 10) + 1
-        pixels[self.bottom_row:self.top_row, :] += 30
+        pixels[self.bottom_row:self.top_row, :] += self.after_fill
 
 
 class RotatingWedge(Effect):
@@ -306,10 +308,15 @@ __all__ = [
         "buttonchaser",
         ButtonChaseController(draw_bottom_layer=True),
         SolidBackground(),
-        ContinuousTide()),
+        ButtonRainbow(max_value=255-30),
+        Pulser()
+    ),
     Scene("buttonloser",
           ButtonChaseController(draw_bottom_layer=True, backwards_progress=True),
-          SolidBackground(), ContinuousTide()),
+          SolidBackground(),
+          ButtonRainbow(),
+          Pulser()
+    ),
     Scene("wedges",
           NoOpCollaborationManager(),
           RotatingWedge(), GenericStatelessLauncher(wedge_factory, width=3, additive=False))
