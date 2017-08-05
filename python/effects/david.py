@@ -19,43 +19,84 @@ import hoe.osc_utils
 class ButtonChaseController(Effect, CollaborationManager):
     def __init__(
             self,
-            draw_bottom_layer=True,
-            num_stations=6,
-            buttons_colors={
+            buttons_colors=None,  # Button colors. Defaults to RED, GREEN, BLUE, YELLOW, WHITE
+            num_stations=6,  # Deprecated
+            draw_bottom_layer=True,  # Turn the bottom layer on or off
+            flash_rate=10,  # Flash on (or off) every X frames
+            backwards_progress=False,  # If true, missing a button actually removes a target
+            selection_time=5  # Time to hit before picking a new one (if backwards_progress, also lose progress)
+    ):
+
+        # TODO Is this super initialization needed? Probably not, but future-proofs it
+        Effect.__init__(self)
+        CollaborationManager.__init__(self)
+
+        # Don't use a dictionary as a default argument (mutable)
+        if buttons_colors is None:
+            buttons_colors = {
                 0: (255, 0, 0),
                 1: (0, 255, 0),
                 2: (0, 0, 255),
                 3: (255, 255, 0),
                 4: (255, 255, 255)
-            }, ):
-        # TODO Is this super initialization needed?
-        Effect.__init__(self)
-        CollaborationManager.__init__(self)
-        self.num_stations = num_stations
+            }
+
         self.button_colors = buttons_colors
-        self.num_buttons = len(buttons_colors)
-        self.next_button = None
-        self.on = None
-        self.all_combos = [c for c in product(range(num_stations), buttons_colors.keys())]
-        self.off = []
         self.draw_bottom_layer = draw_bottom_layer
+        self.flash_rate = flash_rate
+        self.backwards_progress = backwards_progress
+        self.selection_time = selection_time
+
+        # TODO Get from STATE
+        self.num_stations = num_stations
+        self.num_buttons = len(buttons_colors)
+        self.all_combos = [c for c in product(range(num_stations), buttons_colors.keys())]
+
+        # These all get set in the reset_state method called during scene initialization
+        self.on = None
+        self.off = []
+        self.next_button = None
         self.flash_timer = 0
 
+    def reset_state(self):
+        """Resets the state for on, off, buttons, and timer"""
+        self.on = []
+        self.off = [c for c in self.all_combos]
+        self.next_button = None
+        self.flash_timer = 0
+        self.pick_next()
+
+        for s, client in enumerate(STATE.station_osc_clients):
+            hoe.osc_utils.update_buttons(
+                client=client,
+                station_id=s,
+                updates={
+                    b: hoe.osc_utils.BUTTON_ON if (s, b) in self.on else hoe.osc_utils.BUTTON_OFF
+                    for b in range(STATE.button_count)
+                })
+
     def compute_state(self, t, collaboration_state, osc_data):
+        # type: (long, {}, StoredOSCData) -> {}
+        if self.next_button[1] in osc_data.stations[self.next_button[0]].buttons:
+            collaboration_state["last_hit_button"] = self.next_button
+            collaboration_state["last_hit_time"] = t
+            if self.pick_next():
+                collaboration_state.clear()
+        else:
+            collaboration_state.pop("last_hit_button", None)
+            if "last_hit_time" in collaboration_state and collaboration_state["last_hit_time"] + self.selection_time < t:
+                # Too late!
+                self.pick_next(missed=True)
+                # Tick forward
+                collaboration_state["last_hit_time"] = t
+            # collaboration_state.pop("last_hit_time", None)  # Leave this for now for timing
+
         self.flash_timer = (self.flash_timer + 1) % 20
 
         if self.flash_timer == 0:
             self.send_update(self.next_button, hoe.osc_utils.BUTTON_ON)
         elif self.flash_timer == 10:
             self.send_update(self.next_button, hoe.osc_utils.BUTTON_OFF)
-
-        if self.next_button[1] in osc_data.stations[self.next_button[0]].buttons:
-            collaboration_state["last_hit_button"] = self.next_button
-            collaboration_state["last_hit_time"] = t
-            self.pick_next()
-        else:
-            collaboration_state.pop("last_hit_button", None)
-            collaboration_state.pop("last_hit_time", None)
 
         collaboration_state["on"] = self.on
         collaboration_state["off"] = self.off
@@ -79,47 +120,52 @@ class ButtonChaseController(Effect, CollaborationManager):
             c = self.next_button[0] * 11 + self.next_button[1] * 2
             pixels[0:2, c:c + 2 + self.next_button[1] / 4] = self.button_colors[self.next_button[1]]
 
-    def reset_state(self):
-        self.on = []
-        self.off = [c for c in self.all_combos]
-        self.next_button = None
-        self.flash_timer = 0
-
     def scene_starting(self):
         self.reset_state()
-        self.pick_next()
-        for s, client in enumerate(STATE.station_osc_clients):
-            hoe.osc_utils.update_buttons(
-                client=client,
-                station_id=s,
-                updates={
-                    b: hoe.osc_utils.BUTTON_ON if (s, b) in self.on else hoe.osc_utils.BUTTON_OFF
-                    for b in range(STATE.button_count)
-                })
 
-    def pick_next(self):
-        if len(self.on) == self.num_stations * len(self.button_colors):  # TODO: Standardize this
+    def pick_next(self, missed=False):
+        self.flash_timer = 0
+
+        if not missed and not self.off:
+            # TODO: Terminate the animation
             print "Finished!"
-            # TODO: FINISH THIS
-            # self.on = []
+            self.reset_state()
+            return True
 
         last_button = self.next_button
+        lost_button = None
         if last_button:
-            self.on.append(
-                last_button)  # Surprisingly this is not by-ref, and thus safe, so that's nice
+            if missed:
+                self.off.append(
+                    last_button)  # Do this before selecting in case it was the last one left!
+                if self.backwards_progress and len(self.on):
+                    lost_button = choice(self.on)
+                    self.off.append(lost_button)
+                    self.on.remove(lost_button)
+            else:
+                self.on.append(last_button)
 
         local_next = choice(self.off)
         self.next_button = local_next
         self.off.remove(local_next)
 
-        if last_button:
-            self.send_update(last_button, hoe.osc_utils.BUTTON_ON)
+        if missed:
+            if last_button and last_button != local_next:
+                # Turn off unless in edge case
+                self.send_update(last_button, hoe.osc_utils.BUTTON_OFF)
+            if lost_button and lost_button != local_next:
+                self.send_update(lost_button, hoe.osc_utils.BUTTON_OFF)
+        else:
+            if last_button:
+                self.send_update(last_button, hoe.osc_utils.BUTTON_ON)
 
         self.send_update(self.next_button, hoe.osc_utils.BUTTON_ON)
-        # TODO Update the controller with the new next!
         print "Next is now", local_next
+        return False
 
     def send_update(self, button, update):
+        """Actually update a button"""
+        # TODO: Queue this and send when ready
         client = STATE.station_osc_clients[self.next_button[0]]
         if client:
             hoe.osc_utils.update_buttons(
@@ -138,15 +184,17 @@ class ContinuousTide(Effect):
         self.column_success = np.concatenate(
             (color_utils.rainbow(STATE.layout.columns / 2, 0, 255, 255 - 30, 255 - 30),
              color_utils.rainbow(STATE.layout.columns / 2, 255, 0, 255 - 30, 255 - 30)))
-        print self.column_success
-        self.column_bases = np.full(shape=(STATE.layout.columns, 3), fill_value=0, dtype=np.uint8)
         self.frame = 0
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
-        if "last_hit_button" in collaboration_state and "last_hit_time" in collaboration_state:
-            s, b = collaboration_state["last_hit_button"]
+        #if "last_hit_button" in collaboration_state and "last_hit_time" in collaboration_state:
+        #    s, b = collaboration_state["last_hit_button"]
+
+        # Do this each time so we avoid storing state
+        column_bases = np.full(shape=(STATE.layout.columns, 3), fill_value=0, dtype=np.uint8)
+        for s, b in collaboration_state["on"]:
             col = s * 11 + b * 2
-            self.column_bases[col:col + 2 + b / 4] = self.column_success[col:col + 2 + b / 4]
+            column_bases[col:col + 2 + b / 4] = self.column_success[col:col + 2 + b / 4]
 
         self.frame += 1
         """row_offset = (self.top_row - self.bottom_row) / 15.0
@@ -162,7 +210,7 @@ class ContinuousTide(Effect):
                 pixels[self.bottom_row:self.top_row,c] = rows
                 pixels[self.bottom_row:self.top_row,c+1] = rows
         """
-        pixels[self.bottom_row:self.top_row, :] = self.column_bases
+        pixels[self.bottom_row:self.top_row, :] = column_bases
         for r in range(10):
             pixels[self.bottom_row + r:self.top_row:10, :] /= ((self.frame - r) % 10) + 1
         pixels[self.bottom_row:self.top_row, :] += 30
@@ -259,6 +307,9 @@ __all__ = [
         ButtonChaseController(draw_bottom_layer=True),
         SolidBackground(),
         ContinuousTide()),
+    Scene("buttonloser",
+          ButtonChaseController(draw_bottom_layer=True, backwards_progress=True),
+          SolidBackground(), ContinuousTide()),
     Scene("wedges",
           NoOpCollaborationManager(),
           RotatingWedge(), GenericStatelessLauncher(wedge_factory, width=3, additive=False))
