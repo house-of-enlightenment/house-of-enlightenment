@@ -61,7 +61,8 @@ def update_buttons(client, station_id, updates, timeout=None):
 
     if len(updates) == 1:
         client.send(
-            create_button_update_msg(station=station_id, id=updates.items()[0][0], update=updates.items()[0][1]))
+            create_button_update_msg(
+                station=station_id, id=updates.items()[0][0], update=updates.items()[0][1]))
     else:
         bundle = OSCBundle()
         for id, up in updates.items():

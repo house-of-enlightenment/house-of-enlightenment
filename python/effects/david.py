@@ -39,14 +39,14 @@ class ButtonChaseController(Effect, CollaborationManager):
         self.all_combos = [c for c in product(range(num_stations), buttons_colors.keys())]
         self.off = []
         self.draw_bottom_layer = draw_bottom_layer
-        self.flash_timer=0
+        self.flash_timer = 0
 
     def compute_state(self, t, collaboration_state, osc_data):
         self.flash_timer = (self.flash_timer + 1) % 20
 
         if self.flash_timer == 0:
             self.send_update(self.next_button, hoe.osc_utils.BUTTON_ON)
-        elif self.flash_timer==10:
+        elif self.flash_timer == 10:
             self.send_update(self.next_button, hoe.osc_utils.BUTTON_OFF)
 
         if self.next_button[1] in osc_data.stations[self.next_button[0]].buttons:
@@ -72,7 +72,7 @@ class ButtonChaseController(Effect, CollaborationManager):
         for s, b in self.on:
             # TODO: Calculate based on section size and span 2 columns
             c = s * 11 + b * 2
-            pixels[0:2,c:c+2+b/4] = self.button_colors[b]
+            pixels[0:2, c:c + 2 + b / 4] = self.button_colors[b]
 
         # Flash the target
         if self.flash_timer < 10:
@@ -105,7 +105,8 @@ class ButtonChaseController(Effect, CollaborationManager):
 
         last_button = self.next_button
         if last_button:
-            self.on.append(last_button)  # Surprisingly this is not by-ref, and thus safe, so that's nice
+            self.on.append(
+                last_button)  # Surprisingly this is not by-ref, and thus safe, so that's nice
 
         local_next = choice(self.off)
         self.next_button = local_next
@@ -122,10 +123,7 @@ class ButtonChaseController(Effect, CollaborationManager):
         client = STATE.station_osc_clients[self.next_button[0]]
         if client:
             hoe.osc_utils.update_buttons(
-                station_id=button[0],
-                client=client,
-                updates={button[1]: update}
-            )
+                station_id=button[0], client=client, updates={button[1]: update})
 
 
 class ContinuousTide(Effect):
@@ -138,17 +136,17 @@ class ContinuousTide(Effect):
 
     def scene_starting(self):
         self.column_success = np.concatenate(
-            (color_utils.rainbow(STATE.layout.columns / 2, 0, 255, 255-30, 255-30),
-             color_utils.rainbow(STATE.layout.columns / 2, 255, 0, 255-30, 255-30)))
+            (color_utils.rainbow(STATE.layout.columns / 2, 0, 255, 255 - 30, 255 - 30),
+             color_utils.rainbow(STATE.layout.columns / 2, 255, 0, 255 - 30, 255 - 30)))
         print self.column_success
-        self.column_bases = np.full(shape=(STATE.layout.columns,3), fill_value=0, dtype=np.uint8)
+        self.column_bases = np.full(shape=(STATE.layout.columns, 3), fill_value=0, dtype=np.uint8)
         self.frame = 0
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
         if "last_hit_button" in collaboration_state and "last_hit_time" in collaboration_state:
-            s,b = collaboration_state["last_hit_button"]
+            s, b = collaboration_state["last_hit_button"]
             col = s * 11 + b * 2
-            self.column_bases[col:col+2+b/4] = self.column_success[col:col+2+b/4]
+            self.column_bases[col:col + 2 + b / 4] = self.column_success[col:col + 2 + b / 4]
 
         self.frame += 1
         """row_offset = (self.top_row - self.bottom_row) / 15.0
@@ -164,11 +162,10 @@ class ContinuousTide(Effect):
                 pixels[self.bottom_row:self.top_row,c] = rows
                 pixels[self.bottom_row:self.top_row,c+1] = rows
         """
-        pixels[self.bottom_row:self.top_row,:] = self.column_bases
+        pixels[self.bottom_row:self.top_row, :] = self.column_bases
         for r in range(10):
-            pixels[self.bottom_row+r:self.top_row:10,:] /= ((self.frame-r)%10)+1
-        pixels[self.bottom_row:self.top_row,:] += 30
-
+            pixels[self.bottom_row + r:self.top_row:10, :] /= ((self.frame - r) % 10) + 1
+        pixels[self.bottom_row:self.top_row, :] += 30
 
 
 class RotatingWedge(Effect):
@@ -257,7 +254,11 @@ def wedge_factory(**kwargs):
 
 
 __all__ = [
-    Scene("buttonchaser", ButtonChaseController(draw_bottom_layer=True), SolidBackground(), ContinuousTide()),
+    Scene(
+        "buttonchaser",
+        ButtonChaseController(draw_bottom_layer=True),
+        SolidBackground(),
+        ContinuousTide()),
     Scene("wedges",
           NoOpCollaborationManager(),
           RotatingWedge(), GenericStatelessLauncher(wedge_factory, width=3, additive=False))

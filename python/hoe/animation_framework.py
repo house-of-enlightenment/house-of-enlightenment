@@ -306,11 +306,12 @@ class MultiEffect(Effect):
 
     def add_effect(self, effect, before=False):
         # type: (Effect) -> None
-        if effect: # Ignore None
+        if effect:  # Ignore None
             if before:
                 self.effects.insert(0, effect)
             else:
                 self.effects.append(effect)
+
 
 """
 class EffectLauncher(MultiEffect):
