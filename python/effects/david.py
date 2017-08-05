@@ -213,8 +213,8 @@ class Pulser(Effect):
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
         self.frame += 1
-        for r in range(10):
-            pixels[self.bottom_row + r:self.top_row:10, :] /= ((self.frame - r) % 10) + 1
+        for r in range(self.pulse_length):
+            pixels[self.bottom_row + r:self.top_row:self.pulse_length, :] /= ((self.frame - r) % self.pulse_length) + 1
         pixels[self.bottom_row:self.top_row, :] += self.after_fill
 
 
