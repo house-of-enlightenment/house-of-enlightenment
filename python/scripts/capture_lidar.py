@@ -3,7 +3,7 @@ from threading import Thread
 import Queue
 import argparse
 import time
-import atexit
+import sys
 
 
 def main():
@@ -21,11 +21,20 @@ def main():
 
     osc_queue = Queue.Queue()
     # pylint: disable=no-value-for-parameter
-    server.addMsgHandler("/lidar", lambda *args: osc_queue.put(time.time(), args[2][-1]))
+    server.addMsgHandler("/lidar", lambda *args: osc_queue.put((time.time(), args)))
 
     try:
         while True:
-            value = osc_queue.get_nowait()
-            output_file.writelines(value)
+            try:
+                value = osc_queue.get_nowait()
+                output_file.write(str(value))
+                output_file.write("\n")
+            except Queue.Empty:
+                continue
     finally:
         output_file.close()
+
+    print "Exiting"
+
+if __name__ == '__main__':
+    sys.exit(main())
