@@ -6,6 +6,7 @@ import argparse
 import sys
 import os
 from threading import Thread
+from multiprocessing import Process
 from time import sleep
 
 from hoe import animation_framework as AF
@@ -13,6 +14,7 @@ from hoe import opc
 from hoe import osc_utils
 from hoe.layout import Layout
 from hoe.state import STATE
+from hoe.play_lidar import play_lidar
 
 
 # -------------------------------------------------------------------------------
@@ -148,6 +150,14 @@ def listen_for_keyboard(scene):
         elif key_lower.startswith("scene "):
             args = key_lower.split(" ", 1)
             osc_utils.send_simple_message(osc_client, "/scene/select", [args[1]])
+        elif key_lower.startswith("lidar "):
+            args = key_lower.split(" ", 1)
+            filename = args[1]
+            thread = Process(target=play_lidar, args=(filename,))
+            thread.daemon = True
+            print "Running lidar thread"
+            thread.start()
+            print "Started lidar thread"
         else:
             args = key.split(" ")
             if len(args) == 1:

@@ -53,7 +53,6 @@ class AnimationFramework(object):
 
     def select_scene_handler(self, path, tags, args, source):
         # TODO: Call specific scenes
-        print path, tags, args, source
         if args[0] == "":
             self.next_scene()
         else:
@@ -84,7 +83,16 @@ class AnimationFramework(object):
             station, button_id, value = map(int, args)
             self.osc_data.fader_changed(station, button_id, value)
 
+        def handle_lidar(path, tags, args, source):
+            object_id = args[0]
+            data = LidarData(object_id,
+                             args[1], args[2], args[3], #  Pose
+                             args[4], args[5], args[6]) #  Velocity?
+            # TODO Parse, queue, and erase
+            self.osc_data.add_lidar_data(object_id, data)
+
         self.osc_server.addMsgHandler("/input/fader", handle_fader)
+        self.osc_server.addMsgHandler("/lidar", handle_lidar)
 
         print "Registered all OSC Handlers"
 
@@ -199,6 +207,16 @@ def get_first_non_empty(pixels):
     return next(pix for pix in pixels if pix is not None)
 
 
+class LidarData(object):
+    def __init__(self, id, pose_x, pose_y, pose_z, velocity_x, velocity_y, velocity_z):
+        self.id = id
+        self.pose_x = pose_x
+        self.pose_y = pose_y
+        self.pose_z = pose_z
+        self.velocity_x = velocity_x
+        self.velocity_y = velocity_y
+        self.velocity_z = velocity_z
+
 class StoredStationData(object):
     def __init__(self, client=None, last_data=None):
         self.buttons = {}
@@ -233,6 +251,7 @@ class StoredOSCData(object):
                 client=clients[i] if clients and i < len(clients) else None)
             for i in range(num_stations)
         ]
+        self.lidar_objects = last_data.lidar_objects if last_data else {}  # type: {str, LidarData}
         self.contains_change = False
 
     def __str__(self):
@@ -250,6 +269,10 @@ class StoredOSCData(object):
     def init_fader_on_all_stations(self, fader, value):
         for station in self.stations:
             station.faders[fader] = value
+
+    def add_lidar_data(self, object_id, data):
+        # type: (int, LidarData) -> None
+        self.lidar_objects[object_id] = data
 
 
 class CollaborationManager(object):
