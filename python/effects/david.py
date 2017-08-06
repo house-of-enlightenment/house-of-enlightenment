@@ -362,7 +362,7 @@ __all__ = [
           examples.SampleEffectLauncher(),
           FunctionFrameRotator(
               func=FunctionFrameRotator.no_op,
-              start_offsets=5 * np.sin(np.linspace(0, 8 * np.pi, STATE.layout.rows))))
+              start_offsets=5 * np.sin(np.linspace(0, 8 * np.pi, STATE.layout.rows)))),
     Scene("lidartest",
           NoOpCollaborationManager(),
           Rainbow(hue_start=0, hue_end=255),
