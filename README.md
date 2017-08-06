@@ -40,5 +40,5 @@ The defaults uses the [house of enlightenment layout file](./layout.hoeLayout.js
 - The simulator stores button state at the client side. For animations that light up buttons, you may need to refresh the client and then reinitialize the scene.
 
 
-### BeagleBone LEDScape controller info
+# BeagleBone LEDScape controller info
 https://github.com/house-of-enlightenment/LEDscape
