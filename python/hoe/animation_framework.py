@@ -84,11 +84,14 @@ class AnimationFramework(object):
             station, button_id, value = map(int, args)
             self.osc_data.fader_changed(station, button_id, value)
 
-        def print_incoming(path, tags, args, source):
-            print path, tags, args, source
+        def handle_lidar(path, tags, args, source):
+            object_id = args[0]
+            data = args[1:]
+            # TODO Parse, queue, and erase
+            self.osc_data.add_lidar_data(object_id, data)
 
         self.osc_server.addMsgHandler("/input/fader", handle_fader)
-        self.osc_server.addMsgHandler("/lidar", print_incoming)
+        self.osc_server.addMsgHandler("/lidar", handle_lidar)
 
         print "Registered all OSC Handlers"
 
@@ -237,6 +240,7 @@ class StoredOSCData(object):
                 client=clients[i] if clients and i < len(clients) else None)
             for i in range(num_stations)
         ]
+        self.lidar_objects = last_data.lidar_objects if last_data else {}
         self.contains_change = False
 
     def __str__(self):
@@ -254,6 +258,9 @@ class StoredOSCData(object):
     def init_fader_on_all_stations(self, fader, value):
         for station in self.stations:
             station.faders[fader] = value
+
+    def add_lidar_data(self, id, data):
+        self.lidar_objects[id] = data
 
 
 class CollaborationManager(object):
