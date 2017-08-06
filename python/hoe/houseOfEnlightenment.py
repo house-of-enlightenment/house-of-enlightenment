@@ -39,6 +39,14 @@ def parse_command_line():
         help='json file for server addresses')
     parser.add_argument(
         '-f', '--fps', dest='fps', default=30, action='store', type=int, help='frames per second')
+    parser.add_argument(
+        '-n',
+        '--scene',
+        dest='scene',
+        default=None,
+        action='store',
+        type=str,
+        help='First scene to display')
     parser.add_argument('-v', '--verbose', dest='verbose', default=False, action='store_true')
 
     options = parser.parse_args()
@@ -105,10 +113,13 @@ def create_opc_client(server, verbose=False):
     return client
 
 
-def init_animation_framework(osc_server, opc_client, osc_stations):
-    # OSCServer, Client, dict -> SceneManager, Thread
+def init_animation_framework(osc_server, opc_client, osc_stations, first_scene=None):
+    # type: (OSCServer, Client, [OSCClient], str) -> AnimationFramework
     mgr = AF.AnimationFramework(
-        osc_server=osc_server, opc_client=opc_client, osc_station_clients=osc_stations)
+        osc_server=osc_server,
+        opc_client=opc_client,
+        osc_station_clients=osc_stations,
+        first_scene=first_scene)
     return mgr
 
 
@@ -177,7 +188,7 @@ def launch():
         server=STATE.servers["remote"]["opc_server"], verbose=config.verbose)
     stations = create_osc_station_clients(servers=STATE.servers["remote"]["osc_controls"])
     STATE.station_osc_clients = stations
-    framework = init_animation_framework(osc_server, opc_client, stations)
+    framework = init_animation_framework(osc_server, opc_client, stations, config.scene)
 
     keyboard_thread = Thread(
         target=listen_for_keyboard, args=(framework, ), name="KeyboardListeningThread")

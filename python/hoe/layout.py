@@ -36,4 +36,3 @@ class Layout(object):
 
     def colmod(self, i):
         return divmod(i, self.columns)[1]
-
