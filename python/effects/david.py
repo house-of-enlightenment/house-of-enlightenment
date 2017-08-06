@@ -320,10 +320,19 @@ def distortion_rotation(offsets, t, start_t, frame):
     print offsets
 
 
+
+
 class LidarDisplay(Effect):
     def next_frame(self, pixels, t, collaboration_state, osc_data):
+        ratio = STATE.layout.columns / (np.pi * 2)
         if osc_data.lidar_objects:
-            print osc_data.lidar_objects
+            objects = osc_data.lidar_objects
+            for obj_id, data in objects.iteritems():
+                # TODO Probably faster conversion mechanism or at least make a helper method
+                r = np.sqrt(data.pose_x**2 + data.pose_y**2)
+                theta = np.arctan2(data.pose_y, data.pose_x)
+                col = int(theta * ratio) % STATE.layout.columns
+                pixels[:,col] = 255
 
 
 __all__ = [
@@ -365,7 +374,8 @@ __all__ = [
               start_offsets=5 * np.sin(np.linspace(0, 8 * np.pi, STATE.layout.rows)))),
     Scene("lidartest",
           NoOpCollaborationManager(),
-          Rainbow(hue_start=0, hue_end=255),
+#          Rainbow(hue_start=0, hue_end=255),
+          SolidBackground(),
           LidarDisplay()
           )
 

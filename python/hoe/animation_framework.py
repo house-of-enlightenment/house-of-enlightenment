@@ -53,7 +53,6 @@ class AnimationFramework(object):
 
     def select_scene_handler(self, path, tags, args, source):
         # TODO: Call specific scenes
-        print path, tags, args, source
         if args[0] == "":
             self.next_scene()
         else:
@@ -86,7 +85,9 @@ class AnimationFramework(object):
 
         def handle_lidar(path, tags, args, source):
             object_id = args[0]
-            data = args[1:]
+            data = LidarData(object_id,
+                             args[1], args[2], args[3], #  Pose
+                             args[4], args[5], args[6]) #  Velocity?
             # TODO Parse, queue, and erase
             self.osc_data.add_lidar_data(object_id, data)
 
@@ -269,9 +270,9 @@ class StoredOSCData(object):
         for station in self.stations:
             station.faders[fader] = value
 
-    def add_lidar_data(self, id, data):
-        # type: (str, LidarData) -> None
-        self.lidar_objects[id] = data
+    def add_lidar_data(self, object_id, data):
+        # type: (int, LidarData) -> None
+        self.lidar_objects[object_id] = data
 
 
 class CollaborationManager(object):
