@@ -320,6 +320,12 @@ def distortion_rotation(offsets, t, start_t, frame):
     print offsets
 
 
+class LidarDisplay(Effect):
+    def next_frame(self, pixels, t, collaboration_state, osc_data):
+        if osc_data.lidar_objects:
+            print osc_data.lidar_objects
+
+
 __all__ = [
     Scene(
         "buttonchaser",
@@ -357,4 +363,10 @@ __all__ = [
           FunctionFrameRotator(
               func=FunctionFrameRotator.no_op,
               start_offsets=5 * np.sin(np.linspace(0, 8 * np.pi, STATE.layout.rows))))
+    Scene("lidartest",
+          NoOpCollaborationManager(),
+          Rainbow(hue_start=0, hue_end=255),
+          LidarDisplay()
+          )
+
 ]

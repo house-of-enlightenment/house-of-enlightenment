@@ -206,6 +206,16 @@ def get_first_non_empty(pixels):
     return next(pix for pix in pixels if pix is not None)
 
 
+class LidarData(object):
+    def __init__(self, id, pose_x, pose_y, pose_z, velocity_x, velocity_y, velocity_z):
+        self.id = id
+        self.pose_x = pose_x
+        self.pose_y = pose_y
+        self.pose_z = pose_z
+        self.velocity_x = velocity_x
+        self.velocity_y = velocity_y
+        self.velocity_z = velocity_z
+
 class StoredStationData(object):
     def __init__(self, client=None, last_data=None):
         self.buttons = {}
@@ -240,7 +250,7 @@ class StoredOSCData(object):
                 client=clients[i] if clients and i < len(clients) else None)
             for i in range(num_stations)
         ]
-        self.lidar_objects = last_data.lidar_objects if last_data else {}
+        self.lidar_objects = last_data.lidar_objects if last_data else {}  # type: {str, LidarData}
         self.contains_change = False
 
     def __str__(self):
@@ -260,6 +270,7 @@ class StoredOSCData(object):
             station.faders[fader] = value
 
     def add_lidar_data(self, id, data):
+        # type: (str, LidarData) -> None
         self.lidar_objects[id] = data
 
 
