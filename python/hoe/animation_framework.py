@@ -10,6 +10,7 @@ import sys
 import time
 from threading import Thread
 from pixels import Pixels
+from itertools import ifilter
 from functools import partial
 import atexit
 from collections import OrderedDict
@@ -85,9 +86,14 @@ class AnimationFramework(object):
 
         def handle_lidar(path, tags, args, source):
             object_id = args[0]
-            data = LidarData(object_id,
-                             args[1], args[2], args[3], #  Pose
-                             args[4], args[5], args[6]) #  Velocity?
+            data = LidarData(
+                object_id,
+                args[1],
+                args[2],
+                args[3],  #  Pose
+                args[4],
+                args[5],
+                args[6])  #  Velocity?
             # TODO Parse, queue, and erase
             self.osc_data.add_lidar_data(object_id, data)
 
@@ -104,6 +110,9 @@ class AnimationFramework(object):
         self.curr_scene.scene_ended()
 
     def get_osc_frame(self, clear=True):
+        # type: (bool) -> StoredOSCData
+        """Get the last frame of osc data and initialize the next frame"""
+        # TODO: Do we need to explicitly synchronize here?
         last_frame = self.osc_data
         self.osc_data = StoredOSCData(last_data=last_frame)
         return last_frame
@@ -216,6 +225,8 @@ class LidarData(object):
         self.velocity_x = velocity_x
         self.velocity_y = velocity_y
         self.velocity_z = velocity_z
+        self.last_updated = time.time()
+
 
 class StoredStationData(object):
     def __init__(self, client=None, last_data=None):
@@ -244,15 +255,20 @@ class StoredStationData(object):
 
 
 class StoredOSCData(object):
-    def __init__(self, clients=None, last_data=None, num_stations=6):
+    def __init__(self, clients=None, last_data=None, num_stations=6, lidar_removal_time=.5):
         self.stations = [
             StoredStationData(
                 last_data=last_data.stations[i] if last_data else None,
                 client=clients[i] if clients and i < len(clients) else None)
             for i in range(num_stations)
         ]
-        self.lidar_objects = last_data.lidar_objects if last_data else {}  # type: {str, LidarData}
         self.contains_change = False
+        self.lidar_removal_time = lidar_removal_time
+        expired = time.time() - lidar_removal_time
+        self.lidar_objects = {
+            k: lidar
+            for (k, lidar) in last_data.lidar_objects.iteritems() if lidar.last_updated > expired
+        } if last_data else {}  # type: {str, LidarData}
 
     def __str__(self):
         return "{}({})".format(self.__class__.__name__,
