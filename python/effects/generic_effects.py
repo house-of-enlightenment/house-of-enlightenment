@@ -4,7 +4,6 @@ from hoe.animation_framework import CollaborationManager
 from hoe.animation_framework import MultiEffect
 from hoe.state import STATE
 from hoe.osc_utils import update_buttons
-from debugging_effects import PrintOSC
 import hoe.color_utils
 import numpy as np
 
@@ -127,23 +126,6 @@ class FunctionFrameRotator(Effect):
         offsets[:] = np.roll(offsets, 1)
 
 
-class AdjustableFillFromBottom(Effect):
-    def __init__(self, max_in=100):
-        Effect.__init__(self)
-        self.color_scale = 255.0 / max_in
-        self.row_scale = 216.0 / max_in
-
-    def next_frame(self, pixels, t, collaboration_state, osc_data):
-        for ii, coord in enumerate(STATE.layout.pixels):
-            self.fill(pixels, t, coord, ii, osc_data)
-
-    def fill(self, pixels, time, coord, ii, osc_data):
-        # TODO Check for existance of fade
-        if osc_data.stations[5].faders[0] * self.row_scale > coord["row"]:
-            pixels[ii] = tuple(
-                [int(osc_data.stations[i].faders[0] * self.color_scale) for i in range(3)])
-
-
 class ButtonToggleResponderManager(CollaborationManager):
     """Each button press sends a toggle command back to the controller.
 
@@ -165,9 +147,10 @@ class NoOpCollaborationManager(CollaborationManager):
     def compute_state(self, t, collaboration_state, osc_data):
         pass
 
-
+# FIXME : A little hacky - trying to avoid circular dependencies on debugging_effects
+import debugging_effects
 __all__ = [
-    Scene("buttontoggler", ButtonToggleResponderManager(), SolidBackground(), PrintOSC()),
+    Scene("buttontoggler", ButtonToggleResponderManager(), SolidBackground(), debugging_effects.PrintOSC()),
     # A simple rainbow that rotates due to the FrameRotator
     Scene(
         "rotatingrainbow",

@@ -3,8 +3,6 @@ from hoe.animation_framework import Scene
 from hoe.animation_framework import Effect
 from hoe.state import STATE
 
-from examples import SampleFeedbackEffect
-
 
 class TonyEffect(Effect):
     """Always return red"""

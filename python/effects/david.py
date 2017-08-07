@@ -11,7 +11,6 @@ from random import getrandbits
 from itertools import product
 from math import ceil
 from generic_effects import SolidBackground
-from generic_effects import Rainbow
 from generic_effects import NoOpCollaborationManager
 from generic_effects import FrameRotator
 from generic_effects import FunctionFrameRotator

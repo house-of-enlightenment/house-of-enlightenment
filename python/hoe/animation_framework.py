@@ -209,7 +209,7 @@ def load_scenes_from_file(pkg_name, scenes):
             print "Registering %s" % scene
             scenes[scene.name] = scene
     except ImportError:
-        print "WARNING: could not load effect %s" % pkg_name
+       print "WARNING: could not load effect %s" % pkg_name
 
 
 def get_first_non_empty(pixels):
