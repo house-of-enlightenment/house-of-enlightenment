@@ -32,6 +32,7 @@ class Rainbow(Effect):
        Note: No individual value in a color tuple will be greater than max_value, so this can be used to limit a range
         to preempt an additive operation later from rolling over the uint8 limit of 255
     """
+
     def __init__(self,
                  hue_start,
                  hue_end,
@@ -108,7 +109,6 @@ class FunctionFrameRotator(Effect):
             pixels[r, :] = np.concatenate(
                 (pixels[r, int(offset):], pixels[r, :int(offset)]), axis=0)
 
-
     ### Below are static sample methods for rotation ###
     @staticmethod
     def no_op(offsets, t, start_t, frame):
@@ -151,6 +151,7 @@ class ButtonToggleResponderManager(CollaborationManager):
 
        TODO: Store the button state and send explicit on/off commands
     """
+
     def compute_state(self, t, collaboration_state, osc_data):
         for s, station in enumerate(osc_data.stations):
             for b in station.buttons:
@@ -160,6 +161,7 @@ class ButtonToggleResponderManager(CollaborationManager):
 
 class NoOpCollaborationManager(CollaborationManager):
     """A no-op collaboration manager for when you need a placeholder in your scene"""
+
     def compute_state(self, t, collaboration_state, osc_data):
         pass
 

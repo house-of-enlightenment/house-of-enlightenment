@@ -457,5 +457,6 @@ __all__ = [
         #          Rainbow(hue_start=0, hue_end=255),
         SolidBackground(color=(30, 30, 30)),
         LidarDisplay()),
-    Scene("risingtide", NoOpCollaborationManager(), SolidBackground(), TideLauncher(), FrameRotator())
+    Scene("risingtide",
+          NoOpCollaborationManager(), SolidBackground(), TideLauncher(), FrameRotator())
 ]

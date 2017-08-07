@@ -3,15 +3,7 @@ import json
 
 import numpy as np
 
-_GROUPBY = [
-    "address",
-    "section",
-    "strip",
-    "stripIndex",
-    "topOrBottom",
-    "row",
-    "slice"
-]
+_GROUPBY = ["address", "section", "strip", "stripIndex", "topOrBottom", "row", "slice"]
 
 # Center is where the disk is widest
 #
