@@ -217,14 +217,14 @@ def get_first_non_empty(pixels):
 
 
 class LidarData(object):
-    def __init__(self, id, pose_x, pose_y, pose_z, velocity_x, velocity_y, velocity_z):
-        self.id = id
+    def __init__(self, object_id, pose_x, pose_y, pose_z, width, height, depth):
+        self.object_id = object_id
         self.pose_x = pose_x
         self.pose_y = pose_y
         self.pose_z = pose_z
-        self.velocity_x = velocity_x
-        self.velocity_y = velocity_y
-        self.velocity_z = velocity_z
+        self.width = width
+        self.height = height
+        self.depth = depth  # Actually depth?
         self.last_updated = time.time()
 
 

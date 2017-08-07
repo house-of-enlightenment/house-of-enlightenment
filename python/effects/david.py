@@ -8,6 +8,7 @@ from hoe.state import STATE
 from random import choice
 from random import randint
 from itertools import product
+from math import ceil
 from generic_effects import SolidBackground
 from generic_effects import Rainbow
 from generic_effects import NoOpCollaborationManager
@@ -250,13 +251,19 @@ class RotatingWedge(Effect):
     def next_frame(self, pixels, t, collaboration_state, osc_data):
         if self.angle == 0:
             if self.start_col < self.end_col:
-                self.update_pixels(
-                    pixels=pixels, slices=[(slice(None), slice(self.start_col, self.end_col))])
+                update_pixels(
+                    pixels=pixels,
+                    slices=[(slice(None), slice(self.start_col, self.end_col))],
+                    additive=self.additive,
+                    color=self.color)
             else:
-                self.update_pixels(
+                update_pixels(
                     pixels=pixels,
                     slices=[(slice(None), slice(self.start_col, None)), (slice(None), slice(
-                        None, self.end_col))])
+                        None, self.end_col))],
+                    additive=self.additive,
+                    color=self.color)
+
         else:
             # TODO Combine Slices or get Indexes?
             slices = [(slice(r, min(r + self.width, STATE.layout.rows)),
@@ -264,16 +271,17 @@ class RotatingWedge(Effect):
                       for r, c in enumerate(
                           np.arange(self.start_col, self.start_col + self.angle * STATE.layout.rows,
                                     self.angle))]
-            self.update_pixels(pixels=pixels, slices=slices)
+            update_pixels(pixels=pixels, slices=slices, additive=self.additive, color=self.color)
         self.start_col = (self.start_col + self.direction) % STATE.layout.columns
         self.end_col = (self.end_col + self.direction) % STATE.layout.columns
 
-    def update_pixels(self, pixels, slices):
-        for r, c in slices:
-            if self.additive:
-                pixels[r, c] += self.color
-            else:
-                pixels[r, c] = self.color
+
+def update_pixels(pixels, slices, additive, color):
+    for r, c in slices:
+        if additive:
+            pixels[r, c] += color
+        else:
+            pixels[r, c] = color
 
 
 def button_launch_checker(t, collaboration_state, osc_data):
@@ -320,19 +328,36 @@ def distortion_rotation(offsets, t, start_t, frame):
     print offsets
 
 
-
-
 class LidarDisplay(Effect):
     def next_frame(self, pixels, t, collaboration_state, osc_data):
+        SCALE = 30
+
         ratio = STATE.layout.columns / (np.pi * 2)
         if osc_data.lidar_objects:
             objects = osc_data.lidar_objects
             for obj_id, data in objects.iteritems():
                 # TODO Probably faster conversion mechanism or at least make a helper method
-                r = np.sqrt(data.pose_x**2 + data.pose_y**2)
-                theta = np.arctan2(data.pose_y, data.pose_x)
-                col = int(theta * ratio) % STATE.layout.columns
-                pixels[:,col] = 255
+                bottom_row = max(0, int(data.pose_z * SCALE))
+                top_row = min(STATE.layout.rows, int(bottom_row + 1 + abs(data.height * SCALE)))
+                row_slice = slice(bottom_row, top_row)
+
+                apothem = np.sqrt(data.pose_x**2 + data.pose_y**2)
+                central_theta = np.arctan2(data.pose_y, data.pose_x)
+                half_angle = abs(np.arctan2(data.width / 2, apothem))
+                col_left = int((central_theta - half_angle) * ratio) % STATE.layout.columns
+                col_right = int(ceil((central_theta + half_angle) * ratio)) % STATE.layout.columns
+                col_slices = [slice(col_left, col_right)]
+                if col_left < 0:
+                    col_slices = [slice(0, col_right), slice(STATE.layout.columns + col_left, None)]
+                elif col_right > STATE.layout.columns:
+                    col_slices = [slice(col_left, None), slice(0, col_right % STATE.layout.columns)]
+                color = np.asarray((0, 0, 0), np.uint8)
+                color[data.object_id % 3] = (255 - 30) / 2
+                update_pixels(
+                    pixels=pixels,
+                    additive=True,
+                    color=color,
+                    slices=[(row_slice, col_slice) for col_slice in col_slices])
 
 
 __all__ = [
@@ -372,11 +397,10 @@ __all__ = [
           FunctionFrameRotator(
               func=FunctionFrameRotator.no_op,
               start_offsets=5 * np.sin(np.linspace(0, 8 * np.pi, STATE.layout.rows)))),
-    Scene("lidartest",
-          NoOpCollaborationManager(),
-#          Rainbow(hue_start=0, hue_end=255),
-          SolidBackground(),
-          LidarDisplay()
-          )
-
+    Scene(
+        "lidartest",
+        NoOpCollaborationManager(),
+        #          Rainbow(hue_start=0, hue_end=255),
+        SolidBackground(color=(30, 30, 30)),
+        LidarDisplay())
 ]
