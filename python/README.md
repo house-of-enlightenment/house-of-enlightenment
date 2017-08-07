@@ -31,6 +31,15 @@ The python application allows for some command prompt input to assist in develop
 | osc msg | anything else is sent as an osc message | /osc/path [arg1] [arg2] ... [argN] | See below |
 | osc button | simulate pressing a button | /input/button <station> <button> | /input/button 1 2 |
 | osc fader | simulate changing a fader | /input/fader <station> <fader> <value> | /input/fader 2 0 57 |
+| lidar | replay lidar data | lidar <filename> | lidar lidar/newbag.sample |
+
+# Lidar
+Upstream of the python layer is a lidar and a roscore application doing object recognition. That data can be sent to the server via OSC messages. The OSC messages come with 7 values: id, x, y, z, width, height depth. The id is NOT unique across scans - it is just an enumeration of the objects found in each cycle.
+
+We have captured some of these messages to a sample file using the python/scripts/capture_lidar.py script. You can replay it one of two ways:
+- Run the python/hoe/play_lidar.py script. You'll need to supply --filename, --host, and --port
+- From the command prompt of a launched animation framework (hoe/houseOfEnlightenment) type "lidar <path_to_file>"
+Sample data is in the <repo_root>/lidar/data directory
 
 # Contributing
 ## Before you commit
