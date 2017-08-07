@@ -11,13 +11,15 @@ This package is the pattern logic driving the House of Enlightment LEDs.
 # Running the application
 ```
 # Simplest way to start up with all default values (uses local servers and default layout)
-python ./python/houseOfEnlightenment.py
+python ./python/hoe/houseOfEnlightenment.py
+# Start on a specific scene:
+python ./python/hoe/houseOfEnlightenment.py <scenename>
 # To run with customized layout or server list, use (below are default values): 
-python ./python/houseOfEnlightenment.py -l layout/hoeLayout.json -s layout/servers_local.json
+python ./python/hoe/houseOfEnlightenment.py -l layout/hoeLayout.json -s layout/servers_local.json
 # To change the FPS:
-python ./python/houseOfEnlightenment.py -f 30
+python ./python/hoe/houseOfEnlightenment.py -f 30
 # To run in verbose mode (not much supports this yet):
-python ./python/houseOfEnlightenment.py -v
+python ./python/hoe/houseOfEnlightenment.py -v
 ```
 
 # Interaction
