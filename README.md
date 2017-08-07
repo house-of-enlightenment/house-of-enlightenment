@@ -38,3 +38,7 @@ The defaults uses the [house of enlightenment layout file](./layout.hoeLayout.js
 ## Known Issues
 - Currently if the python server crashes or exits via ctrl-C (instead of "quit"), it can cause trouble reconnecting to the javascript simulator on the next run. You'll need to restart the simulator to handle this.
 - The simulator stores button state at the client side. For animations that light up buttons, you may need to refresh the client and then reinitialize the scene.
+
+
+# BeagleBone LEDScape controller info
+https://github.com/house-of-enlightenment/LEDscape
