@@ -7,6 +7,7 @@ from hoe.animation_framework import MultiEffect
 from hoe.state import STATE
 from random import choice
 from random import randint
+from random import getrandbits
 from itertools import product
 from math import ceil
 from generic_effects import SolidBackground
@@ -360,6 +361,76 @@ class LidarDisplay(Effect):
                     slices=[(row_slice, col_slice) for col_slice in col_slices])
 
 
+class RisingTide(Effect):
+    def __init__(self,
+                 target_color=(255, 255, 255),
+                 start_color=(10, 10, 10),
+                 start_column=0,
+                 end_column=None,
+                 bottom_row=2,
+                 top_row=None):
+        self.target_color = target_color
+        self.start_color = start_color
+        self.start_column = start_column
+        self.end_column = end_column
+        self.bottom_row = bottom_row
+        self.top_row = top_row
+        self.curr_top = self.bottom_row
+        self.curr_bottom = self.bottom_row
+        self.completed = False
+
+        self.colors = [start_color]
+        self.color_inc = tuple(
+            map(lambda t, s: (0.0 + t - s) / (self.top_row - self.bottom_row) + 30, target_color,
+                start_color))
+        print self.start_color, self.target_color, self.color_inc
+
+    def next_frame(self, pixels, t, collaboration_state, osc_data):
+        if self.curr_top < self.top_row:
+            for i, r in enumerate(range(self.curr_bottom, self.curr_top)):
+                pixels[r, self.start_column:self.end_column] = self.colors[i]
+
+            self.colors = [tuple(map(lambda c, i: c + i, self.colors[0], self.color_inc))
+                           ] + self.colors
+            self.curr_top += 1
+        elif self.curr_bottom < self.top_row:
+            self.colors = self.colors[:-1]
+            self.curr_bottom += 1
+            for i, r in enumerate(range(self.curr_bottom, self.curr_top)):
+                pixels[r, self.start_column:self.end_column] = self.colors[i]
+        else:
+            self.completed = True
+
+    def is_completed(self, t, osc_data):
+        return self.completed
+
+
+class TideLauncher(MultiEffect):
+    def before_rendering(self, pixels, t, collaboration_state, osc_data):
+        MultiEffect.before_rendering(self, pixels, t, collaboration_state, osc_data)
+        for s in range(STATE.layout.sections):
+            if osc_data.stations[s].buttons:
+                self.launch_effect(t, s)
+
+    def launch_effect(self, t, s):
+        per_section = int(STATE.layout.columns / STATE.layout.sections)
+        c = (bool(getrandbits(1)), bool(getrandbits(1)), bool(getrandbits(1)))
+        print c
+        if not any(c):  #  Deal with all 0's case
+            c = (True, True, True)
+        print c
+        start_color = (c[0] * 10, c[1] * 10, c[2] * 10)
+        target_color = (c[0] * 255, c[1] * 255, c[2] * 255)
+        e = RisingTide(
+            start_column=s * per_section,
+            end_column=(s + 1) * per_section,
+            bottom_row=0,
+            top_row=216,
+            target_color=target_color,
+            start_color=start_color)
+        self.effects.append(e)
+
+
 __all__ = [
     Scene(
         "buttonchaser",
@@ -373,23 +444,6 @@ __all__ = [
     Scene("wedges",
           NoOpCollaborationManager(),
           RotatingWedge(), GenericStatelessLauncher(wedge_factory, width=3, additive=False)),
-    Scene(
-        "rotatingrainbow",
-        NoOpCollaborationManager(),
-        Rainbow(hue_start=0, hue_end=255),
-        FrameRotator(rate=.75)),
-    Scene("funkrainbow",
-          NoOpCollaborationManager(),
-          Rainbow(hue_start=0, hue_end=255),
-          FunctionFrameRotator(
-              func=FunctionFrameRotator.sample_rotating_offset,
-              start_offsets=range(STATE.layout.rows))),
-    Scene("sinerainbow",
-          NoOpCollaborationManager(),
-          Rainbow(hue_start=0, hue_end=255),
-          FunctionFrameRotator(
-              func=FunctionFrameRotator.sample_roll_offset,
-              start_offsets=5 * np.sin(np.linspace(0, 8 * np.pi, STATE.layout.rows)))),
     Scene("sinedots",
           NoOpCollaborationManager(),
           SolidBackground((100, 100, 100)),
@@ -402,5 +456,6 @@ __all__ = [
         NoOpCollaborationManager(),
         #          Rainbow(hue_start=0, hue_end=255),
         SolidBackground(color=(30, 30, 30)),
-        LidarDisplay())
+        LidarDisplay()),
+    Scene("risingtide", NoOpCollaborationManager(), SolidBackground(), TideLauncher(), FrameRotator())
 ]
