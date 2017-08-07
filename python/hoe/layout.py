@@ -9,6 +9,8 @@ _GROUPBY = [
     "strip",
     "stripIndex",
     "topOrBottom",
+    "row",
+    "slice"
 ]
 
 # Center is where the disk is widest
