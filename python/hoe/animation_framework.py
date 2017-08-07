@@ -90,10 +90,10 @@ class AnimationFramework(object):
                 object_id,
                 args[1],
                 args[2],
-                args[3],  #  Pose
+                args[3],  # Pose
                 args[4],
                 args[5],
-                args[6])  #  Velocity?
+                args[6])  # Velocity?
             # TODO Parse, queue, and erase
             self.osc_data.add_lidar_data(object_id, data)
 
@@ -301,14 +301,20 @@ class Effect(object):
     def __init__(self):
         pass
 
-    def next_frame(self, pixels, t, collaboration_state, osc_data):
+    def next_frame(self, pixels, now, collaboration_state, osc_data):
         # type: (Pixels, long, {}, StoredOscData) -> None
-        """ Implement this method to render the next frame.
-        Modify the pixels in place.
-        t represents the time
-        collaboration_state is (currently) a dictionary that can be modified by a CollaborationManager before any effects apply
-        OSC Data contains the data sent in since the last frame (for buttons), as well as store fader states
-        Use the osc data to get station clients if you need to send button feedback """
+        """Implement this method to render the next frame.
+
+        Args:
+            pixels: rgb values to be modified in place
+            now: represents the time (in seconds)
+            collaboration_state: a dictionary that can be modified by
+                a CollaborationManager before any effects apply
+            osc_data: contains the data sent in since the last frame
+                (for buttons), as well as store fader states Use the
+                osc data to get station clients if you need to send
+                button feedback.
+        """
         raise NotImplementedError("All effects must implement next_frame")
         # TODO: Use abc
 

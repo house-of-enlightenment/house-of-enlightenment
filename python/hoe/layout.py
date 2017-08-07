@@ -3,7 +3,6 @@ import json
 
 import numpy as np
 
-
 _GROUPBY = [
     "address",
     "section",
@@ -12,12 +11,10 @@ _GROUPBY = [
     "topOrBottom",
 ]
 
-
 # Center is where the disk is widest
 #
 # Bottom and top are subjective as there is no distinct line
 Disc = collections.namedtuple('Disc', 'bottom center top')
-
 
 ROWS = 216
 COLUMNS = 66
@@ -27,6 +24,7 @@ SECTIONS = 6
 class Layout(object):
     BOTTOM_DISC = Disc(39, 62, 109)
     TOP_DISC = Disc(139, 160, 191)
+
     def __init__(self, pixels, rows=ROWS, columns=COLUMNS, sections=SECTIONS):
         self.pixels = pixels
         self.n_pixels = len(pixels)

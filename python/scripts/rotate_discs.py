@@ -18,7 +18,6 @@ from hoe import opc
 from hoe import osc_utils
 from hoe import color_utils
 
-
 # TODO: fix this. Move the stream_up code somewhere shared
 import stream_up as su
 
@@ -89,14 +88,14 @@ class RotateDisc(object):
         self.hue_shift = (self.hue_shift + 10) % 256
         rainbow = color_utils.rainbow(self.layout.columns, self.hue_shift, 255 + self.hue_shift)
         rows = slice(self.layout.BOTTOM_DISC.bottom, self.layout.BOTTOM_DISC.top)
-        pixels[rows,:] = rainbow
+        pixels[rows, :] = rainbow
 
         rainbow = rainbow[::-1]
         rows = slice(self.layout.TOP_DISC.bottom, self.layout.TOP_DISC.top)
-        pixels[rows,:] = rainbow
+        pixels[rows, :] = rainbow
 
         # black out the back for a more realistic view
-        pixels[:,33:] = 5
+        pixels[:, 33:] = 5
 
 
 def add_button_id(queue, address, types, payload, *args):

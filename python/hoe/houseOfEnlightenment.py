@@ -153,7 +153,7 @@ def listen_for_keyboard(scene):
         elif key_lower.startswith("lidar "):
             args = key_lower.split(" ", 1)
             filename = args[1]
-            thread = Process(target=play_lidar, args=(filename,))
+            thread = Process(target=play_lidar, args=(filename, ))
             thread.daemon = True
             print "Running lidar thread"
             thread.start()
