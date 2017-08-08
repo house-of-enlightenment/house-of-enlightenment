@@ -32,20 +32,20 @@ class FailureEffect(Effect):
     """Force a failure after X frame"""
 
     def __init__(self, frames=30):
-        self.frames=30
+        self.frames = 30
 
     def next_frame(self, pixels, now, collaboration_state, osc_data):
         self.frames -= 1
         if self.frames < 0:
             raise Exception("Nobody expects me!")
 
+
 # FIXME : A little hacky - trying to avoid circular dependencies with generic_effects
 from generic_effects import NoOpCollaborationManager
 from generic_effects import SolidBackground
 __all__ = [
-    Scene("osc printer", NoOpCollaborationManager(), PrintOSC(), SolidBackground(30,30,30)),
+    Scene("osc printer", NoOpCollaborationManager(), PrintOSC(), SolidBackground(30, 30, 30)),
     # Not a real effect. Just testing failures in effect code against the gulp server
     # Scene("failquick", NoOpCollaborationManager(), SolidBackground(0, 255, 0), FailureEffect()),
     Scene("bluewithdot", NoOpCollaborationManager(), SolidBackground(0, 255, 0), MovingDot())
-
 ]

@@ -10,7 +10,6 @@ from generic_effects import SolidBackground
 from random import randrange
 
 
-
 class SpatialStripesBackground(Effect):
     def next_frame(self, pixels, t, collaboration_state, osc_data):
         for ii, coord in enumerate(STATE.layout.pixels):
@@ -94,7 +93,8 @@ class SampleEffectLauncher(MultiEffect):
 
 __all__ = [
     Scene("spatial scene", NoOpCollaborationManager(), SpatialStripesBackground()),
-    Scene("adjustablebackground", NoOpCollaborationManager(), SolidBackground(), AdjustableFillFromBottom()),
-    Scene("launchdots", NoOpCollaborationManager(), SolidBackground((100, 100, 100)), SampleEffectLauncher()),
-
+    Scene("adjustablebackground",
+          NoOpCollaborationManager(), SolidBackground(), AdjustableFillFromBottom()),
+    Scene("launchdots",
+          NoOpCollaborationManager(), SolidBackground((100, 100, 100)), SampleEffectLauncher()),
 ]

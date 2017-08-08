@@ -147,10 +147,12 @@ class NoOpCollaborationManager(CollaborationManager):
     def compute_state(self, t, collaboration_state, osc_data):
         pass
 
+
 # FIXME : A little hacky - trying to avoid circular dependencies on debugging_effects
 import debugging_effects
 __all__ = [
-    Scene("buttontoggler", ButtonToggleResponderManager(), SolidBackground(), debugging_effects.PrintOSC()),
+    Scene("buttontoggler",
+          ButtonToggleResponderManager(), SolidBackground(), debugging_effects.PrintOSC()),
     # A simple rainbow that rotates due to the FrameRotator
     Scene(
         "rotatingrainbow",
