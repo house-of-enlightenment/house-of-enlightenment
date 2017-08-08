@@ -205,12 +205,17 @@ def launch():
     keyboard_thread.setDaemon(True)
     keyboard_thread.start()
 
-    framework.serve_forever()
-
+    try:
+        framework.serve_forever()
+    except KeyboardInterrupt:
+        print "Received interrupt. Stopping..."
+    finally:
+        framework.shutdown()
+        opc_client.disconnect()
     # TODO: This was deadlocking
     # osc_server.shutdown()
 
-    opc_client.disconnect()
+
 
 
 if __name__ == '__main__':
