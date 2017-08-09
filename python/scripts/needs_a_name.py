@@ -112,8 +112,8 @@ class RainbowBlink(object):
 
 class Breathe(object):
     def __init__(self, layout):
-        self.n_colors = 41
-        self.n_black = 5
+        self.n_colors = 21
+        self.n_black = 1
         self.max_hue = 20
         self.min_hue = -20
         self.sources = np.random.randint(0, self.n_colors + self.n_black - 1, len(layout.pixels))
@@ -146,21 +146,24 @@ class Breathe(object):
     def colors(self, now):
         return color_utils.hsv2rgb([ct.update(now) for ct in self.color_transitions])
 
+STEPS = []
 
 class ColorTransition(su.Transition):
     def __init__(self, hue, now):
         self.hue = hue % 256
         self.full = False
+        self.idx = len(STEPS)
+        STEPS.append(0)
         su.Transition.__init__(self, now)
 
     def rnd_pt(self):
         # 119 is just off of half (128) so we make a slow, pretty walk
         # around the color wheel
         if self.full:
-            self.hue += np.random.randint(119, 137)
+            self.hue += 119
             pt = (self.hue, np.random.randint(24, 31), np.random.randint(24, 31))
         else:
-            pt = (self.hue, np.random.randint(3, 28), np.random.randint(3, 28))
+            pt = (self.hue, np.random.randint(3, 18), np.random.randint(3, 18))
         self.full = not self.full
         return np.array(pt)
 
@@ -168,7 +171,21 @@ class ColorTransition(su.Transition):
         # if there is no randomness, all of the pixels change hues at the same time
         # Too much randomness and each pixel will quickly end up a totally different color
         # in my judgement, 1 / 3 is a good ratio
-        return np.random.rand() * 1 + 3
+        was_max = (STEPS[self.idx] == max(STEPS))
+        STEPS[self.idx] += 1
+        am_min = (STEPS[self.idx] == min(STEPS))
+        print max(STEPS), min(STEPS), self.idx, STEPS[self.idx]
+        wt = 2
+        if was_max:
+            print 'Run slower'
+            wt = 3
+        elif am_min:
+            print 'Run faster'
+            wt = 1
+        return np.random.rand() * wt + 2
+
+
+
 
     def update(self, now):
         hue, sat, val = su.Transition.update(self, now)
