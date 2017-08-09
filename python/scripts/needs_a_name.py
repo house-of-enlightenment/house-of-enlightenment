@@ -150,7 +150,7 @@ class Breathe(object):
 STEPS = []
 
 class ColorTransition(su.Transition):
-    N_STAGES = 2
+    N_STAGES = 4
     def __init__(self, hue, now):
         # TODO: make hue the target hue and
         #       on transition, pick whether to be complementary or not
@@ -172,13 +172,14 @@ class ColorTransition(su.Transition):
         self.hue = (hue + offset) % 256
 
     def rnd_pt(self):
-        print "---", self.idx
         # 119 is just off of half (128) so we make a slow, pretty walk
         # around the color wheel
         if self.stage == 0:
             self.reference_hue = (self.reference_hue + 119) % 256
             self.set_hue()
             pt = (31, np.random.randint(18, 31))
+        elif self.stage < self.N_STAGES - 1:
+            pt = (31, np.random.randint(12, 31))
         else:
             pt = (31, np.random.randint(3, 12))
         self.stage = (self.stage + 1) % self.N_STAGES
@@ -187,12 +188,16 @@ class ColorTransition(su.Transition):
     PERIOD = 2
     GAP = 0.025
     def transition_period(self, now):
-        self.target_time += self.PERIOD
-        rand_time = randrange(-self.PERIOD / 2 + self.GAP, self.PERIOD / 2 - self.GAP)
-        period = (self.target_time + rand_time) - now
-        assert period > self.GAP, period
-        assert period < 2 * (self.PERIOD - self.GAP), period
-        return period
+        if self.stage == 0 or self.stage == 1:
+            self.target_time += self.PERIOD
+            rand_time = randrange(-self.PERIOD / 2 + self.GAP, self.PERIOD / 2 - self.GAP)
+            period = (self.target_time + rand_time) - now
+            assert period > self.GAP, period
+            assert period < 2 * (self.PERIOD - self.GAP), period
+            return period
+        else:
+            self.target_time += .6
+            return .6
         # return 3
         # # if there is no randomness, all of the pixels change hues at the same time
         # # Too much randomness and each pixel will quickly end up a totally different color
@@ -212,7 +217,6 @@ class ColorTransition(su.Transition):
 
     def update(self, now):
         sat, val = su.Transition.update(self, now)
-        print self.hue, sat, val, self.idx
         hsv = np.array((
             self.hue,
             color_utils.linear_brightness(sat),
