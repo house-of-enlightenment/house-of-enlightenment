@@ -120,7 +120,7 @@ class Breathe(object):
         self.max_hue = 20
         self.min_hue = -20
         self.sources = np.random.randint(0, self.n_colors + self.n_black - 1, len(layout.pixels))
-        self.sources[:] = 0
+        #self.sources[:] = 0
 
     def start(self, now):
         hue = np.random.randint(0, 255)
@@ -165,21 +165,22 @@ class ColorTransition(su.Transition):
 
     def set_hue(self):
         if np.random.rand() < .2:
-            hue = (self.reference_hue + 128) % 256
+            hue = self.reference_hue + 128
         else:
             hue = self.reference_hue
         offset = np.random.randint(MIN_HUE, MAX_HUE)
-        self.hue = hue + offset
+        self.hue = (hue + offset) % 256
 
     def rnd_pt(self):
+        print "---", self.idx
         # 119 is just off of half (128) so we make a slow, pretty walk
         # around the color wheel
         if self.stage == 0:
             self.reference_hue = (self.reference_hue + 119) % 256
             self.set_hue()
-            pt = (self.hue, 31, np.random.randint(18, 31))
+            pt = (31, np.random.randint(18, 31))
         else:
-            pt = (self.hue, 31, np.random.randint(3, 12))
+            pt = (31, np.random.randint(3, 12))
         self.stage = (self.stage + 1) % self.N_STAGES
         return np.array(pt)
 
@@ -210,9 +211,10 @@ class ColorTransition(su.Transition):
         # return np.random.rand() * wt + 2
 
     def update(self, now):
-        hue, sat, val = su.Transition.update(self, now)
+        sat, val = su.Transition.update(self, now)
+        print self.hue, sat, val, self.idx
         hsv = np.array((
-            hue,
+            self.hue,
             color_utils.linear_brightness(sat),
             color_utils.linear_brightness(val)
         ))
