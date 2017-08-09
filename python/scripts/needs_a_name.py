@@ -110,6 +110,9 @@ class RainbowBlink(object):
             self.my_pixels[:,i] = c
 
 
+MIN_HUE = -20
+MAX_HUE = 20
+
 class Breathe(object):
     def __init__(self, layout):
         self.n_colors = 21
@@ -120,10 +123,7 @@ class Breathe(object):
 
     def start(self, now):
         hue = np.random.randint(0, 255)
-        self.color_transitions = [
-            ColorTransition(hue + step, now)
-            for step in np.linspace(self.min_hue, self.max_hue, self.n_colors, dtype=int)
-        ]
+        self.color_transitions = [ColorTransition(hue, now) for _ in range(self.n_colors)]
 
     def swap(self):
         # this method of swapping looked
@@ -150,39 +150,58 @@ STEPS = []
 
 class ColorTransition(su.Transition):
     def __init__(self, hue, now):
-        self.hue = hue % 256
+        # TODO: make hue the target hue and
+        #       on transition, pick whether to be complementary or not
+        #       and then pick a random hue within 30 of that
+        self.reference_hue = hue % 256
+        self.set_hue()
         self.full = False
         self.idx = len(STEPS)
+        self.target_time = now
         STEPS.append(0)
         su.Transition.__init__(self, now)
+
+    def set_hue(self):
+        if np.random.rand() < .2:
+            hue = (self.reference_hue + 128) % 256
+        else:
+            hue = self.reference_hue
+        offset = np.random.randint(MIN_HUE, MAX_HUE)
+        self.hue = hue + offset
 
     def rnd_pt(self):
         # 119 is just off of half (128) so we make a slow, pretty walk
         # around the color wheel
         if self.full:
-            self.hue += 119
-            pt = (self.hue, np.random.randint(24, 31), np.random.randint(24, 31))
+            self.reference_hue = (self.reference_hue + 119) % 256
+            self.set_hue()
+            pt = (self.hue, np.random.randint(26, 31), np.random.randint(26, 31))
         else:
-            pt = (self.hue, np.random.randint(3, 18), np.random.randint(3, 18))
+            pt = (self.hue, np.random.randint(3, 12), np.random.randint(3, 12))
         self.full = not self.full
         return np.array(pt)
 
-    def transition_period(self):
-        # if there is no randomness, all of the pixels change hues at the same time
-        # Too much randomness and each pixel will quickly end up a totally different color
-        # in my judgement, 1 / 3 is a good ratio
-        was_max = (STEPS[self.idx] == max(STEPS))
-        STEPS[self.idx] += 1
-        am_min = (STEPS[self.idx] == min(STEPS))
-        print max(STEPS), min(STEPS), self.idx, STEPS[self.idx]
-        wt = 2
-        if was_max:
-            print 'Run slower'
-            wt = 3
-        elif am_min:
-            print 'Run faster'
-            wt = 1
-        return np.random.rand() * wt + 2
+    def transition_period(self, now):
+        self.target_time += 3
+        period = (self.target_time + 2 * np.random.rand() - 1) - now
+        assert period > 0
+        return period
+        # return 3
+        # # if there is no randomness, all of the pixels change hues at the same time
+        # # Too much randomness and each pixel will quickly end up a totally different color
+        # # in my judgement, 1 / 3 is a good ratio
+        # was_max = (STEPS[self.idx] == max(STEPS))
+        # STEPS[self.idx] += 1
+        # am_min = (STEPS[self.idx] == min(STEPS))
+        # print max(STEPS), min(STEPS), self.idx, STEPS[self.idx]
+        # wt = 2
+        # if was_max:
+        #     print 'Run slower'
+        #     wt = 3
+        # elif am_min:
+        #     print 'Run faster'
+        #     wt = 1
+        # return np.random.rand() * wt + 2
 
 
 

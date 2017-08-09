@@ -281,7 +281,7 @@ class Transition(object):
     def _reset(self, now):
         self.start = self.end
         self.end = self.rnd_pt()
-        self.length = self.transition_period()
+        self.length = self.transition_period(now)
         self.start_time = now
 
     def transition_period(self):
