@@ -156,8 +156,8 @@ class ColorTransition(su.Transition):
     def rnd_pt(self):
         # 119 is just off of half (128) so we make a slow, pretty walk
         # around the color wheel
-        self.hue += np.random.randint(119, 137)
         if self.full:
+            self.hue += np.random.randint(119, 137)
             pt = (self.hue, np.random.randint(24, 31), np.random.randint(24, 31))
         else:
             pt = (self.hue, np.random.randint(3, 28), np.random.randint(3, 28))
