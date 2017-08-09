@@ -149,13 +149,14 @@ class Breathe(object):
 STEPS = []
 
 class ColorTransition(su.Transition):
+    N_STAGES = 5
     def __init__(self, hue, now):
         # TODO: make hue the target hue and
         #       on transition, pick whether to be complementary or not
         #       and then pick a random hue within 30 of that
         self.reference_hue = hue % 256
         self.set_hue()
-        self.full = False
+        self.stage = 0
         self.idx = len(STEPS)
         self.target_time = now
         STEPS.append(0)
@@ -170,22 +171,38 @@ class ColorTransition(su.Transition):
         self.hue = hue + offset
 
     def rnd_pt(self):
-        # 119 is just off of half (128) so we make a slow, pretty walk
-        # around the color wheel
-        if self.full:
+        # Try having three stages
+        # where in the first stage we switch hue and go from dark to light
+        # in the second stage we keep the same hue, but transition to
+        # something else
+        # and then in the third state we transition back to dark
+        print 'IN STAGE: {}'.format(self.stage)
+        if self.stage == 0:
+            # 119 is just off of half (128) so we make a slow, pretty walk
+            # around the color wheel
             self.reference_hue = (self.reference_hue + 119) % 256
             self.set_hue()
             pt = (self.hue, np.random.randint(26, 31), np.random.randint(26, 31))
+        elif self.stage < self.N_STAGES - 1:
+            if np.random.rand() < .20:
+                # change the brightness to ensure we go from light to dark
+                pt = (self.hue, np.random.randint(24, 31), (self.end[2] + 16) % 32)
+            else:
+                # don't change
+                pt = self.end
         else:
             pt = (self.hue, np.random.randint(3, 12), np.random.randint(3, 12))
-        self.full = not self.full
+        self.stage = (self.stage + 1) % self.N_STAGES
         return np.array(pt)
 
     def transition_period(self, now):
-        self.target_time += 3
+        self.target_time += 2
         period = (self.target_time + 2 * np.random.rand() - 1) - now
         assert period > 0
-        return period
+        if self.stage == 1:
+            return period
+        else:
+            return period / 3.0
         # return 3
         # # if there is no randomness, all of the pixels change hues at the same time
         # # Too much randomness and each pixel will quickly end up a totally different color

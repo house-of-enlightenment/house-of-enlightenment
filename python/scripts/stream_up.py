@@ -270,6 +270,7 @@ class Transition(object):
 
     def update(self, now):
         self.reset_if_needed(now)
+        # make a linear step towards the end target
         delta = (self.end - self.start) * (now - self.start_time) / self.length
         return self.start + delta
 
