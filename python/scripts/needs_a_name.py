@@ -27,6 +27,9 @@ GREEN = (0, 255, 0)
 YELLOW = (255, 255, 0)
 
 
+np.seterr(over='ignore')
+
+
 def main():
     # TODO: copy and paste is bad, mkay.
     client = opc.Client('localhost:7890')
@@ -147,46 +150,48 @@ class Breathe(object):
     def colors(self, now):
         return color_utils.hsv2rgb([ct.update(now) for ct in self.color_transitions])
 
-STEPS = []
 
 class ColorTransition(su.Transition):
     N_STAGES = 4
+    PERIOD = 2
+    GAP = 0.025
+
     def __init__(self, hue, now):
-        # TODO: make hue the target hue and
-        #       on transition, pick whether to be complementary or not
-        #       and then pick a random hue within 30 of that
-        self.reference_hue = hue % 256
+        # using uint8 so that we don't have to take mod all of the time
+        self.reference_hue = np.uint8(hue)
         self.set_hue()
         self.stage = 0
-        self.idx = len(STEPS)
         self.target_time = now
-        STEPS.append(0)
         su.Transition.__init__(self, now)
 
     def set_hue(self):
         if np.random.rand() < .2:
-            hue = self.reference_hue + 128
+            # 20% chance of picking the complementary color
+            hue = self.reference_hue + np.uint8(128)
         else:
             hue = self.reference_hue
         offset = np.random.randint(MIN_HUE, MAX_HUE)
-        self.hue = (hue + offset) % 256
+        self.hue = np.uint8(hue + offset)
 
     def rnd_pt(self):
         # 119 is just off of half (128) so we make a slow, pretty walk
         # around the color wheel
         if self.stage == 0:
-            self.reference_hue = (self.reference_hue + 119) % 256
+            self.reference_hue = self.reference_hue + np.uint8(119)
             self.set_hue()
+            # In playing around, full saturation looked the best
+            #
+            # Using linear brightness so it ranges from 0-31 instead of
+            # 0-255
             pt = (31, np.random.randint(18, 31))
         elif self.stage < self.N_STAGES - 1:
+            # these stages add a bit of a sparkle look
             pt = (31, np.random.randint(12, 31))
         else:
             pt = (31, np.random.randint(3, 12))
         self.stage = (self.stage + 1) % self.N_STAGES
         return np.array(pt)
 
-    PERIOD = 2
-    GAP = 0.025
     def transition_period(self, now):
         if self.stage == 0 or self.stage == 1:
             self.target_time += self.PERIOD
@@ -198,22 +203,6 @@ class ColorTransition(su.Transition):
         else:
             self.target_time += .6
             return .6
-        # return 3
-        # # if there is no randomness, all of the pixels change hues at the same time
-        # # Too much randomness and each pixel will quickly end up a totally different color
-        # # in my judgement, 1 / 3 is a good ratio
-        # was_max = (STEPS[self.idx] == max(STEPS))
-        # STEPS[self.idx] += 1
-        # am_min = (STEPS[self.idx] == min(STEPS))
-        # print max(STEPS), min(STEPS), self.idx, STEPS[self.idx]
-        # wt = 2
-        # if was_max:
-        #     print 'Run slower'
-        #     wt = 3
-        # elif am_min:
-        #     print 'Run faster'
-        #     wt = 1
-        # return np.random.rand() * wt + 2
 
     def update(self, now):
         sat, val = su.Transition.update(self, now)
@@ -227,11 +216,6 @@ class ColorTransition(su.Transition):
 
 def randrange(low, high):
     return np.random.rand() * (high - low) + low
-
-
-class GoDarkAndSwap(object):
-    pass
-
 
 
 if __name__ == '__main__':
