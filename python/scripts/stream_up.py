@@ -285,7 +285,7 @@ class Transition(object):
         self.length = self.transition_period(now)
         self.start_time = now
 
-    def transition_period(self):
+    def transition_period(self, now):
         return np.random.rand() * 3 + 1
 
     def rnd_pt(self):
