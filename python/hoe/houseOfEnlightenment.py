@@ -64,7 +64,6 @@ def parse_command_line():
     STATE.layout = Layout(parse_json_file(options.layout_file))
     STATE.servers = parse_json_file(options.servers)
     STATE.fps = options.fps
-
     return options
 
 
@@ -85,23 +84,12 @@ def find_root(start_dirs=[], look_for=set(["layout", "python"])):
             if look_for.issubset(os.listdir(curr_dir)):
                 print "    Found root directory of", curr_dir
                 return curr_dir
-
     print "Could not find %s in parent dirs of %s. Root will be none" % (look_for, start_dirs)
 
 
-# parse layout file.
-# TODO: groups, strips, clients, channels
 def parse_json_file(filename):
-    # type: (str) -> dict
-    print '    parsing file', filename
-
-    # Just use a dictionary as loaded
     with open(filename) as f:
         return json.load(f)
-
-
-# -------------------------------------------------------------------------------
-# connect to OPC server
 
 
 def create_opc_client(server, verbose=False):
@@ -189,13 +177,24 @@ def create_osc_station_clients(servers):
         ]
 
 
+def build_opc_client(verbose):
+    if 'opc_server' in STATE.servers['remote']:
+        return create_opc_client(
+            server=STATE.servers["remote"]["opc_server"], verbose=verbose)
+    else:
+        clients = [
+            create_opc_client(server_ip_port, verbose=verbose)
+            for server_ip_port in STATE.servers['remote']['opc_servers']
+        ]
+        return opc.MultiClient(clients, STATE.layout)
+
+
 def launch():
     config = parse_command_line()
     osc_server = osc_utils.create_osc_server(
         host=STATE.servers["hosting"]["osc_server"]["host"],
         port=int(STATE.servers["hosting"]["osc_server"]["port"]))
-    opc_client = create_opc_client(
-        server=STATE.servers["remote"]["opc_server"], verbose=config.verbose)
+    opc_client = build_opc_client(config)
     stations = create_osc_station_clients(servers=STATE.servers["remote"]["osc_controls"])
     STATE.station_osc_clients = stations
     framework = init_animation_framework(osc_server, opc_client, stations, config.scene)
