@@ -179,8 +179,7 @@ def create_osc_station_clients(servers):
 
 def build_opc_client(verbose):
     if 'opc_server' in STATE.servers['remote']:
-        return create_opc_client(
-            server=STATE.servers["remote"]["opc_server"], verbose=verbose)
+        return create_opc_client(server=STATE.servers["remote"]["opc_server"], verbose=verbose)
     else:
         clients = [
             create_opc_client(server_ip_port, verbose=verbose)

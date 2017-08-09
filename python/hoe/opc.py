@@ -37,7 +37,6 @@ import struct
 
 import numpy as np
 
-
 kinet_data = [0x0401dc4a, 0x0100, 0x0101, 0x00000000, 0x00, 0x00, 0x0000, 0xffffffff, 0x00]
 kinet_header = struct.pack(">IHHIBBHIB", *kinet_data)
 kinet_maxpixels = 170
@@ -219,13 +218,13 @@ def to_byte(num):
     return int(min(255, max(0, num)))
 
 
-
 class MultiClient(object):
     """Opc client that splits messsages across multiple opc lients.
 
     The pixels are broken into parts, as determined by the address field
     of the pixel in the layout file
     """
+
     def __init__(self, clients, layout):
         ips = set(c.ip for c in clients)
         assert ips == set(layout.address.keys()), 'client ips do not match addresses in layout'
