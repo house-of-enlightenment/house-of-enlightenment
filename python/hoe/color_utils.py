@@ -104,6 +104,7 @@ def gamma(color, gamma):
 # An alternative can be found here
 # https://github.com/scikit-image/scikit-image/blob/master/skimage/color/colorconv.py#L299
 def hsv2rgb(hsv):
+    hsv = np.array(hsv)
     input_shape = hsv.shape
     hsv = hsv.reshape(-1, 3)
     h, s, v = hsv[:, 0] / 255, hsv[:, 1] / 255, hsv[:, 2]

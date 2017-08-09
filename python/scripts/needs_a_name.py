@@ -141,36 +141,34 @@ class Breathe(object):
     def next_frame(self, now, pixels):
         #self.swap()
         colors = np.concatenate((self.colors(now), [BLACK] * self.n_black))
-        for i in range(3):
-            arr = np.repeat(colors[:,i].reshape(1, len(colors)), len(self.sources), axis=0)
-            c = arr[range(len(self.sources)), self.sources]#, colors[:,i])
-            # need to access the underlying pixels
-            # because I'm setting the RGB values, not row/column
-            pixels.pixels[:,i] = c
+        pixels.pixels[:] = colors[self.sources]
 
     def colors(self, now):
-        return [ct.update(now) for ct in self.color_transitions]
+        return color_utils.hsv2rgb([ct.update(now) for ct in self.color_transitions])
 
 
 class ColorTransition(su.Transition):
     def __init__(self, hue, now):
         self.hue = hue % 256
-        self.full = True
+        self.full = False
         su.Transition.__init__(self, now)
 
     def rnd_pt(self):
         # 119 is just off of half (128) so we make a slow, pretty walk
         # around the color wheel
-        self.hue += 119
+        self.hue += np.random.randint(119, 137)
         if self.full:
-            pt = (self.hue, 31, 31)
+            pt = (self.hue, np.random.randint(24, 31), np.random.randint(24, 31))
         else:
-            pt = (self.hue, np.random.randint(0, 31), np.random.randint(0, 31))
+            pt = (self.hue, np.random.randint(3, 28), np.random.randint(3, 28))
         self.full = not self.full
         return np.array(pt)
 
     def transition_period(self):
-        return np.random.rand() * 3 + 1
+        # if there is no randomness, all of the pixels change hues at the same time
+        # Too much randomness and each pixel will quickly end up a totally different color
+        # in my judgement, 1 / 3 is a good ratio
+        return np.random.rand() * 1 + 3
 
     def update(self, now):
         hue, sat, val = su.Transition.update(self, now)
@@ -179,7 +177,7 @@ class ColorTransition(su.Transition):
             color_utils.linear_brightness(sat),
             color_utils.linear_brightness(val)
         ))
-        return color_utils.hsv2rgb(hsv)
+        return hsv
 
 
 class GoDarkAndSwap(object):
