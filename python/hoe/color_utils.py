@@ -117,6 +117,7 @@ def hsv2rgb(hsv):
 
     rgb = np.zeros_like(hsv, np.uint8)
     v, t, p, q = v.reshape(-1, 1), t.reshape(-1, 1), p.reshape(-1, 1), q.reshape(-1, 1)
+    # This could probably be much faster if replaced with np.choose
     rgb[i == 0] = np.hstack([v, t, p])[i == 0]
     rgb[i == 1] = np.hstack([q, v, p])[i == 1]
     rgb[i == 2] = np.hstack([p, v, t])[i == 2]
@@ -150,3 +151,19 @@ def bi_rainbow(size, hue_start, hue_end, saturation=255, value=255):
     r2 = rainbow(
         size=size // 2, hue_start=hue_end, hue_end=hue_start, saturation=saturation, value=value)
     return np.concatenate((r1, r2))
+
+
+# Perception of LED brightness is not linear. This applies a correction
+# so that we get approximately 32 equal steps of brightness
+#
+# Lookup table from:
+# https://ledshield.wordpress.com/2012/11/13/led-brightness-to-your-eye-gamma-correction-no/
+#
+_BRIGHTNESS = [
+    0, 1, 2, 3, 4, 5, 7, 9, 12, 15, 18, 22, 27, 32, 38, 44, 51, 58,
+    67, 76, 86, 96, 108, 120, 134, 148, 163, 180, 197, 216, 235, 255
+]
+MAX_BRIGHTNESS = len(_BRIGHTNESS)
+
+def linear_brightness(val):
+    return _BRIGHTNESS[int(val)]
