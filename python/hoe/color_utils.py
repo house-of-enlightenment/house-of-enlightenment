@@ -161,10 +161,11 @@ def bi_rainbow(size, hue_start, hue_end, saturation=255, value=255):
 # https://ledshield.wordpress.com/2012/11/13/led-brightness-to-your-eye-gamma-correction-no/
 #
 _BRIGHTNESS = [
-    0, 1, 2, 3, 4, 5, 7, 9, 12, 15, 18, 22, 27, 32, 38, 44, 51, 58,
-    67, 76, 86, 96, 108, 120, 134, 148, 163, 180, 197, 216, 235, 255
+    0, 1, 2, 3, 4, 5, 7, 9, 12, 15, 18, 22, 27, 32, 38, 44, 51, 58, 67, 76, 86, 96, 108, 120, 134,
+    148, 163, 180, 197, 216, 235, 255
 ]
 MAX_BRIGHTNESS = len(_BRIGHTNESS)
+
 
 def linear_brightness(val):
     return _BRIGHTNESS[int(val)]

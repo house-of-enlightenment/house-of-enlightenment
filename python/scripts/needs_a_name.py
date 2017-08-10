@@ -26,7 +26,6 @@ BLUE = (0, 0, 255)
 GREEN = (0, 255, 0)
 YELLOW = (255, 255, 0)
 
-
 np.seterr(over='ignore')
 
 
@@ -59,20 +58,17 @@ class Static(object):
 
     def _next_frame(self):
         sources = np.random.randint(0, 6, len(self.my_pixels))
-        colors = np.array([
-            RED, BLUE, GREEN,
-            BLACK, BLACK, BLACK
-        ])
+        colors = np.array([RED, BLUE, GREEN, BLACK, BLACK, BLACK])
         for i in range(3):
-            c = np.choose(sources, colors[:,i])
-            self.my_pixels[:,i] = c
+            c = np.choose(sources, colors[:, i])
+            self.my_pixels[:, i] = c
 
 
 class AnalogousColorStatic(object):
     def start(self, now):
         hue = np.random.randint(0, 255)
         self.colors = np.full((4, 3), 255, np.uint8)
-        self.colors[:,0] = (hue - 25, hue - 15, hue + 15, hue + 25)
+        self.colors[:, 0] = (hue - 25, hue - 15, hue + 15, hue + 25)
         self.switch = 0
         self.my_pixels = pixels.allocate_pixel_array(STATE.layout)
 
@@ -86,8 +82,8 @@ class AnalogousColorStatic(object):
         sources = np.random.randint(0, 7, len(self.my_pixels))
         colors = np.concatenate((self.colors, [BLACK, BLACK, BLACK]))
         for i in range(3):
-            c = np.choose(sources, colors[:,i])
-            self.my_pixels[:,i] = c
+            c = np.choose(sources, colors[:, i])
+            self.my_pixels[:, i] = c
 
 
 class RainbowBlink(object):
@@ -95,7 +91,7 @@ class RainbowBlink(object):
         self.my_pixels = pixels.allocate_pixel_array(STATE.layout)
         hue = np.random.randint(0, 255)
         self.colors = np.full((4, 3), 255, np.uint8)
-        self.colors[:,0] = (hue - 25, hue - 15, hue + 15, hue + 25)
+        self.colors[:, 0] = (hue - 25, hue - 15, hue + 15, hue + 25)
         self.switch = 0
 
     def next_frame(self, now, pixels):
@@ -105,16 +101,17 @@ class RainbowBlink(object):
         pixels[:] = color_utils.hsv2rgb(self.my_pixels)
 
     def _next_frame(self):
-        self.colors[:,0] = self.colors[:,0] + 119
+        self.colors[:, 0] = self.colors[:, 0] + 119
         self.sources = np.random.randint(0, 7, len(self.my_pixels))
         colors = np.concatenate((self.colors, [BLACK, BLACK, BLACK]))
         for i in range(3):
-            c = np.choose(self.sources, colors[:,i])
-            self.my_pixels[:,i] = c
+            c = np.choose(self.sources, colors[:, i])
+            self.my_pixels[:, i] = c
 
 
 MIN_HUE = -20
 MAX_HUE = 20
+
 
 class Breathe(object):
     def __init__(self, layout):
@@ -206,11 +203,8 @@ class ColorTransition(su.Transition):
 
     def update(self, now):
         sat, val = su.Transition.update(self, now)
-        hsv = np.array((
-            self.hue,
-            color_utils.linear_brightness(sat),
-            color_utils.linear_brightness(val)
-        ))
+        hsv = np.array((self.hue, color_utils.linear_brightness(sat),
+                        color_utils.linear_brightness(val)))
         return hsv
 
 
