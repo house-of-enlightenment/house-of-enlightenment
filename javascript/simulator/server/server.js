@@ -98,6 +98,9 @@ net.createServer(function (socket) {
 
     // forward socket messages from python to the browser
     socket.on("data", function (data) {
+      if (data.length != 42772) {
+        console.log('data length is funny: ' + data.length + '. It should be 42772')
+      }
       ws.send(data, function ack(error){
         if (error){
           console.log("error sending OPC to websocket client (3030)");
