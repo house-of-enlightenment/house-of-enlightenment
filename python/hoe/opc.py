@@ -37,6 +37,9 @@ import struct
 
 import numpy as np
 
+from hoe import color_utils
+
+
 kinet_data = [0x0401dc4a, 0x0100, 0x0101, 0x00000000, 0x00, 0x00, 0x0000, 0xffffffff, 0x00]
 kinet_header = struct.pack(">IHHIBBHIB", *kinet_data)
 kinet_maxpixels = 170
@@ -234,6 +237,7 @@ class MultiClient(object):
 
     def put_pixels(self, pixels, channel=0):
         pixels = np.array(pixels)
+        pixels = color_utils.color_correct(pixels)
         for client in self.clients:
             client.put_pixels(pixels[self.idx[client]])
 
