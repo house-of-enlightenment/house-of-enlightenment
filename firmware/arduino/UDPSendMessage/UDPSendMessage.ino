@@ -6,7 +6,7 @@
     Adrian Freed
  */
 #include <UIPEthernet.h>
-#include <UIPUdp.h>
+#include <Udp.h>
 #include <SPI.h>    
 #include <OSCMessage.h>
 
@@ -15,7 +15,7 @@ EthernetUDP Udp;
 //the Arduino's IP
 IPAddress ip(10, 0, 0, 55);
 //destination IP
-IPAddress outIp(10, 0, 0, 8);
+IPAddress outIp(10, 0, 0, 30);
 const unsigned int outPort = 9001;
 
  byte mac[] = {  

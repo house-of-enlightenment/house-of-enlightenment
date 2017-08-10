@@ -3,15 +3,9 @@ import json
 
 import numpy as np
 
-_GROUPBY = [
-    "address",
-    "section",
-    "strip",
-    "stripIndex",
-    "topOrBottom",
-]
+_GROUPBY = ["address", "section", "strip", "stripIndex", "topOrBottom", "row", "slice"]
 
-# Center is where the disk is widest
+# Center is the row where the disk is widest
 #
 # Bottom and top are subjective as there is no distinct line
 Disc = collections.namedtuple('Disc', 'bottom center top')
@@ -42,6 +36,7 @@ class Layout(object):
             for attr in _GROUPBY:
                 getattr(self, attr)[pixel[attr]].append(i)
 
+        # reset the defaultdicts to normal dictionaries
         for attr in _GROUPBY:
             setattr(self, attr, {k: v for k, v in getattr(self, attr).items()})
 

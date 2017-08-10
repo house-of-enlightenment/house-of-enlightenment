@@ -11,13 +11,15 @@ This package is the pattern logic driving the House of Enlightment LEDs.
 # Running the application
 ```
 # Simplest way to start up with all default values (uses local servers and default layout)
-python ./python/houseOfEnlightenment.py
+python ./python/hoe/houseOfEnlightenment.py
+# Start on a specific scene:
+python ./python/hoe/houseOfEnlightenment.py <scenename>
 # To run with customized layout or server list, use (below are default values): 
-python ./python/houseOfEnlightenment.py -l layout/hoeLayout.json -s layout/servers_local.json
+python ./python/hoe/houseOfEnlightenment.py -l layout/hoeLayout.json -s layout/servers_local.json
 # To change the FPS:
-python ./python/houseOfEnlightenment.py -f 30
+python ./python/hoe/houseOfEnlightenment.py -f 30
 # To run in verbose mode (not much supports this yet):
-python ./python/houseOfEnlightenment.py -v
+python ./python/hoe/houseOfEnlightenment.py -v
 ```
 
 # Interaction
@@ -31,6 +33,15 @@ The python application allows for some command prompt input to assist in develop
 | osc msg | anything else is sent as an osc message | /osc/path [arg1] [arg2] ... [argN] | See below |
 | osc button | simulate pressing a button | /input/button <station> <button> | /input/button 1 2 |
 | osc fader | simulate changing a fader | /input/fader <station> <fader> <value> | /input/fader 2 0 57 |
+| lidar | replay lidar data | lidar <filename> | lidar lidar/newbag.sample |
+
+# Lidar
+Upstream of the python layer is a lidar and a roscore application doing object recognition. That data can be sent to the server via OSC messages. The OSC messages come with 7 values: id, x, y, z, width, height depth. The id is NOT unique across scans - it is just an enumeration of the objects found in each cycle.
+
+We have captured some of these messages to a sample file using the python/scripts/capture_lidar.py script. You can replay it one of two ways:
+- Run the python/hoe/play_lidar.py script. You'll need to supply --filename, --host, and --port
+- From the command prompt of a launched animation framework (hoe/houseOfEnlightenment) type "lidar <path_to_file>"
+Sample data is in the <repo_root>/lidar/data directory
 
 # Contributing
 ## Before you commit
