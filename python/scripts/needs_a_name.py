@@ -120,16 +120,13 @@ class Breathe(object):
         self.max_hue = 20
         self.min_hue = -20
         self.sources = np.random.randint(0, self.n_colors + self.n_black - 1, len(layout.pixels))
-        #self.sources[:] = 0
 
     def start(self, now):
         hue = np.random.randint(0, 255)
         self.color_transitions = [ColorTransition(hue, now) for _ in range(self.n_colors)]
 
     def swap(self):
-        # this method of swapping looked
-        # like crap
-        # pick a random point
+        # this method of swapping looked like crap
         r = np.random.randint(0, STATE.layout.rows - 1)
         c = np.random.randint(0, STATE.layout.columns - 1)
         pt = np.array((r, c))
@@ -140,7 +137,6 @@ class Breathe(object):
         self.sources[a], self.sources[b] = self.sources[b], self.sources[a]
 
     def next_frame(self, now, pixels):
-        #self.swap()
         colors = np.concatenate((self.colors(now), [BLACK] * self.n_black))
         pixels.pixels[:] = colors[self.sources]
 
