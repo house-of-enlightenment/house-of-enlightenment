@@ -24,7 +24,17 @@ class Pixels(object):
         return len(self.pixels)
 
     def put(self, client):
+        # print_avg_brightness(self.pixels)
         client.put_pixels(self.pixels)
+
+
+def print_avg_brightness(pixels):
+    # Generally looks ugly if there are massive changes in brightness
+    # on the structure. Can be useful to print this out if you're
+    # worried about changes like that
+    #
+    # percieved luminance: https://stackoverflow.com/a/596243/2752242
+    print 'Bright:', pixels.dot([.299, .587, .114]).mean()
 
 
 def allocate_pixel_array(layout):
