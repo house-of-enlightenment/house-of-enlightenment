@@ -237,7 +237,7 @@ class MultiClient(object):
 
     def put_pixels(self, pixels, channel=0):
         pixels = np.array(pixels)
-        pixels = color_utils.color_correct(pixels)
+        # pixels = color_utils.color_correct(pixels)
         for client in self.clients:
             client.put_pixels(pixels[self.idx[client]])
 
