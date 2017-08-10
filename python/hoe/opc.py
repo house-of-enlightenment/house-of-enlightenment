@@ -209,6 +209,8 @@ class Client(object):
     def _send_message(self):
         self._debug('put_pixels: sending pixels to server')
         try:
+            # 42772 is the length if we're sending to the simulator
+            # assert len(self.message) == 42772, len(self.message)
             self._socket.send(self.message)
         except socket.error:
             self._debug('put_pixels: connection lost.  could not send pixels.')

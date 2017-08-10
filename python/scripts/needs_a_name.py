@@ -154,8 +154,6 @@ class Breathe(object):
         return color_utils.hsv2rgb([ct.update(now) for ct in self.color_transitions])
 
 
-TRANSITIONS = [0] * 4
-
 class ColorTransition(su.Transition):
     N_STAGES = 4
     PERIOD = 2
@@ -194,8 +192,6 @@ class ColorTransition(su.Transition):
         if self.switch_ref_hue_on_next_reset:
             # print 'Updating hue', self.stage, self.idx
             assert self.end < 12
-            TRANSITIONS[self.stage] += 1
-            print TRANSITIONS
             self.update_reference_hue()
             self.set_hue()
             self.switch_ref_hue_on_next_reset = False
