@@ -165,8 +165,8 @@ class ColorTransition(su.Transition):
         su.Transition.__init__(self, now)
 
     def set_hue(self):
-        if np.random.rand() < .2:
-            # 20% chance of picking the complementary color
+        if np.random.rand() < .3:
+            # 30% chance of picking the complementary color
             hue = self.reference_hue + np.uint8(128)
         else:
             hue = self.reference_hue
