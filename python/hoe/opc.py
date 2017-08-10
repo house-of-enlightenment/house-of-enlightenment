@@ -72,8 +72,8 @@ class Client(object):
 
         self._long_connection = long_connection
 
-        self._ip, self._port = server_ip_port.split(':')
-        self._port = int(self._port)
+        self.ip, self.port = server_ip_port.split(':')
+        self.port = int(self.port)
 
         self._socket = None  # will be None when we're not connected
         # TODO: if you want a different protocol, make a different class
@@ -98,11 +98,11 @@ class Client(object):
             return True
 
         try:
-            self._debug('_ensure_connected: trying to connect to ' + self._ip + ' using protocol ' +
+            self._debug('_ensure_connected: trying to connect to ' + self.ip + ' using protocol ' +
                         self.protocol + '...')
             self._socket = socket.socket(socket.AF_INET, self.socket_type)
             self._socket.settimeout(0.5)
-            self._socket.connect((self._ip, self._port))
+            self._socket.connect((self.ip, self.port))
             self._debug('_ensure_connected:    ...success')
             return True
         except socket.error:
@@ -216,3 +216,29 @@ class Client(object):
 
 def to_byte(num):
     return int(min(255, max(0, num)))
+
+
+class MultiClient(object):
+    """Opc client that splits messsages across multiple opc lients.
+
+    The pixels are broken into parts, as determined by the address field
+    of the pixel in the layout file
+    """
+
+    def __init__(self, clients, layout):
+        ips = set(c.ip for c in clients)
+        assert ips == set(layout.address.keys()), 'client ips do not match addresses in layout'
+        self.clients = clients
+        self.layout = layout
+        self.idx = {c: layout.address[c.ip] for c in clients}
+
+    def put_pixels(self, pixels, channel=0):
+        pixels = np.array(pixels)
+        for client in self.clients:
+            client.put_pixels(pixels[self.idx[client]])
+
+    def disconnect(self):
+        return all([c.disconnect() for c in self.clients])
+
+    def can_connect(self):
+        return all([c.can_connect() for c in self.clients])
