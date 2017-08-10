@@ -1,8 +1,4 @@
-"""Recreate the classic arcade game where a light rotates around and
-the player has to hit the button to stop the light at a target.
-"""
-# sorry for the spaghetti like nature of this code, but its getting better
-
+"""Draw and rotate a color wheel on the two discs"""
 from __future__ import division
 import json
 import math

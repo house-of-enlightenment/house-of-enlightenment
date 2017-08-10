@@ -24,6 +24,7 @@ class Layout(object):
         self.n_pixels = len(pixels)
         self.rows = rows
         self.columns = columns
+        self.shape = (rows, columns)
         self.grid = np.zeros((rows, columns), np.int)
         self.sections = 6
 

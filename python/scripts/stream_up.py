@@ -76,6 +76,8 @@ class Render(object):
             self.pixels[:] = 0
             for effect in self.effects:
                 effect.next_frame(now, self.pixels)
+            # make half very dark gray for a more realistic view
+            self.pixels[:, 33:] = 5
             self.pixels.put(self.client)
             self.sleep_until_next_frame(now)
 
@@ -187,7 +189,7 @@ class RainbowRow(object):
 
     Each update gradually shifts the original arc towards another
     arc. Once that is hit, another random arc is choosen and we
-    continue the process.  Additionally the row is rotated.
+    continue the process. Additionally the row is rotated.
 
     The speed of the transitions and rotations vary randomly.
     """
@@ -268,6 +270,7 @@ class Transition(object):
 
     def update(self, now):
         self.reset_if_needed(now)
+        # make a linear step towards the end target
         delta = (self.end - self.start) * (now - self.start_time) / self.length
         return self.start + delta
 
@@ -279,10 +282,10 @@ class Transition(object):
     def _reset(self, now):
         self.start = self.end
         self.end = self.rnd_pt()
-        self.length = self.transition_period()
+        self.length = self.transition_period(now)
         self.start_time = now
 
-    def transition_period(self):
+    def transition_period(self, now):
         return np.random.rand() * 3 + 1
 
     def rnd_pt(self):
