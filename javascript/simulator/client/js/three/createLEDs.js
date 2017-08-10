@@ -34,6 +34,7 @@ function createGeometry(layout) {
       console.log('low:', lengthLow);
       console.log('expected:', dataSize);
       console.log('actual:', data.length);
+      return;
     }
 
     // change the colors of the LEDS based on the OPC signal
