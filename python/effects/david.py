@@ -349,7 +349,12 @@ class DavesAbstractLidarClass(Effect):
                 half_angle = abs(np.arctan2(data.width / 2, apothem))
                 col_left = int((central_theta - half_angle) * ratio) % STATE.layout.columns
                 col_right = int(ceil((central_theta + half_angle) * ratio)) % STATE.layout.columns
-                self.render_lidar_input(pixels=pixels, obj_id=obj_id, row_slice=row_slice, col_left=col_left, col_right=col_right)
+                self.render_lidar_input(
+                    pixels=pixels,
+                    obj_id=obj_id,
+                    row_slice=row_slice,
+                    col_left=col_left,
+                    col_right=col_right)
 
     def get_default_column_slices(self, col_left, col_right):
         if col_right < col_left:
@@ -371,15 +376,18 @@ class OpaqueLidar(DavesAbstractLidarClass):
             pixels=pixels,
             additive=True,
             color=color,
-            slices=[(row_slice, col_slice) for col_slice in self.get_default_column_slices(col_left=col_left, col_right=col_right)])
+            slices=[(row_slice, col_slice)
+                    for col_slice in self.get_default_column_slices(
+                        col_left=col_left, col_right=col_right)])
 
 
 class SwappingLidar(DavesAbstractLidarClass):
     def render_lidar_input(self, pixels, obj_id, row_slice, col_left, col_right):
         if col_left < col_right:
-            pixels[row_slice,col_left:col_right] = pixels[row_slice, col_right:col_left:-1]
+            pixels[row_slice, col_left:col_right] = pixels[row_slice, col_right:col_left:-1]
         else:
-            col_indices = map(lambda x: x % STATE.layout.columns, range(col_right, col_left+STATE.layout.columns))
+            col_indices = map(lambda x: x % STATE.layout.columns,
+                              range(col_right, col_left + STATE.layout.columns))
             reversed_indices = col_indices
             reversed_indices.reverse()
             pixels[row_slice, col_indices] = pixels[row_slice, reversed_indices]
@@ -456,12 +464,13 @@ class TideLauncher(MultiEffect):
 
 
 def pick_mod_n(columns, mod=2, value=0, **kwargs):
-    return filter(lambda x: x%mod == value, columns)
+    return filter(lambda x: x % mod == value, columns)
 
 
 class Columns(Effect):
-    def __init__(self, color=(0,0,0), column_picker=pick_mod_n, additive=False):
-        Effect.__init__(self,)
+    def __init__(self, color=(0, 0, 0), column_picker=pick_mod_n, additive=False):
+        Effect.__init__(
+            self, )
         self.picker = column_picker
         self.color = np.array(color, dtype=np.uint8)
         self.additive = additive
@@ -473,6 +482,7 @@ class Columns(Effect):
             pixels[:, columns] += self.color
         else:
             pixels[:, columns] = self.color
+
 
 __all__ = [
     Scene(
@@ -520,11 +530,11 @@ __all__ = [
     #       Columns(color=(0,100,100), column_picker=partial(pick_mod_n, mod=4, value=3), additive=True),
     #       FrameRotator(rate=-.25),
     #       ),
-    Scene("rainbowblackoutcolumns",
-          NoOpCollaborationManager(),
-          Rainbow(hue_start=0, hue_end=255),
-          FrameRotator(rate=-.25),
-          Columns(color=(0, 0, 0), column_picker=partial(pick_mod_n, mod=10)),
-          FrameRotator(rate=.25)
-          )
+    Scene(
+        "rainbowblackoutcolumns",
+        NoOpCollaborationManager(),
+        Rainbow(hue_start=0, hue_end=255),
+        FrameRotator(rate=-.25),
+        Columns(color=(0, 0, 0), column_picker=partial(pick_mod_n, mod=10)),
+        FrameRotator(rate=.25))
 ]
