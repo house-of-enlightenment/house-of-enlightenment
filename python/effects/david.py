@@ -11,9 +11,11 @@ from random import getrandbits
 from itertools import product
 from math import ceil
 from generic_effects import SolidBackground
+from generic_effects import Rainbow
 from generic_effects import NoOpCollaborationManager
 from generic_effects import FrameRotator
 from generic_effects import FunctionFrameRotator
+from functools import partial
 import examples
 import numpy as np
 import debugging_effects
@@ -430,6 +432,25 @@ class TideLauncher(MultiEffect):
         self.effects.append(e)
 
 
+def pick_mod_n(columns, mod=2, value=0, **kwargs):
+    return filter(lambda x: x%mod == value, columns)
+
+
+class Columns(Effect):
+    def __init__(self, color=(0,0,0), column_picker=pick_mod_n, additive=False):
+        Effect.__init__(self,)
+        self.picker = column_picker
+        self.color = np.array(color, dtype=np.uint8)
+        self.additive = additive
+
+    def next_frame(self, pixels, now, collaboration_state, osc_data):
+        # TODO : row limiter
+        columns = self.picker(columns=range(STATE.layout.columns))
+        if self.additive:
+            pixels[:, columns] += self.color
+        else:
+            pixels[:, columns] = self.color
+
 __all__ = [
     Scene(
         "buttonchaser",
@@ -457,5 +478,22 @@ __all__ = [
         SolidBackground(color=(30, 30, 30)),
         LidarDisplay()),
     Scene("risingtide",
-          NoOpCollaborationManager(), SolidBackground(), TideLauncher(), FrameRotator())
+          NoOpCollaborationManager(), SolidBackground(), TideLauncher(), FrameRotator()),
+    # TODO This is currently just an eyesore
+    # Scene("columnfunction",
+    #       NoOpCollaborationManager(),
+    #       Columns(color=(128, 0, 0), column_picker=partial(pick_mod_n, mod=4)),
+    #       Columns(color=(0,128,0), column_picker=partial(pick_mod_n, mod=4, value=2)),
+    #       FrameRotator(rate=.5),
+    #       Columns(color=(100,0,100), column_picker=partial(pick_mod_n, mod=4, value=1), additive=True),
+    #       Columns(color=(0,100,100), column_picker=partial(pick_mod_n, mod=4, value=3), additive=True),
+    #       FrameRotator(rate=-.25),
+    #       ),
+    Scene("rainbowblackoutcolumns",
+          NoOpCollaborationManager(),
+          Rainbow(hue_start=0, hue_end=255),
+          FrameRotator(rate=-.25),
+          Columns(color=(0, 0, 0), column_picker=partial(pick_mod_n, mod=10)),
+          FrameRotator(rate=.25)
+          )
 ]
