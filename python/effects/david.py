@@ -234,25 +234,26 @@ class Pulser(Effect):
 
 
 class DiskPulsers(Effect):
-    def __init__(self, pulse_length=10, bottom_row=2, top_row=None, after_fill=30):
+    def __init__(self, pulse_length=10, bottom_row=0, top_row=None, after_fill=30):
         self.pulse_length = pulse_length
         self.bottom_row = bottom_row
         self.top_row = top_row if top_row else STATE.layout.rows
         self.after_fill = after_fill
-
         self.frame = 0
+        self.row_indices = [range(STATE.layout.BOTTOM_DISC.center-r, self.bottom_row-1, -self.pulse_length) +\
+                             range(STATE.layout.BOTTOM_DISC.center+r,STATE.layout.DISC_MIDPOINT+1,self.pulse_length) + \
+                             range(STATE.layout.TOP_DISC.center - r, STATE.layout.DISC_MIDPOINT, -self.pulse_length) + \
+                             range(STATE.layout.TOP_DISC.center + r, self.top_row, self.pulse_length) for r in range(self.pulse_length)]
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
         self.frame += 1
-        for r in range(self.pulse_length):
-            row_indices = range(STATE.layout.BOTTOM_DISC.center-r, self.bottom_row, -self.pulse_length) +\
-                             range(STATE.layout.BOTTOM_DISC.center+r,STATE.layout.DISC_MIDPOINT+1,self.pulse_length) + \
-                             range(STATE.layout.TOP_DISC.center - r, STATE.layout.DISC_MIDPOINT, -self.pulse_length) + \
-                             range(STATE.layout.TOP_DISC.center + r, self.top_row, self.pulse_length)
-
-            pixels[row_indices, :] /= ((self.frame - r) % self.pulse_length) + 1
+        for r, row_indices in enumerate(self.get_row_indices_array()):
+            pixels[row_indices, :] /= ((self.frame-r) % self.pulse_length) + 1
         pixels[self.bottom_row:self.top_row, :] += self.after_fill
 
+    def get_row_indices_array(self):
+        # return [self.row_indices[-1]]+self.row_indices[0:-1]
+        return self.row_indices
 
 class RotatingWedge(Effect):
     def __init__(self,
