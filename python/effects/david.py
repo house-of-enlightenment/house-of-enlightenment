@@ -347,7 +347,7 @@ class DavesAbstractLidarClass(Effect):
 
                 bottom_row = max(0, int(apothem * DISTANCE_SCALE))
                 top_row = min(STATE.layout.BOTTOM_DISC.center, int(bottom_row + 1 + abs(data.height * HEIGHT_SCALE)))
-                row_slice = slice(bottom_row, top_row)
+                bottom_row, top_row = min(bottom_row, top_row), max(bottom_row, top_row)
 
                 col_left = int((central_theta - half_angle) * ratio) % STATE.layout.columns
                 col_right = int(ceil((central_theta + half_angle) * ratio)) % STATE.layout.columns
@@ -355,7 +355,8 @@ class DavesAbstractLidarClass(Effect):
                 self.render_lidar_input(
                     pixels=pixels,
                     obj_id=obj_id,
-                    row_slice=row_slice,
+                    row_bottom=bottom_row,
+                    row_top=top_row,
                     col_left=col_left,
                     col_right=col_right)
 
@@ -372,28 +373,28 @@ class DavesAbstractLidarClass(Effect):
 
 
 class OpaqueLidar(DavesAbstractLidarClass):
-    def render_lidar_input(self, pixels, obj_id, row_slice, col_left, col_right):
+    def render_lidar_input(self, pixels, obj_id, row_bottom, row_top, col_left, col_right):
         color = np.asarray((0, 0, 0), np.uint8)
         color[obj_id % 3] = (255 - 30) / 2
         update_pixels(
             pixels=pixels,
             additive=True,
             color=color,
-            slices=[(row_slice, col_slice)
+            slices=[(slice(row_bottom, row_top), col_slice)
                     for col_slice in self.get_default_column_slices(
                         col_left=col_left, col_right=col_right)])
 
 
 class SwappingLidar(DavesAbstractLidarClass):
-    def render_lidar_input(self, pixels, obj_id, row_slice, col_left, col_right):
+    def render_lidar_input(self, pixels, obj_id, row_bottom, row_top, col_left, col_right):
         if col_left < col_right:
-            pixels[row_slice, col_left:col_right] = pixels[row_slice, col_right:col_left:-1]
+            pixels[row_bottom:row_top, col_left:col_right] = pixels[row_top:row_bottom:-1, col_right:col_left:-1]
         else:
             col_indices = map(lambda x: x % STATE.layout.columns,
                               range(col_right, col_left + STATE.layout.columns))
             reversed_indices = col_indices
             reversed_indices.reverse()
-            pixels[row_slice, col_indices] = pixels[row_slice, reversed_indices]
+            pixels[row_bottom:row_top, col_indices] = pixels[row_top:row_bottom:-1, reversed_indices]
 
 
 class RisingTide(Effect):
