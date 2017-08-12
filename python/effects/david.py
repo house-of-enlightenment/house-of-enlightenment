@@ -332,7 +332,8 @@ def distortion_rotation(offsets, t, start_t, frame):
 
 class DavesAbstractLidarClass(Effect):
     def next_frame(self, pixels, t, collaboration_state, osc_data):
-        SCALE = 30
+        HEIGHT_SCALE = 30
+        DISTANCE_SCALE=10
 
         ratio = STATE.layout.columns / (np.pi * 2)
         if osc_data.lidar_objects:
@@ -340,15 +341,17 @@ class DavesAbstractLidarClass(Effect):
             lidar_computations = []
             for obj_id, data in objects.iteritems():
                 # TODO Probably faster conversion mechanism or at least make a helper method
-                bottom_row = max(0, int(data.pose_z * SCALE))
-                top_row = min(STATE.layout.rows, int(bottom_row + 1 + abs(data.height * SCALE)))
-                row_slice = slice(bottom_row, top_row)
-
                 apothem = np.sqrt(data.pose_x**2 + data.pose_y**2)
                 central_theta = np.arctan2(data.pose_y, data.pose_x)
                 half_angle = abs(np.arctan2(data.width / 2, apothem))
+
+                bottom_row = max(0, int(apothem * DISTANCE_SCALE))
+                top_row = min(STATE.layout.BOTTOM_DISC.center, int(bottom_row + 1 + abs(data.height * HEIGHT_SCALE)))
+                row_slice = slice(bottom_row, top_row)
+
                 col_left = int((central_theta - half_angle) * ratio) % STATE.layout.columns
                 col_right = int(ceil((central_theta + half_angle) * ratio)) % STATE.layout.columns
+
                 self.render_lidar_input(
                     pixels=pixels,
                     obj_id=obj_id,
