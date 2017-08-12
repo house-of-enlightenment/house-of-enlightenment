@@ -10,6 +10,7 @@ const loadSimulatorTasks = require("./pages/simulator.js");
 const loadControlsTasks = require("./pages/controls.js");
 const loadLayoutTasks = require("./pages/layout.js");
 const loadHoeTasks = require("./pages/hoe.js");
+const loadAdminTasks = require("./pages/admin.js");
 
 const projectRoot = path.resolve(__dirname, "../..");
 
@@ -34,6 +35,9 @@ loadLayoutTasks(projectRoot);
 
 /* gulp hoe */
 loadHoeTasks(projectRoot);
+
+/* gulp admin */
+loadAdminTasks(projectRoot);
 
 
 gulp.task("build-all", ["simulator-build", "controls-build", "hoe-build"]);

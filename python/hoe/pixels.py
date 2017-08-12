@@ -4,7 +4,7 @@ import numpy as np
 class Pixels(object):
     def __init__(self, layout):
         self.layout = layout
-        self.pixels = np.zeros((len(self.layout.pixels), 3), np.uint8)
+        self.pixels = allocate_pixel_array(layout)
 
     def __getitem__(self, key):
         if isinstance(key, tuple):
@@ -24,4 +24,18 @@ class Pixels(object):
         return len(self.pixels)
 
     def put(self, client):
+        # print_avg_brightness(self.pixels)
         client.put_pixels(self.pixels)
+
+
+def print_avg_brightness(pixels):
+    # Generally looks ugly if there are massive changes in brightness
+    # on the structure. Can be useful to print this out if you're
+    # worried about changes like that
+    #
+    # percieved luminance: https://stackoverflow.com/a/596243/2752242
+    print 'Bright:', pixels.dot([.299, .587, .114]).mean()
+
+
+def allocate_pixel_array(layout):
+    return np.zeros((len(layout.pixels), 3), np.uint8)
