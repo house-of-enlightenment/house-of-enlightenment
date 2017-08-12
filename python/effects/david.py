@@ -233,6 +233,27 @@ class Pulser(Effect):
         pixels[self.bottom_row:self.top_row, :] += self.after_fill
 
 
+class DiskPulsers(Effect):
+    def __init__(self, pulse_length=10, bottom_row=2, top_row=None, after_fill=30):
+        self.pulse_length = pulse_length
+        self.bottom_row = bottom_row
+        self.top_row = top_row if top_row else STATE.layout.rows
+        self.after_fill = after_fill
+
+        self.frame = 0
+
+    def next_frame(self, pixels, t, collaboration_state, osc_data):
+        self.frame += 1
+        for r in range(self.pulse_length):
+            row_indices = range(STATE.layout.BOTTOM_DISC.center-r, self.bottom_row, -self.pulse_length) +\
+                             range(STATE.layout.BOTTOM_DISC.center+r,STATE.layout.DISC_MIDPOINT+1,self.pulse_length) + \
+                             range(STATE.layout.TOP_DISC.center - r, STATE.layout.DISC_MIDPOINT, -self.pulse_length) + \
+                             range(STATE.layout.TOP_DISC.center + r, self.top_row, self.pulse_length)
+
+            pixels[row_indices, :] /= ((self.frame - r) % self.pulse_length) + 1
+        pixels[self.bottom_row:self.top_row, :] += self.after_fill
+
+
 class RotatingWedge(Effect):
     def __init__(self,
                  color=(255, 255, 0),
@@ -333,7 +354,7 @@ def distortion_rotation(offsets, t, start_t, frame):
 class DavesAbstractLidarClass(Effect):
     def next_frame(self, pixels, t, collaboration_state, osc_data):
         HEIGHT_SCALE = 30
-        DISTANCE_SCALE=10
+        DISTANCE_SCALE = 10
 
         ratio = STATE.layout.columns / (np.pi * 2)
         if osc_data.lidar_objects:
@@ -346,7 +367,8 @@ class DavesAbstractLidarClass(Effect):
                 half_angle = abs(np.arctan2(data.width / 2, apothem))
 
                 bottom_row = max(0, int(apothem * DISTANCE_SCALE))
-                top_row = min(STATE.layout.BOTTOM_DISC.center, int(bottom_row + 1 + abs(data.height * HEIGHT_SCALE)))
+                top_row = min(STATE.layout.BOTTOM_DISC.center,
+                              int(bottom_row + 1 + abs(data.height * HEIGHT_SCALE)))
                 bottom_row, top_row = min(bottom_row, top_row), max(bottom_row, top_row)
 
                 col_left = int((central_theta - half_angle) * ratio) % STATE.layout.columns
@@ -388,13 +410,15 @@ class OpaqueLidar(DavesAbstractLidarClass):
 class SwappingLidar(DavesAbstractLidarClass):
     def render_lidar_input(self, pixels, obj_id, row_bottom, row_top, col_left, col_right):
         if col_left < col_right:
-            pixels[row_bottom:row_top, col_left:col_right] = pixels[row_top:row_bottom:-1, col_right:col_left:-1]
+            pixels[row_bottom:row_top, col_left:col_right] = pixels[row_top:row_bottom:-1,
+                                                                    col_right:col_left:-1]
         else:
             col_indices = map(lambda x: x % STATE.layout.columns,
                               range(col_right, col_left + STATE.layout.columns))
             reversed_indices = col_indices
             reversed_indices.reverse()
-            pixels[row_bottom:row_top, col_indices] = pixels[row_top:row_bottom:-1, reversed_indices]
+            pixels[row_bottom:row_top, col_indices] = pixels[row_top:row_bottom:-1,
+                                                             reversed_indices]
 
 
 class RisingTide(Effect):
@@ -540,5 +564,7 @@ __all__ = [
         Rainbow(hue_start=0, hue_end=255),
         FrameRotator(rate=-.25),
         Columns(color=(0, 0, 0), column_picker=partial(pick_mod_n, mod=10)),
-        FrameRotator(rate=.25))
+        FrameRotator(rate=.25)),
+    Scene("diskrainbow",
+          NoOpCollaborationManager(), Rainbow(hue_start=0, hue_end=255 - 30), DiskPulsers())
 ]

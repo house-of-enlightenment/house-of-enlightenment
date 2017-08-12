@@ -18,6 +18,7 @@ SECTIONS = 6
 class Layout(object):
     BOTTOM_DISC = Disc(39, 62, 109)
     TOP_DISC = Disc(139, 160, 191)
+    DISC_MIDPOINT = (BOTTOM_DISC.top + TOP_DISC.bottom) / 2
 
     def __init__(self, pixels, rows=ROWS, columns=COLUMNS, sections=SECTIONS):
         self.pixels = pixels
