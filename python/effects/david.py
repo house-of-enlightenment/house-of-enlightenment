@@ -330,13 +330,14 @@ def distortion_rotation(offsets, t, start_t, frame):
     print offsets
 
 
-class LidarDisplay(Effect):
+class DavesAbstractLidarClass(Effect):
     def next_frame(self, pixels, t, collaboration_state, osc_data):
         SCALE = 30
 
         ratio = STATE.layout.columns / (np.pi * 2)
         if osc_data.lidar_objects:
             objects = osc_data.lidar_objects
+            lidar_computations = []
             for obj_id, data in objects.iteritems():
                 # TODO Probably faster conversion mechanism or at least make a helper method
                 bottom_row = max(0, int(data.pose_z * SCALE))
@@ -348,18 +349,40 @@ class LidarDisplay(Effect):
                 half_angle = abs(np.arctan2(data.width / 2, apothem))
                 col_left = int((central_theta - half_angle) * ratio) % STATE.layout.columns
                 col_right = int(ceil((central_theta + half_angle) * ratio)) % STATE.layout.columns
-                col_slices = [slice(col_left, col_right)]
-                if col_left < 0:
-                    col_slices = [slice(0, col_right), slice(STATE.layout.columns + col_left, None)]
-                elif col_right > STATE.layout.columns:
-                    col_slices = [slice(col_left, None), slice(0, col_right % STATE.layout.columns)]
-                color = np.asarray((0, 0, 0), np.uint8)
-                color[data.object_id % 3] = (255 - 30) / 2
-                update_pixels(
-                    pixels=pixels,
-                    additive=True,
-                    color=color,
-                    slices=[(row_slice, col_slice) for col_slice in col_slices])
+                self.render_lidar_input(pixels=pixels, obj_id=obj_id, row_slice=row_slice, col_left=col_left, col_right=col_right)
+
+    def get_default_column_slices(self, col_left, col_right):
+        if col_right < col_left:
+            return [slice(0, col_right), slice(col_left, None)]
+        else:
+            # print "No wrap"
+            return [slice(col_left, col_right)]
+
+    def render_lidar_input(self, pixels, obj_id, row_slice, col_left, col_right):
+        # TODO: Should this just be a passed in function instead of needing to subclass?
+        raise NotImplementedError
+
+
+class OpaqueLidar(DavesAbstractLidarClass):
+    def render_lidar_input(self, pixels, obj_id, row_slice, col_left, col_right):
+        color = np.asarray((0, 0, 0), np.uint8)
+        color[obj_id % 3] = (255 - 30) / 2
+        update_pixels(
+            pixels=pixels,
+            additive=True,
+            color=color,
+            slices=[(row_slice, col_slice) for col_slice in self.get_default_column_slices(col_left=col_left, col_right=col_right)])
+
+
+class SwappingLidar(DavesAbstractLidarClass):
+    def render_lidar_input(self, pixels, obj_id, row_slice, col_left, col_right):
+        if col_left < col_right:
+            pixels[row_slice,col_left:col_right] = pixels[row_slice, col_right:col_left:-1]
+        else:
+            col_indices = map(lambda x: x % STATE.layout.columns, range(col_right, col_left+STATE.layout.columns))
+            reversed_indices = col_indices
+            reversed_indices.reverse()
+            pixels[row_slice, col_indices] = pixels[row_slice, reversed_indices]
 
 
 class RisingTide(Effect):
@@ -476,7 +499,15 @@ __all__ = [
         NoOpCollaborationManager(),
         #          Rainbow(hue_start=0, hue_end=255),
         SolidBackground(color=(30, 30, 30)),
-        LidarDisplay()),
+        OpaqueLidar()),
+    Scene(
+        "lidarswap",
+        NoOpCollaborationManager(),
+        Rainbow(hue_start=0, hue_end=255),
+        # FunctionFrameRotator(
+        #     func=FunctionFrameRotator.sample_roll_offset,
+        #     start_offsets=5 * np.sin(np.linspace(0, 8 * np.pi, STATE.layout.rows))),
+        SwappingLidar()),
     Scene("risingtide",
           NoOpCollaborationManager(), SolidBackground(), TideLauncher(), FrameRotator()),
     # TODO This is currently just an eyesore

@@ -193,7 +193,7 @@ def launch():
     osc_server = osc_utils.create_osc_server(
         host=STATE.servers["hosting"]["osc_server"]["host"],
         port=int(STATE.servers["hosting"]["osc_server"]["port"]))
-    opc_client = build_opc_client(config)
+    opc_client = build_opc_client(config.verbose)
     stations = create_osc_station_clients(servers=STATE.servers["remote"]["osc_controls"])
     STATE.station_osc_clients = stations
     framework = init_animation_framework(osc_server, opc_client, stations, config.scene)
