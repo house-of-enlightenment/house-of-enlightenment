@@ -79,6 +79,22 @@ void setup() {
   }
 
 }
+
+char * numToOSCAddress( int pin) {
+  static char s[10];
+  int i = 9;
+
+  s[i--] = '\0';
+  do
+  {
+    s[i] = "0123456789"[pin % 10];
+    --i;
+    pin /= 10;
+  }
+  while (pin && i);
+  s[i] = '/';
+  return &s[i];
+}
 //reads and dispatches the incoming message
 void loop() {
 
@@ -89,18 +105,25 @@ void loop() {
 
 void OSCMsgReceive() {
   OSCMessage msgIN;
-  int size;
-  if ((size = Udp.parsePacket()) > 0) {
-    while (size--)
+  int sizeOf;
+  if ((sizeOf = Udp.parsePacket()) > 0) {
+    Serial.println("Recxeived a packet");
+    while (sizeOf--) {
+      Serial.print("size is: ");
+      Serial.println(sizeOf);
       msgIN.fill(Udp.read());
+    }
     if (!msgIN.hasError()) {
-      Serial.println("a message received");
+      Serial.println("\na message received, routing now ");
       msgIN.route("/button/0", routeButton0);
       msgIN.route("/button/1", routeButton1);
       msgIN.route("/button/2", routeButton2);
       msgIN.route("/button/3", routeButton3);
       msgIN.route("/button/4", routeButton4);
       // msgIN.route("/Fader/Value",funcValue);
+    }
+    if (msgIN.hasError()) {
+      Serial.println("    ----->>>>> Theres an error message");
     }
     Udp.flush();
     Udp.stop();
@@ -114,6 +137,8 @@ void routeButton0(OSCMessage &msg, int addrOffset ) {
   Serial.println(ledState);
   Serial.print("got Button Message offset : ");
   Serial.println(addrOffset);
+  Serial.print("got address message : ");
+  Serial.println(msg.getAddress(numToOSCAddress(0), addrOffset));
   toggleLights(0);
 }
 
@@ -123,6 +148,8 @@ void routeButton1(OSCMessage &msg, int addrOffset ) {
   Serial.println(ledState);
   Serial.print("got Button Message offset : ");
   Serial.println(addrOffset);
+  Serial.print("got address message : ");
+  Serial.println(msg.getAddress(numToOSCAddress(1), addrOffset));
   toggleLights(1);
 }
 void routeButton2(OSCMessage &msg, int addrOffset ) {
@@ -159,14 +186,14 @@ void toggleLights(int val) {
   Serial.print(outputLightState[val]);
   Serial.print(" and ");
   Serial.println(val);
-//  for (int i = 0; i++; i < 5) {
-//    digitalWrite(outPins[i], outputState);
-//  }
+  //  for (int i = 0; i++; i < 5) {
+  //    digitalWrite(outPins[i], outputState);
+  //  }
   digitalWrite(outPins[val], outputLightState[val]);
-//  digitalWrite(outPins[1], outputState);
-//  digitalWrite(outPins[2], outputState);
-//  digitalWrite(outPins[3], outputState);
-//  digitalWrite(outPins[4], outputState);
+  //  digitalWrite(outPins[1], outputState);
+  //  digitalWrite(outPins[2], outputState);
+  //  digitalWrite(outPins[3], outputState);
+  //  digitalWrite(outPins[4], outputState);
 }
 
 
