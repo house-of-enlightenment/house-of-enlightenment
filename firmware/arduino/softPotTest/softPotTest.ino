@@ -1,42 +1,41 @@
 //Using these softpots with a 10k pulldown https://learn.sparkfun.com/tutorials/softpot-hookup-guide
 
-const int SOFT_POT_PIN1 = A6; // Pin connected to softpot wiper
-const int SOFT_POT_PIN2 = A7; // Pin connected to softpot wiper
+const byte sliderIn[2] = {A6, A7};
 
-const int GRAPH_LENGTH = 40; // Length of line graph
+int sliderVals[2] = {0, 0};
+int oldSliderVals[2] = {0, 0};
+int sliderLowVal = 10;
+int sliderHighVal = 1013;
 
-void setup() 
+void setup()
 {
   Serial.begin(9600);
-  pinMode(SOFT_POT_PIN1, INPUT);
-  pinMode(SOFT_POT_PIN2, INPUT);
+  for (int i = 0; i < 2; i++) {
+    pinMode(sliderIn[i], INPUT);
+  }
 }
 
-void loop() 
+void loop()
 {
-  // Read in the soft pot's ADC value
-  int softPotADC1 = analogRead(SOFT_POT_PIN1);
-  int softPotADC2 = analogRead(SOFT_POT_PIN2);
-  // Map the 0-1023 value to 0-40
-  int softPotPosition1 = map(softPotADC1, 0, 1023, 0, GRAPH_LENGTH);
-  int softPotPosition2 = map(softPotADC2, 0, 1023, 0, GRAPH_LENGTH);
-
-  // Print a line graph:
-  Serial.print("<"); // Starting end
-  for (int i=0; i<GRAPH_LENGTH; i++)
-  {
-    if (i == softPotPosition1) Serial.print("|");
-    else Serial.print("-");
-  }
-  Serial.print("> (" + String(softPotADC1) + ") ");
-
-  Serial.print("<"); // Starting end
-  for (int i=0; i<GRAPH_LENGTH; i++)
-  {
-    if (i == softPotPosition2) Serial.print("|");
-    else Serial.print("-");
-  }
-  Serial.println("> (" + String(softPotADC2) + ") ");
-
+  readSliders();
   delay(100);
 }
+
+void readSliders() {
+  for (int i = 0; i < 2; i++) {
+    int sliderVal = analogRead(sliderIn[i]);
+    if ( sliderVal >= sliderLowVal && sliderVal <= sliderHighVal) {
+      sliderVals[i] = map(sliderVal, sliderLowVal, sliderHighVal, 0, 100);
+    }
+    if (oldSliderVals[i] != sliderVals[i]) {
+      oldSliderVals[i] = sliderVals[i];
+      Serial.print("Slider");
+      Serial.print(i);
+      Serial.print(" is ");
+      Serial.print(sliderVals[i]);
+      Serial.print(" actual val is ");
+      Serial.println(sliderVal);
+    }
+  }
+}
+

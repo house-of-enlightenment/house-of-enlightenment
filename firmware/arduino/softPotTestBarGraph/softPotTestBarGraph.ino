@@ -15,8 +15,8 @@ serial monitor should match the wiper's position.
 Development environment specifics:
 Arduino 1.6.7
 ******************************************************************************/
-const int SOFT_POT_PIN1 = A6; // Pin connected to softpot wiper
-const int SOFT_POT_PIN2 = A7; // Pin connected to softpot wiper
+const byte SOFT_POT_PIN1 = A6; // Pin connected to softpot wiper
+const byte SOFT_POT_PIN2 = A7; // Pin connected to softpot wiper
 
 const int GRAPH_LENGTH = 40; // Length of line graph
 
