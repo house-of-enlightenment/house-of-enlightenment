@@ -1,5 +1,7 @@
 """Draw and rotate a color wheel on the two discs"""
 from __future__ import division
+
+import argparse
 import json
 import math
 import Queue
@@ -30,6 +32,9 @@ np.seterr(over='ignore')
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('n', type=int)
+    args = parser.parse_args()
     # TODO: copy and paste is bad, mkay.
     client = opc.Client('localhost:7890')
     if not client.can_connect():
@@ -40,7 +45,7 @@ def main():
         hoe_layout = layout.Layout(json.load(f))
 
     STATE.layout = hoe_layout
-    background = Breathe(hoe_layout)
+    background = Breathe(hoe_layout, args.n)
     render = su.Render(client, None, hoe_layout, [background])
     render.run_forever()
 
@@ -114,8 +119,8 @@ MAX_HUE = 15
 
 
 class Breathe(object):
-    def __init__(self, layout):
-        self.n_colors = 40
+    def __init__(self, layout, n_colors):
+        self.n_colors = n_colors
         self.layout = layout
         # randomly place each color into the pixel array
         self.sources = np.random.randint(0, self.n_colors , len(layout.pixels))
@@ -223,13 +228,15 @@ class ColorTransition(su.Transition):
 
     def update(self, now):
         val = su.Transition.update(self, now)
+        print(val)
+        val = int(val / 31.0 * 255)
         # In playing around, full saturation looked the best
         sat = 255
         hsv = np.array((
             self.hue,
             sat,
-            color_utils.linear_brightness(val))
-        )
+            color_utils._GAMMA_CORRECTION[val]
+        ))
         return hsv
 
 
@@ -246,16 +253,26 @@ def twinkle():
 
 
 def dark():
+    return 11
     return np.random.randint(0, 12)
+
+
+# def weighted_bright():
+#     """Returns a medium to high bright value, with preference towards bright"""
+#     return np.random.choice(
+#         [12, 13, 14, 15, 16] +
+#         [17, 18, 19, 20, 21] * 2 +
+#         [22, 23, 24, 25, 26] * 3 +
+#         [27, 28, 29, 30, 31] * 4
+#     )
 
 
 def weighted_bright():
     """Returns a medium to high bright value, with preference towards bright"""
     return np.random.choice(
-        [12, 13, 14, 15, 16] +
-        [17, 18, 19, 20, 21] * 2 +
-        [22, 23, 24, 25, 26] * 3 +
-        [27, 28, 29, 30, 31] * 4
+        [17, 18, 19, 20, 21] * 1 +
+        [22, 23, 24, 25, 26] * 2 +
+        [27, 28, 29, 30, 31] * 3
     )
 
 

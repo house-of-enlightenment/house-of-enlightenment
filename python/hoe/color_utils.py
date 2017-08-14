@@ -167,7 +167,7 @@ _BRIGHTNESS = [
 MAX_BRIGHTNESS = len(_BRIGHTNESS)
 
 
-def linear_brightness(val):
+def linear_brightness(val, interpolate=False):
     return _BRIGHTNESS[int(val)]
 
 
