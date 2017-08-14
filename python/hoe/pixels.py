@@ -27,6 +27,13 @@ class Pixels(object):
         # print_avg_brightness(self.pixels)
         client.put_pixels(self.pixels)
 
+    def update(self, slices, additive, color):
+        for r, c in slices:
+            if additive:
+                self[r, c] += color
+            else:
+                self[r, c] = color
+
 
 def print_avg_brightness(pixels):
     # Generally looks ugly if there are massive changes in brightness

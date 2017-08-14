@@ -248,12 +248,13 @@ class DiskPulsers(Effect):
     def next_frame(self, pixels, t, collaboration_state, osc_data):
         self.frame += 1
         for r, row_indices in enumerate(self.get_row_indices_array()):
-            pixels[row_indices, :] /= ((self.frame-r) % self.pulse_length) + 1
+            pixels[row_indices, :] /= ((self.frame - r) % self.pulse_length) + 1
         pixels[self.bottom_row:self.top_row, :] += self.after_fill
 
     def get_row_indices_array(self):
         # return [self.row_indices[-1]]+self.row_indices[0:-1]
         return self.row_indices
+
 
 class RotatingWedge(Effect):
     def __init__(self,
@@ -275,14 +276,12 @@ class RotatingWedge(Effect):
     def next_frame(self, pixels, t, collaboration_state, osc_data):
         if self.angle == 0:
             if self.start_col < self.end_col:
-                update_pixels(
-                    pixels=pixels,
+                pixels.update(
                     slices=[(slice(None), slice(self.start_col, self.end_col))],
                     additive=self.additive,
                     color=self.color)
             else:
-                update_pixels(
-                    pixels=pixels,
+                pixels.update(
                     slices=[(slice(None), slice(self.start_col, None)), (slice(None), slice(
                         None, self.end_col))],
                     additive=self.additive,
@@ -295,17 +294,9 @@ class RotatingWedge(Effect):
                       for r, c in enumerate(
                           np.arange(self.start_col, self.start_col + self.angle * STATE.layout.rows,
                                     self.angle))]
-            update_pixels(pixels=pixels, slices=slices, additive=self.additive, color=self.color)
+            pixels.update(slices=slices, additive=self.additive, color=self.color)
         self.start_col = (self.start_col + self.direction) % STATE.layout.columns
         self.end_col = (self.end_col + self.direction) % STATE.layout.columns
-
-
-def update_pixels(pixels, slices, additive, color):
-    for r, c in slices:
-        if additive:
-            pixels[r, c] += color
-        else:
-            pixels[r, c] = color
 
 
 def button_launch_checker(t, collaboration_state, osc_data):
@@ -399,8 +390,7 @@ class OpaqueLidar(DavesAbstractLidarClass):
     def render_lidar_input(self, pixels, obj_id, row_bottom, row_top, col_left, col_right):
         color = np.asarray((0, 0, 0), np.uint8)
         color[obj_id % 3] = (255 - 30) / 2
-        update_pixels(
-            pixels=pixels,
+        pixels.update(
             additive=True,
             color=color,
             slices=[(slice(row_bottom, row_top), col_slice)
