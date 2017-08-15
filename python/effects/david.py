@@ -276,16 +276,9 @@ class RotatingWedge(Effect):
     def next_frame(self, pixels, t, collaboration_state, osc_data):
         if self.angle == 0:
             if self.start_col < self.end_col:
-                pixels.update(
-                    slices=[(slice(None), slice(self.start_col, self.end_col))],
-                    additive=self.additive,
-                    color=self.color)
+                pixels.update_slices(additive=self.additive, color=self.color, slices=[])
             else:
-                pixels.update(
-                    slices=[(slice(None), slice(self.start_col, None)), (slice(None), slice(
-                        None, self.end_col))],
-                    additive=self.additive,
-                    color=self.color)
+                pixels.update_slices(additive=self.additive, color=self.color, slices=[])
 
         else:
             # TODO Combine Slices or get Indexes?
@@ -294,7 +287,7 @@ class RotatingWedge(Effect):
                       for r, c in enumerate(
                           np.arange(self.start_col, self.start_col + self.angle * STATE.layout.rows,
                                     self.angle))]
-            pixels.update(slices=slices, additive=self.additive, color=self.color)
+            pixels.update_slices(additive=self.additive, color=self.color, slices=[])
         self.start_col = (self.start_col + self.direction) % STATE.layout.columns
         self.end_col = (self.end_col + self.direction) % STATE.layout.columns
 
@@ -390,12 +383,7 @@ class OpaqueLidar(DavesAbstractLidarClass):
     def render_lidar_input(self, pixels, obj_id, row_bottom, row_top, col_left, col_right):
         color = np.asarray((0, 0, 0), np.uint8)
         color[obj_id % 3] = (255 - 30) / 2
-        pixels.update(
-            additive=True,
-            color=color,
-            slices=[(slice(row_bottom, row_top), col_slice)
-                    for col_slice in self.get_default_column_slices(
-                        col_left=col_left, col_right=col_right)])
+        pixels.update_slices(additive=True, color=color, slices=[])
 
 
 class SwappingLidar(DavesAbstractLidarClass):
