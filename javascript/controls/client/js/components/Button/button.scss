@@ -32,39 +32,47 @@ $white: white;
         font-size: 14px;
     }
 
-    &.is-disabled {
+    &.is-disabled button  {
         background-color: rgba($white, 0.2);
         border: 2px solid transparent;
     }
 
-    &.button--red button {
-        background-color: $red;
+    &.button--red {
+        button {
+            background-color: $red;
+        }
 
-        &.is-disabled {
+        &.is-disabled button {
             background-color: rgba($red, 0.2);
         }
     }
 
-    &.button--green button {
-        background-color: $green;
+    &.button--green {
+        button {
+            background-color: $green;
+        }
 
-        &.is-disabled {
+        &.is-disabled button {
             background-color: rgba($green, 0.2);
         }
     }
 
-    &.button--blue button {
-        background-color: $blue;
+    &.button--blue {
+        button {
+            background-color: $blue;
+        }
 
-        &.is-disabled {
+        &.is-disabled button {
             background-color: rgba($blue, 0.2);
         }
     }
 
-    &.button--yellow button {
-        background-color: $yellow;
+    &.button--yellow {
+        button {
+            background-color: $yellow;
+        }
 
-        &.is-disabled {
+        &.is-disabled button {
             background-color: rgba($yellow, 0.2);
         }
     }
