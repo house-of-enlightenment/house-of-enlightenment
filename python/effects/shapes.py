@@ -76,7 +76,7 @@ class Shape(Effect):
         self.curr_col = start_col
         self.movement_function = movement_function if movement_function else no_movement
 
-    def scene_starting(self):
+    def scene_starting(self, now):
         self.curr_row, self.curr_col = self.start_row, self.start_col
 
     def next_frame(self, pixels, now, collaboration_state, osc_data):
