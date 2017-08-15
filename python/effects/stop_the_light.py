@@ -12,7 +12,6 @@ from hoe.state import STATE
 
 from generic_effects import SolidBackground
 
-
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)

@@ -1,17 +1,20 @@
 from hoe import color_utils
 from hoe.animation_framework import Scene
 from hoe.animation_framework import Effect
+from hoe.animation_framework import CollaborationManager
+from hoe.animation_framework import EffectFactory
+from hoe.animation_framework import MultiEffect
 from hoe.state import STATE
+from generic_effects import NoOpCollaborationManager
+from generic_effects import SolidBackground
+from random import randrange
 
-from examples import SampleFeedbackEffect
-
-
-class TonyEffect(Effect):
+class TonyTestEffect(Effect):
     """Always return red"""
 
     def next_frame(self, pixels, t, collaborative_state, osc_data):
         for ii, coord in enumerate(STATE.layout.pixels):
-            pixels[ii] = (0, 255, 0)
+            pixels[ii] = (255, 0, 0)
 
 
 # a simple effect for the bottom of the ring in red
@@ -21,8 +24,8 @@ class Background1(Effect):
             self.gentle_glow(pixels, t, coord, ii)
 
     def gentle_glow(self, pixels, t, coord, ii):
-        if pixels[ii]:
-            return
+        #if pixels[ii]:
+        #    return
 
         x, y, z = coord['point']
         g = 0
@@ -33,6 +36,6 @@ class Background1(Effect):
 
 
 __all__ = [
-    # Scene("tony's scene", SampleFeedbackEffect(), TonyEffect()),
-    # Scene("tony's next scene", SampleFeedbackEffect(), Background1())
+    Scene("tonyscene1", NoOpCollaborationManager(), TonyTestEffect()),
+    Scene("tonyscene2", NoOpCollaborationManager(), Background1())
 ]

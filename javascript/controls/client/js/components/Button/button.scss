@@ -1,11 +1,57 @@
+$red: #c0392b;
+$green: #27ae60;
+$blue: #2980b9;
+$yellow: #f1c40f;
+$white: white;
+
+
+
 button {
     width: 26px;
     height: 26px;
     margin: 1px;
-    background-color: #fff;
+    background-color: $white;
     border: 2px solid #ccc;
     border-radius: 50%;
     cursor: pointer;
     font-weight: bold;
     font-size: 14px;
+
+    &.is-disabled {
+        background-color: rgba($white, 0.2);
+        border: 2px solid transparent;
+    }
+
+    &.button--red {
+        background-color: $red;
+
+        &.is-disabled {
+            background-color: rgba($red, 0.2);
+        }
+    }
+
+    &.button--green {
+        background-color: $green;
+
+        &.is-disabled {
+            background-color: rgba($green, 0.2);
+        }
+    }
+
+    &.button--blue {
+        background-color: $blue;
+
+        &.is-disabled {
+            background-color: rgba($blue, 0.2);
+        }
+    }
+
+    &.button--yellow {
+        background-color: $yellow;
+
+        &.is-disabled {
+            background-color: rgba($yellow, 0.2);
+        }
+    }
+
 }

@@ -5,9 +5,9 @@ from hoe.animation_framework import CollaborationManager
 from hoe.animation_framework import EffectFactory
 from hoe.animation_framework import MultiEffect
 from hoe.state import STATE
+from generic_effects import NoOpCollaborationManager
+from generic_effects import SolidBackground
 from random import randrange
-import generic_effects
-import debugging_effects
 
 
 class SpatialStripesBackground(Effect):
@@ -59,6 +59,23 @@ class ColumnStreak(Effect):
         return self.row >= STATE.layout.rows
 
 
+class AdjustableFillFromBottom(Effect):
+    def __init__(self, max_in=100):
+        Effect.__init__(self)
+        self.color_scale = 255.0 / max_in
+        self.row_scale = 216.0 / max_in
+
+    def next_frame(self, pixels, t, collaboration_state, osc_data):
+        for ii, coord in enumerate(STATE.layout.pixels):
+            self.fill(pixels, t, coord, ii, osc_data)
+
+    def fill(self, pixels, time, coord, ii, osc_data):
+        # TODO Check for existance of fade
+        if osc_data.stations[5].faders[0] * self.row_scale > coord["row"]:
+            pixels[ii] = tuple(
+                [int(osc_data.stations[i].faders[0] * self.color_scale) for i in range(3)])
+
+
 class SampleEffectLauncher(MultiEffect):
     def before_rendering(self, pixels, t, collaboration_state, osc_data):
         MultiEffect.before_rendering(self, pixels, t, collaboration_state, osc_data)
@@ -74,29 +91,10 @@ class SampleEffectLauncher(MultiEffect):
         self.effects.append(e)
 
 
-class SampleFeedbackEffect(CollaborationManager, Effect):
-    def next_frame(self, pixels, t, collaboration_state, osc_data):
-        pixels[0:2, :] = (0, 255, 0)
-
-    def compute_state(self, t, collaboration_state, osc_data):
-        pass
-
-
-osc_printing_effect = debugging_effects.PrintOSC()
-spatial_background = SpatialStripesBackground()
-red_background = generic_effects.SolidBackground((255, 0, 0))
-blue_background = generic_effects.SolidBackground((0, 0, 255))
-moving_dot = debugging_effects.MovingDot()
-
-default_feedback_effect = SampleFeedbackEffect()
-
 __all__ = [
-    Scene("launchdots", default_feedback_effect,
-          generic_effects.SolidBackground((100, 100, 100)), SampleEffectLauncher()),
-    Scene("redgreenprinting", default_feedback_effect, osc_printing_effect,
-          generic_effects.SolidBackground()),
-    Scene("adjustablebackground", default_feedback_effect, red_background,
-          generic_effects.AdjustableFillFromBottom()),
-    Scene("bluewithdot", default_feedback_effect, blue_background, moving_dot),
-    Scene("spatial scene", default_feedback_effect, spatial_background)
+    Scene("spatial scene", NoOpCollaborationManager(), SpatialStripesBackground()),
+    Scene("adjustablebackground",
+          NoOpCollaborationManager(), SolidBackground(), AdjustableFillFromBottom()),
+    Scene("launchdots",
+          NoOpCollaborationManager(), SolidBackground((100, 100, 100)), SampleEffectLauncher()),
 ]

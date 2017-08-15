@@ -6,13 +6,14 @@
 import os.path
 import glob
 import importlib
-import inspect
 import sys
 import time
 from threading import Thread
 from pixels import Pixels
+from itertools import ifilter
 from functools import partial
 import atexit
+from collections import OrderedDict
 
 from OSC import OSCServer
 
@@ -21,8 +22,13 @@ from hoe.opc import Client
 
 
 class AnimationFramework(object):
-    def __init__(self, osc_server, opc_client, osc_station_clients=[], scenes=None):
-        # OSCServer, Client, dict, int -> None
+    def __init__(self,
+                 osc_server,
+                 opc_client,
+                 osc_station_clients=[],
+                 scenes=None,
+                 first_scene=None):
+        # type: (OSCServer, Client, List(OSCClient), {str, Scene}) -> None
         self.osc_server = osc_server
         self.opc_client = opc_client
         self.osc_station_clients = osc_station_clients
@@ -31,14 +37,14 @@ class AnimationFramework(object):
         # Load all scenes from effects package. Then set initial index and load it up
         self.scenes = scenes or load_scenes()
         self.curr_scene = None
-        self.queued_scene = self.scenes[self.scenes.keys()[0]]
+        self.queued_scene = self.scenes[first_scene if first_scene else self.scenes.keys()[0]]
         self.change_scene()
 
         self.serve = False
         self.is_running = False
 
         self.osc_data = StoredOSCData(clients=osc_station_clients)
-        self.setup_handlers({0: 50})
+        self.setup_osc_input_handlers({0: 50})
 
     def next_scene_handler(self, path, tags, args, source):
         if not args or args[0] == "":
@@ -48,13 +54,12 @@ class AnimationFramework(object):
 
     def select_scene_handler(self, path, tags, args, source):
         # TODO: Call specific scenes
-        print path, tags, args, source
         if args[0] == "":
             self.next_scene()
         else:
             self.pick_scene(args[0])
 
-    def setup_handlers(self, faders={}):
+    def setup_osc_input_handlers(self, faders={}):
         """
         :param faders: Dictionary of faders and their default values for each station
         :return:
@@ -79,7 +84,21 @@ class AnimationFramework(object):
             station, button_id, value = map(int, args)
             self.osc_data.fader_changed(station, button_id, value)
 
+        def handle_lidar(path, tags, args, source):
+            object_id = args[0]
+            data = LidarData(
+                object_id,
+                args[1],
+                args[2],
+                args[3],  # Pose
+                args[4],
+                args[5],
+                args[6])  # Velocity?
+            # TODO Parse, queue, and erase
+            self.osc_data.add_lidar_data(object_id, data)
+
         self.osc_server.addMsgHandler("/input/fader", handle_fader)
+        self.osc_server.addMsgHandler("/lidar", handle_lidar)
 
         print "Registered all OSC Handlers"
 
@@ -91,6 +110,9 @@ class AnimationFramework(object):
         self.curr_scene.scene_ended()
 
     def get_osc_frame(self, clear=True):
+        # type: (bool) -> StoredOSCData
+        """Get the last frame of osc data and initialize the next frame"""
+        # TODO: Do we need to explicitly synchronize here?
         last_frame = self.osc_data
         self.osc_data = StoredOSCData(last_data=last_frame)
         return last_frame
@@ -158,11 +180,12 @@ def wait_for_next_frame(wait_until):
 
 
 def load_scenes(effects_dir=None):
+    # type: (str) -> {str, Scene}
     if not effects_dir:
         pwd = os.path.dirname(__file__)
         effects_dir = os.path.abspath(os.path.join(pwd, '..', 'effects'))
     sys.path.append(effects_dir)
-    scenes = {}
+    scenes = OrderedDict()
     for filename in glob.glob(os.path.join(effects_dir, '*.py')):
         pkg_name = os.path.basename(filename)[:-3]
         if pkg_name.startswith("_"):
@@ -173,6 +196,7 @@ def load_scenes(effects_dir=None):
 
 
 def load_scenes_from_file(pkg_name, scenes):
+    # type: (str, {str, Scene}) -> None
     try:
         effect_dict = importlib.import_module(pkg_name)
         for scene in effect_dict.__all__:
@@ -190,6 +214,18 @@ def load_scenes_from_file(pkg_name, scenes):
 
 def get_first_non_empty(pixels):
     return next(pix for pix in pixels if pix is not None)
+
+
+class LidarData(object):
+    def __init__(self, object_id, pose_x, pose_y, pose_z, width, height, depth):
+        self.object_id = object_id
+        self.pose_x = pose_x
+        self.pose_y = pose_y
+        self.pose_z = pose_z
+        self.width = width
+        self.height = height
+        self.depth = depth  # Actually depth?
+        self.last_updated = time.time()
 
 
 class StoredStationData(object):
@@ -219,7 +255,7 @@ class StoredStationData(object):
 
 
 class StoredOSCData(object):
-    def __init__(self, clients=None, last_data=None, num_stations=6):
+    def __init__(self, clients=None, last_data=None, num_stations=6, lidar_removal_time=.5):
         self.stations = [
             StoredStationData(
                 last_data=last_data.stations[i] if last_data else None,
@@ -227,6 +263,12 @@ class StoredOSCData(object):
             for i in range(num_stations)
         ]
         self.contains_change = False
+        self.lidar_removal_time = lidar_removal_time
+        expired = time.time() - lidar_removal_time
+        self.lidar_objects = {
+            k: lidar
+            for (k, lidar) in last_data.lidar_objects.iteritems() if lidar.last_updated > expired
+        } if last_data else {}  # type: {str, LidarData}
 
     def __str__(self):
         return "{}({})".format(self.__class__.__name__,
@@ -244,6 +286,10 @@ class StoredOSCData(object):
         for station in self.stations:
             station.faders[fader] = value
 
+    def add_lidar_data(self, object_id, data):
+        # type: (int, LidarData) -> None
+        self.lidar_objects[object_id] = data
+
 
 class CollaborationManager(object):
     def compute_state(self, t, collaboration_state, osc_data):
@@ -255,7 +301,20 @@ class Effect(object):
     def __init__(self):
         pass
 
-    def next_frame(self, pixels, t, collaboration_state, osc_data):
+    def next_frame(self, pixels, now, collaboration_state, osc_data):
+        # type: (Pixels, long, {}, StoredOscData) -> None
+        """Implement this method to render the next frame.
+
+        Args:
+            pixels: rgb values to be modified in place
+            now: represents the time (in seconds)
+            collaboration_state: a dictionary that can be modified by
+                a CollaborationManager before any effects apply
+            osc_data: contains the data sent in since the last frame
+                (for buttons), as well as store fader states Use the
+                osc data to get station clients if you need to send
+                button feedback.
+        """
         raise NotImplementedError("All effects must implement next_frame")
         # TODO: Use abc
 
@@ -293,8 +352,17 @@ class MultiEffect(Effect):
         self.cleanup_terminated_effects(pixels, t, collaboration_state, osc_data)
 
     def cleanup_terminated_effects(self, pixels, t, collaboration_state, osc_data):
+        # type: (Pixel, long, {}, OscStoredData) -> None
         # TODO Debugging code here?
         self.effects[:] = [e for e in self.effects if not e.is_completed(t, osc_data)]
+
+    def add_effect(self, effect, before=False):
+        # type: (Effect) -> None
+        if effect:  # Ignore None
+            if before:
+                self.effects.insert(0, effect)
+            else:
+                self.effects.append(effect)
 
 
 """

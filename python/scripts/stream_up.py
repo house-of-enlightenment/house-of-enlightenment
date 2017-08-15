@@ -83,6 +83,8 @@ class Render(object):
             self.pixels[:] = 0
             for effect in self.effects:
                 effect.next_frame(now, self.pixels)
+            # make half very dark gray for a more realistic view
+            #self.pixels[:, 33:] = 5
             self.pixels.put(self.client)
             self.sleep_until_next_frame(now)
 
@@ -91,8 +93,8 @@ class Render(object):
         frame_took = time.time() - now
         remaining_until_next_frame = (1 / self.fps) - frame_took
         if remaining_until_next_frame > 0:
-            print time.time(), self.frame_count, '{:0.2f}%'.format(frame_took * self.fps * 100), \
-                frame_took, remaining_until_next_frame
+            # print time.time(), self.frame_count, '{:0.2f}%'.format(frame_took * self.fps * 100), \
+            #     frame_took, remaining_until_next_frame
             time.sleep(remaining_until_next_frame)
         else:
             print "!! Behind !!", remaining_until_next_frame
@@ -339,7 +341,7 @@ class RainbowRow(object):
 
     Each update gradually shifts the original arc towards another
     arc. Once that is hit, another random arc is choosen and we
-    continue the process.  Additionally the row is rotated.
+    continue the process. Additionally the row is rotated.
 
     The speed of the transitions and rotations vary randomly.
     """
@@ -420,6 +422,7 @@ class Transition(object):
 
     def update(self, now):
         self.reset_if_needed(now)
+        # make a linear step towards the end target
         delta = (self.end - self.start) * (now - self.start_time) / self.length
         return self.start + delta
 
@@ -431,10 +434,10 @@ class Transition(object):
     def _reset(self, now):
         self.start = self.end
         self.end = self.rnd_pt()
-        self.length = self.transition_period()
+        self.length = self.transition_period(now)
         self.start_time = now
 
-    def transition_period(self):
+    def transition_period(self, now):
         return np.random.rand() * 3 + 1
 
     def rnd_pt(self):
@@ -453,8 +456,17 @@ class SVTransition(Transition):
 
     def rnd_pt(self):
         # pick a saturation between 128-256 (128 is very pastel, 256 is full saturation)
+        # drastically favoring full saturation
+        sat = np.random.choice(
+            [135, 143, 151, 159] * 1 +
+            [167, 175, 183, 191] * 2 +
+            [199, 207, 215, 223] * 3 +
+            [231, 239, 247, 255] * 4
+        )
         # pick a value between 192-256 (probably a very minor effect)
-        return np.array([np.random.randint(128, 256), np.random.randint(196, 256)])
+        val = np.random.randint(196, 256)
+        print sat, val
+        return np.array([sat, val])
 
 
 class HueTransition(Transition):

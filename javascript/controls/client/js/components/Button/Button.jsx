@@ -1,23 +1,35 @@
 import React from "react";
-import { func, oneOf } from "prop-types";
+import classNames from "classnames";
+import { bool, func, number, oneOf } from "prop-types";
 
 
 const propTypes = {
-  id: oneOf(["0", "1", "2", "3", "4"]),
-  onClick: func.isRequired
+  id: number.isRequired,
+  onClick: func.isRequired,
+  isDisabled: bool,
+  color: oneOf(["red", "green", "blue", "yellow", "white"])
+};
+
+const defaultProps = {
+  color: "white"
 };
 
 
-const Button = ({ id, onClick }) => {
+const Button = ({ id, onClick, color, isDisabled }) => {
+
+  const buttonClasses = classNames(`button--${color}`, {
+    "is-disabled": isDisabled
+  });
 
   return (
-    <button onClick={onClick}>
-      { id }
+    <button onClick={onClick} className={buttonClasses}>
+      {/* { id } */}
     </button>
   );
 
 };
 
 Button.propTypes = propTypes;
+Button.defaultProps = defaultProps;
 
 export default Button;

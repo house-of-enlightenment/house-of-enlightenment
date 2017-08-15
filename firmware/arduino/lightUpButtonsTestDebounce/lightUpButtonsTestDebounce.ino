@@ -1,7 +1,7 @@
 
 //mapped to test console
-int inPins[5] = {7, 4, 6, 5, 3};
-int outPins[5] = {10, 8, 11 , 9, 12};
+int inPins[5] = {A2, 4, 6, 5, 3};
+byte outPins[5] = {9, 7, A1 , 8, A0};
 
 int buttonState[5] = {0, 0, 0, 0, 0};
 int lastButtonState[5] = {0, 0, 0, 0, 0};

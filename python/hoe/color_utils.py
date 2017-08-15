@@ -118,6 +118,7 @@ def hsv2rgb(hsv):
 
     rgb = np.zeros_like(hsv, np.uint8)
     v, t, p, q = v.reshape(-1, 1), t.reshape(-1, 1), p.reshape(-1, 1), q.reshape(-1, 1)
+    # This could probably be much faster if replaced with np.choose
     rgb[i == 0] = np.hstack([v, t, p])[i == 0]
     rgb[i == 1] = np.hstack([q, v, p])[i == 1]
     rgb[i == 2] = np.hstack([p, v, t])[i == 2]
@@ -137,3 +138,54 @@ def rainbow(size, hue_start, hue_end, saturation=255, value=255):
     hsv_pixels[:, 1] = saturation
     hsv_pixels[:, 2] = value
     return hsv2rgb(hsv_pixels)
+
+
+def bi_rainbow(size, hue_start, hue_end, saturation=255, value=255):
+    """Create a rainbow using color_utils.rainbow that returns to the start value"""
+    r1 = rainbow(
+        size=(size + 1) // 2,
+        hue_start=hue_start,
+        hue_end=hue_end,
+        saturation=saturation,
+        value=value)
+    # Note that hue_end and hue_start are reversed
+    r2 = rainbow(
+        size=size // 2, hue_start=hue_end, hue_end=hue_start, saturation=saturation, value=value)
+    return np.concatenate((r1, r2))
+
+
+# Perception of LED brightness is not linear. This applies a correction
+# so that we get approximately 32 equal steps of brightness
+#
+# Lookup table from:
+# https://ledshield.wordpress.com/2012/11/13/led-brightness-to-your-eye-gamma-correction-no/
+#
+_BRIGHTNESS = [
+    0, 1, 2, 3, 4, 5, 7, 9, 12, 15, 18, 22, 27, 32, 38, 44, 51, 58, 67, 76, 86, 96, 108, 120, 134,
+    148, 163, 180, 197, 216, 235, 255
+]
+MAX_BRIGHTNESS = len(_BRIGHTNESS)
+
+
+def linear_brightness(val, interpolate=False):
+    return _BRIGHTNESS[int(val)]
+
+
+# from http://rgb-123.com/ws2812-color-output/
+_GAMMA_CORRECTION = np.array([
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2,
+    2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 9, 9, 9, 10, 10, 11,
+    11, 11, 12, 12, 13, 13, 13, 14, 14, 15, 15, 16, 16, 17, 17, 18, 18, 19, 19, 20, 21, 21, 22, 22,
+    23, 23, 24, 25, 25, 26, 27, 27, 28, 29, 29, 30, 31, 31, 32, 33, 34, 34, 35, 36, 37, 37, 38, 39,
+    40, 40, 41, 42, 43, 44, 45, 46, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61,
+    62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 76, 77, 78, 79, 80, 81, 83, 84, 85, 86, 88,
+    89, 90, 91, 93, 94, 95, 96, 98, 99, 100, 102, 103, 104, 106, 107, 109, 110, 111, 113, 114, 116,
+    117, 119, 120, 121, 123, 124, 126, 128, 129, 131, 132, 134, 135, 137, 138, 140, 142, 143, 145,
+    146, 148, 150, 151, 153, 155, 157, 158, 160, 162, 163, 165, 167, 169, 170, 172, 174, 176, 178,
+    179, 181, 183, 185, 187, 189, 191, 193, 194, 196, 198, 200, 202, 204, 206, 208, 210, 212, 214,
+    216, 218, 220, 222, 224, 227, 229, 231, 233, 235, 237, 239, 241, 244, 246, 248, 250, 252, 255
+])
+
+
+def color_correct(rgbs):
+    return _GAMMA_CORRECTION[rgbs]
