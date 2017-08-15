@@ -30,6 +30,7 @@ class SolidRow(Effect):
 
 class LaunchRows(MultiEffect):
     def before_rendering(self, pixels, t, collaboration_state, osc_data):
+        MultiEffect.before_rendering(self, pixels, t, collaboration_state, osc_data)
         for sid, station in enumerate(osc_data.stations):
             if station.buttons:
                 self.add_effect(
