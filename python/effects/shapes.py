@@ -23,6 +23,8 @@ def move_along_horizontal_sine_wave(shape, period=2, amplitude=5, **kwargs):
     shape.curr_col += 1
     shape.curr_row = int(math.sin(shape.curr_col*2*np.pi/(STATE.layout.columns/period))*amplitude+.5)+shape.start_row
 
+def rotate_in_place(shape, **kwargs):
+    shape.frame_indices[:] = _rotate_around_center(shape.base_indices, kwargs['now'])
 
 # ----------- Index Functions ------------
 
@@ -34,6 +36,11 @@ def _flip_across_row_axis(indices):
 
 def _flip_across_column_axis(indices):
     return map(lambda x: (x[0],-x[1]), indices)
+
+def _rotate_around_center(indices, theta):
+    cos = math.cos(theta)
+    sin = math.sin(theta)
+    return map(lambda x: (cos*x[0]-sin*x[1], sin*x[0]+cos*x[1]), indices)
 
 def _upward_triangle_indicies(height=3):
     """Create an upward triangle with a central point.
@@ -71,7 +78,8 @@ class Shape(Effect):
         self.start_col = start_col
         # normalize indices:
         min_row = min(indices, key=lambda x: x[0])[0]
-        self.indices = np.array(indices)
+        self.base_indices = np.array(indices)
+        self.frame_indices = None
         self.curr_row = start_row
         self.curr_col = start_col
         self.movement_function = movement_function if movement_function else no_movement
@@ -83,9 +91,10 @@ class Shape(Effect):
         # print map(lambda x: (x[0]+self.row, x[1]), self.indices)
         # pixels[map(lambda x: (x[0]+self.row, x[1]), self.indices)] = self.color
         # TODO Just pass this?
-        self.movement_function(shape=self)
-        frame_indices = cleanup_pairwise_indicies(self.indices+(self.curr_row, self.curr_col))
-        pixels.update_pairwise(additive=False, color=self.color, pairwise=frame_indices)
+        self.frame_indices = np.copy(self.base_indices)
+        self.movement_function(shape=self, now=now)
+        cleaned_indices = cleanup_pairwise_indicies(self.frame_indices+(self.curr_row, self.curr_col))
+        pixels.update_pairwise(additive=False, color=self.color, pairwise=cleaned_indices)
 
     def is_completed(self, t, osc_data):
         return self.curr_row >= STATE.layout.rows
@@ -96,6 +105,12 @@ __all__ = [
         NoOpCollaborationManager(),
         SolidBackground(),
         Shape(indices=_diamond_indicies(4,4), movement_function=move_along_horizontal_sine_wave, start_row=20)
+    ),
+    Scene(
+        "distortingdiamond",
+        NoOpCollaborationManager(),
+        SolidBackground(),
+        Shape(indices=_diamond_indicies(5,5), movement_function=rotate_in_place, start_row=20)
     ),
     Scene(
         "uptriangle",
