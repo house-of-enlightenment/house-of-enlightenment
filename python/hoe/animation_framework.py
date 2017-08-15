@@ -302,7 +302,7 @@ class Effect(object):
         pass
 
     def next_frame(self, pixels, now, collaboration_state, osc_data):
-        # type: (Pixels, long, {}, StoredOscData) -> None
+        # type: (Pixels, float, {}, StoredOscData) -> None
         """Implement this method to render the next frame.
 
         Args:
