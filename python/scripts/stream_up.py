@@ -18,6 +18,9 @@ from hoe import layout
 from hoe import opc
 from hoe import osc_utils
 from hoe import pixels
+from hoe.state import STATE
+# sorry, got lazy
+from hoe.distance import *
 
 
 BLACK = (0, 0, 0)
@@ -40,6 +43,8 @@ def main():
     if not client.can_connect():
         print('Connection Failed')
         return 1
+
+    STATE.fps = 30
 
     with open('layout/hoeLayout.json') as f:
         hoe_layout = layout.Layout(json.load(f))
@@ -69,7 +74,7 @@ class Render(object):
         self.client = opc_client
         self.queue = osc_queue
         self.layout = hoe_layout
-        self.fps = 30
+        self.fps = STATE.fps
         self.effects = effects
         self.frame_count = 0
 
@@ -103,9 +108,9 @@ class Render(object):
 class UpAndRotateEffect(object):
     def __init__(self, layout, row):
         self.layout = layout
-        self.up_speed = SpeedToPixels(100)  # rows / second
+        self.up_speed = consistent_speed_to_pixels(100)  # rows / second
         # is this redundant with the bottom row also rotating?
-        self.rotate_speed = SpeedToPixels(50)  # columns / second
+        self.rotate_speed = consistent_speed_to_pixels(50)  # columns / second
         self.row = row
 
     def start(self, now):
@@ -152,7 +157,7 @@ class UpAndExpandEffect(object):
         self.center = 40
         self.color = np.zeros((216, 3), np.uint8)
         self.width = np.zeros(216, np.float)
-        self.speed = SpeedToPixels(50)
+        self.speed = consistent_speed_to_pixels(50)
 
     def start(self, now):
         self.speed.start(now)
@@ -184,68 +189,6 @@ class UpAndExpandEffect(object):
             self.width[px] = 1
 
 
-# Here are two modes for calculating distance. The accurate method
-# allows for a variable number of pixels per frame, so if you want
-# to travel 100 pixels in a second, it will. This method also keeps
-# a consistent speed regardless of the frame rate
-#
-# The consistent method only allows for movements in a fixed amount.
-# That means that if you want to move 100 pixels a second at 30fps,
-# you'll actually end up going 3pixels / frame or 90 pixels per second.
-#
-# The accurate method can cause a flicker.
-def consistent_speed_to_pixels(speed, fps):
-    # only one of these will have a value, depending
-    # on whether we move fast or slow
-    frames_per_pixel = fps // speed
-    pixels_per_framae = speed // fps
-    assert not (frames_per_pixel and pixels_per_frame)
-    if frames_per_pixel:
-        return FramesPerPixel(frames_per_pixel)
-    else:
-        return PixelsPerFrame(pixels_per_frame)
-
-
-class FramesPerPixel(object):
-    def __init__(self, frames_per_pixel):
-        self.frames_per_pixel = self.frames_per_pixel
-        self.count = 0
-
-    def start(self, now):
-        pass
-
-    def __call__(self, now):
-        self.count += 1
-        if self.count >= self.frames_per_pixel:
-            self.count = 0
-            return 1
-
-
-class PixelsPerFrame(object):
-    def __init__(self, pixels_per_frame):
-        self.pixels_per_frame = pixels_per_frame
-
-    def start(self, now):
-        pass
-
-    def __call__(self, now):
-        return self.pixels_per_frame
-
-
-class AccurateSpeedToPixels(object):
-    def __init__(self, speed):
-        self.speed = speed
-        self.residual = 0
-
-    def start(self, now):
-        self.last_time = now
-
-    def __call__(self, now):
-        elapsed = now - self.last_time
-        self.last_time = now
-        distance = self.speed * elapsed + self.residual
-        px, self.residual = divmod(distance, 1)
-        return int(px)
 
 
 class _Row(object):

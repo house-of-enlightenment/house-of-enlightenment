@@ -126,7 +126,7 @@ class ButtonChaseController(Effect, CollaborationManager):
             c = self.next_button[0] * 11 + self.next_button[1] * 2
             pixels[0:2, c:c + 2 + self.next_button[1] / 4] = self.button_colors[self.next_button[1]]
 
-    def scene_starting(self):
+    def scene_starting(self, now):
         self.reset_state()
 
     def pick_next(self, missed=False):
@@ -195,7 +195,7 @@ class ButtonRainbow(Effect):
         self.column_success = None
         self.frame = 0
 
-    def scene_starting(self):
+    def scene_starting(self, now):
         self.column_success = color_utils.bi_rainbow(
             STATE.layout.columns,
             hue_start=self.hue_start,
