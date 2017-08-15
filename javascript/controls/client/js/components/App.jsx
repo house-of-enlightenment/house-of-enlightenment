@@ -7,15 +7,15 @@ import Controls from "./Controls/Controls.jsx";
 function getButtonColor(id){
   switch (id){
     case 0:
-      return "red";
+      return "yellow";
     case 1:
       return "green";
     case 2:
-      return "blue";
-    case 3:
-      return "yellow";
-    default:
       return "white";
+    case 3:
+      return "red";
+    default:
+      return "blue";
   }
 }
 

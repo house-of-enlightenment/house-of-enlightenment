@@ -22,9 +22,11 @@ const Button = ({ id, onClick, color, isDisabled }) => {
   });
 
   return (
-    <button onClick={onClick} className={buttonClasses}>
-      {/* { id } */}
-    </button>
+    <div className={`button ${buttonClasses}`}>
+      <button onClick={onClick}>
+        {/* { id } */}
+      </button>
+    </div>
   );
 
 };

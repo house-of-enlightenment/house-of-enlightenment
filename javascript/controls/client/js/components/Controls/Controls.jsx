@@ -17,7 +17,7 @@ const Controls = ({ buttons, faders, onButtonClick, onFaderChange }) => {
 
   return (
     <div className="controls">
-      <div className="controls__buttons">
+      <div className="controls__buttons buttons">
         {buttons.map((button, i) => {
           const { isDisabled, color } = button;
 
