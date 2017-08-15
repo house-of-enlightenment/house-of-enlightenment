@@ -32,7 +32,7 @@ export default class App extends React.Component {
         isDisabled: false,
         color: getButtonColor(j)
       })),
-      faders: R.range(0, 4).map(k => ({
+      faders: R.range(0, 1).map(k => ({
         value: 0
       }))
     }))
