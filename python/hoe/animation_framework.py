@@ -1,22 +1,16 @@
-#!/usr/bin/env python
-
-# House of Enlightenment
-# Manager for scene selection
-
-import os.path
+"""Framework for running animations and effects"""
+from collections import OrderedDict
 import glob
 import importlib
+import os.path
 import sys
 import time
 from threading import Thread
-from pixels import Pixels
-from itertools import ifilter
-from functools import partial
-import atexit
-from collections import OrderedDict
+
 
 from OSC import OSCServer
 
+from hoe.pixels import Pixels
 from hoe.state import STATE
 from hoe.opc import Client
 
@@ -25,7 +19,7 @@ class AnimationFramework(object):
     def __init__(self,
                  osc_server,
                  opc_client,
-                 osc_station_clients=[],
+                 osc_station_clients=(),
                  scenes=None,
                  first_scene=None):
         # type: (OSCServer, Client, List(OSCClient), {str, Scene}) -> None
@@ -144,7 +138,6 @@ class AnimationFramework(object):
 
         self.serve = True
 
-        start_time = time.time()
         fps_frame_time = 1.0 / self.fps
 
         print '\tsending pixels forever (quit or control-c to exit)...'
@@ -154,20 +147,15 @@ class AnimationFramework(object):
         while self.serve:
             # TODO : Does this create lots of GC?
             frame_start_time = time.time()
-            t = frame_start_time - start_time
             target_frame_end_time = frame_start_time + fps_frame_time
 
             # Create the pixels, set all, then put
             pixels[:] = 0
-            self.curr_scene.render(pixels, t, self.get_osc_frame())
-            # TODO: Check for None and replace with (0, 0, 0)
-            self.opc_client.put_pixels(pixels.pixels, channel=0)
+            self.curr_scene.render(pixels, frame_start_time, self.get_osc_frame())
+            pixels.put(self.opc_client)
 
             # Crude way of trying to hit target fps
-            wait_for_next_frame(
-                target_frame_end_time, )
-
-            # TODO: channel?
+            wait_for_next_frame(target_frame_end_time)
 
         self.is_running = False
         print "Scene Manager Exited"
@@ -177,7 +165,12 @@ class AnimationFramework(object):
 
 
 def wait_for_next_frame(wait_until):
-    time.sleep(max(0, wait_until - time.time()))
+    sleep_amount = wait_until - time.time()
+    if sleep_amount <= 0:
+        print "WARNING: scene is rendering too slowly. This frame took {} seconds too long".format(
+            sleep_amount)
+    else:
+        time.sleep(sleep_amount)
 
 
 def load_scenes(effects_dir=None):
@@ -185,6 +178,8 @@ def load_scenes(effects_dir=None):
     if not effects_dir:
         pwd = os.path.dirname(__file__)
         effects_dir = os.path.abspath(os.path.join(pwd, '..', 'effects'))
+    # effects might import other sub-effects from the effects directory
+    # so we need it to be on the path
     sys.path.append(effects_dir)
     scenes = OrderedDict()
     for filename in glob.glob(os.path.join(effects_dir, '*.py')):
@@ -205,7 +200,7 @@ def load_scenes_from_file(pkg_name, scenes):
                 print "Got scene %s not of type Scene" % scene
                 continue
             if scene.name in scenes:
-                print("Cannot register scene %s. Scene with name already exists") % scene.name
+                print "Cannot register scene %s. Scene with name already exists" % scene.name
                 continue
             print "Registering %s" % scene
             scenes[scene.name] = scene
@@ -335,9 +330,7 @@ class MultiEffect(Effect):
         self.effects = list(effects)
 
     def scene_starting(self, now):
-        """Initialize a scene
-        :param now:
-        """
+        """Initialize a scene"""
         for e in self.effects:
             e.scene_starting(now)
 
@@ -392,8 +385,7 @@ class Scene(MultiEffect):
         return "{}({})".format(self.__class__.__name__, self.name)
 
     def render(self, pixels, t, osc_data):
-        self.collaboration_state = self.collaboration_manager.compute_state(
-            t, self.collaboration_state, osc_data)
+        self.collaboration_state = self.collaboration_manager.compute_state(t, self.collaboration_state, osc_data)
         # TODO Why didn't super(MultiEffect, self) work?
         self.next_frame(pixels, t, self.collaboration_state, osc_data)
 

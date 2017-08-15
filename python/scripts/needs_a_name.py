@@ -45,6 +45,8 @@ def main():
         hoe_layout = layout.Layout(json.load(f))
 
     STATE.layout = hoe_layout
+    STATE.fps = 30
+
     background = Breathe(hoe_layout, args.n)
     render = su.Render(client, None, hoe_layout, [background])
     render.run_forever()
