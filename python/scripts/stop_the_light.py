@@ -42,7 +42,7 @@ def main():
     server = osc_utils.create_osc_server()
     # pylint: disable=no-value-for-parameter
     server.addMsgHandler("/input/button", lambda *args: add_station_id(osc_queue, *args))
-    background = su.Effect(hoe_layout, su.RainbowRow(hoe_layout))
+    background = su.UpAndRotateEffect(hoe_layout, su.RainbowRow(hoe_layout))
     interaction = Effect(hoe_layout, osc_queue)
     render = su.Render(client, osc_queue, hoe_layout, [background, interaction])
     render.run_forever()
