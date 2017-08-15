@@ -91,7 +91,7 @@ class FunctionFrameRotator(Effect):
         self.frame = 0
         self.start_t = None
 
-    def scene_starting(self):
+    def scene_starting(self, now):
         self.frame = 0
         self.start_t = None
 

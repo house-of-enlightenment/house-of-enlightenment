@@ -104,7 +104,8 @@ class AnimationFramework(object):
 
     # ---- EFFECT CONTROL METHODS -----
     def change_scene(self):
-        self.queued_scene.scene_starting()
+        now = time.time()
+        self.queued_scene.scene_starting(now)
         self.curr_scene = self.queued_scene
         print '\tScene %s started\n' % self.curr_scene
         self.curr_scene.scene_ended()
@@ -318,7 +319,7 @@ class Effect(object):
         raise NotImplementedError("All effects must implement next_frame")
         # TODO: Use abc
 
-    def scene_starting(self):
+    def scene_starting(self, now):
         pass
 
     def scene_ended(self):
@@ -333,10 +334,12 @@ class MultiEffect(Effect):
         Effect.__init__(self)
         self.effects = list(effects)
 
-    def scene_starting(self):
-        """Initialize a scene"""
+    def scene_starting(self, now):
+        """Initialize a scene
+        :param now:
+        """
         for e in self.effects:
-            e.scene_starting()
+            e.scene_starting(now)
 
     def scene_ended(self):
         for e in self.effects:
