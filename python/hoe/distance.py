@@ -14,8 +14,13 @@ The accurate method can cause a flicker.
 
 from hoe.state import STATE
 
+
 def consistent_speed_to_pixels(speed, fps=None):
+    if speed == 0:
+        return PixelsPerFrame(0)
     fps = fps or STATE.fps
+    if speed == fps:
+        return PixelsPerFrame(1)
     # only one of these will have a value, depending
     # on whether we move fast or slow
     frames_per_pixel = fps // speed
@@ -29,7 +34,7 @@ def consistent_speed_to_pixels(speed, fps=None):
 
 class FramesPerPixel(object):
     def __init__(self, frames_per_pixel):
-        self.frames_per_pixel = self.frames_per_pixel
+        self.frames_per_pixel = frames_per_pixel
         self.count = 0
 
     def start(self, now):
@@ -40,6 +45,8 @@ class FramesPerPixel(object):
         if self.count >= self.frames_per_pixel:
             self.count = 0
             return 1
+        else:
+            return 0
 
 
 class PixelsPerFrame(object):
