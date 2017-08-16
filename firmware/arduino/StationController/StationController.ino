@@ -12,6 +12,11 @@ IPAddress ip(10, 0, 0, 55);
 //destination IP
 IPAddress outIp(10, 0, 0, 30);
 const unsigned int outPort = 7000;
+const unsigned int inPort = 9000;
+
+const byte stationId = 0;
+
+EthernetServer server = EthernetServer(inPort);
 
 byte mac[] = {
   0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED
@@ -20,6 +25,12 @@ byte mac[] = {
 //mapped to test console
 int inPins[5] = {A2, 4, 6, 5, 3};
 byte outPins[5] = {9, 7, A1 , 8, A0};
+const byte sliderIn[2] = {A6};
+
+int sliderVals[1] = {0};
+int oldSliderVals[1] = {0};
+int sliderLowVal = 10;
+int sliderHighVal = 1013;
 
 boolean buttonState[5] = {0, 0, 0, 0, 0};
 boolean lastButtonState[5] = {0, 0, 0, 0, 0};
@@ -28,14 +39,17 @@ boolean ledState[5] = {0, 0, 0, 0, 0};
 unsigned long lastDebounceTime[] = {0, 0, 0, 0, 0};
 unsigned long debounceDelay = 50;
 
+unsigned long lastSliderReadTime = 0;
+
+boolean outputLightState[5] = {0, 0, 0, 0, 0};
 
 
 void setup() {
   Ethernet.begin(mac, ip);
-  Udp.begin(8888);
+  Udp.begin(inPort);
 
   Serial.begin(9600);
-
+  server.begin();
   //set up inputs
   for (int i = 0; i < 5; i++) {
     pinMode(inPins[i], INPUT_PULLUP);
@@ -48,50 +62,45 @@ void setup() {
   for (int i = 0; i < 5; i++) {
     digitalWrite(outPins[i], LOW);
   }
+  for (int i = 0; i < 1; i++) {
+    pinMode(sliderIn[i], INPUT);
+  }
 
 }
 
 
 void loop() {
- // buttonPress(1);
   checkInputs();
-  lightUpButtons();
+  readSliders();
+  receiveMessage();
 }
-
 
 void buttonPress(int i) {
   OSCMessage msg("/input/button");
-  Serial.print(i);
-  msg.add((int32_t)1);
+  //Serial.print(i);
+  msg.add((int32_t)stationId);
   msg.add((int32_t)i);
   Udp.beginPacket(outIp, outPort);
   msg.send(Udp); // send the bytes to the SLIP stream
   Udp.endPacket(); // mark the end of the OSC Packet
   msg.empty(); // free space occupied by message
-  delay(20);
-
+  //delay(20);
 }
 
-
-
-//simulates a fader input from station 0 fader 1
 void sensorTouched(int sliderVal) {
   OSCMessage msg("/input/fader");
-  msg.add((int32_t)0);
-  msg.add((int32_t)0);
+  msg.add((int32_t)stationId);
   msg.add((int32_t)sliderVal);
   Udp.beginPacket(outIp, outPort);
   msg.send(Udp); // send the bytes to the SLIP stream
   Udp.endPacket(); // mark the end of the OSC Packet
   msg.empty(); // free space occupied by message
-  delay(20);
-
+  // delay(20);
 }
 
 void checkInputs() {
   for (int i = 0; i < 5; i++) {
     int reading = digitalRead(inPins[i]);
-
     if (reading != lastButtonState[i]) {
       // reset the debouncing timer
       lastDebounceTime[i] = millis();
@@ -99,14 +108,12 @@ void checkInputs() {
     if ((millis() - lastDebounceTime[i]) > debounceDelay) {
       if (reading != buttonState[i]) {
         buttonState[i] = reading;
-
         // only toggle the LED if the new button state is HIGH
         if (buttonState[i] == LOW) {
           ledState[i] = !ledState[i];
-          Serial.print("Buttoon ");
-          Serial.print(i);
-          Serial.println(" was pressed");
-
+          //          Serial.print("Buttoon ");
+          //          Serial.print(i);
+          //          Serial.println(" was pressed");
           buttonPress(i);
         }
       }
@@ -115,28 +122,24 @@ void checkInputs() {
   }
 }
 
-
-void printStates() {
-
-  for (int i = 0; i < 5; i++) {
-    int sensorVal = digitalRead(inPins[i]);
-
-    Serial.print(" Button ");
-    Serial.print(i);
-    Serial.print(" is ");
-    Serial.print(digitalRead(sensorVal));
-
-    if (sensorVal == HIGH) {
-      digitalWrite(outPins[i], LOW);
-    } else {
-      digitalWrite(outPins[i], HIGH);
-    }
-  }
-  Serial.println(" ");
-}
+//
+//void printStates() {
+//  for (int i = 0; i < 5; i++) {
+//    int sensorVal = digitalRead(inPins[i]);
+//    Serial.print(" Button ");
+//    Serial.print(i);
+//    Serial.print(" is ");
+//    Serial.print(digitalRead(sensorVal));
+//    if (sensorVal == HIGH) {
+//      digitalWrite(outPins[i], LOW);
+//    } else {
+//      digitalWrite(outPins[i], HIGH);
+//    }
+//  }
+//  Serial.println(" ");
+//}
 
 void lightUpButtons() {
-
   for (int i = 0; i < 5; i++) {
     int sensorVal = digitalRead(inPins[i]);
     if (sensorVal == HIGH) {
@@ -147,3 +150,71 @@ void lightUpButtons() {
   }
 }
 
+void readSliders() {
+  if (millis() - lastSliderReadTime < debounceDelay) {
+    return;
+  }
+  for (int i = 0; i < 1; i++) {
+    int sliderVal = analogRead(sliderIn[i]);
+    if ( sliderVal >= sliderLowVal && sliderVal <= sliderHighVal) {
+      sliderVals[i] = map(sliderVal, sliderLowVal, sliderHighVal, 0, 100);
+    }
+    if (oldSliderVals[i] != sliderVals[i]) {
+      oldSliderVals[i] = sliderVals[i];
+      sensorTouched(sliderVals[i]);
+      //      Serial.print("Slider");
+      //      Serial.print(i);
+      //      Serial.print(" is ");
+      //      Serial.print(sliderVals[i]);
+      //      Serial.print(" actual val is ");
+      //      Serial.println(sliderVal);
+    }
+  }
+  lastSliderReadTime = millis();
+}
+
+void receiveMessage() {
+  size_t size;
+
+  if (EthernetClient client = server.available())
+  {
+    while ((size = client.available()) > 0)
+    {
+      char* msg = (char*)malloc(size);
+      size = client.read(msg, size);
+      processMessage(msg, size);
+      //Serial.write(msg, size);
+      free(msg);
+      updateLights();
+
+    }
+   // Serial.println("");
+    //client.println("DATA from Server!");
+    //client.stop();
+  }
+}
+
+void processMessage(char* msg, int size) {
+  String s;
+  for (int i = 0; i < size; i++) {
+    //Serial.write(msg[i]);
+    if (msg[i] == '0') {
+      //Serial.println("writing 0");
+      outputLightState[i] = false;
+    }
+    else {
+      //Serial.println("writing 1");
+      outputLightState[i] = true;
+    }
+    s += msg[i];
+  }
+  //Serial.print("i is: ");
+  //Serial.println(s);
+
+}
+
+void updateLights() {
+  for (int i = 0; i < 5; i++) {
+    digitalWrite(outPins[i], outputLightState[i]);
+  }
+}
