@@ -36,8 +36,8 @@ class FiniteDifference(Effect):
         self.pixels = []
         self.time = []
         self.forceConstant = 400
-        self.velocityConstant = 45000.0
-        self.diffusionConstant = self.velocityConstant/14.0
+        self.velocityConstant = 30000
+        self.diffusionConstant = 0.00001
         self.influence = 0b1111
         self.isFixedBounary = False
         self.X_MAX = STATE.layout.rows
@@ -67,7 +67,7 @@ class FiniteDifference(Effect):
     def setPixels(self, pixels):
         for i in range(self.X_MAX):
             for j in range(self.Y_MAX):
-                #v = self.pixels[2][i,j] >> 8
+                #v = int(self.pixels[2][i,j]) >> 8
                 #pixels[i,j] = (v,v,v)
                 v = float(self.pixels[2][i,j])
                 (r,g,b) =  colorsys.hsv_to_rgb(v/0xFFFF,1,1)
@@ -89,18 +89,23 @@ class FiniteDifference(Effect):
 
 
         c = self.velocityConstant
-        v = self.diffusionConstant
+        beta = self.diffusionConstant
         h1 = self.pixels[0]
         h = np.zeros([self.X_MAX,self.Y_MAX], dtype=float)
 
         h0 = self.pixels[1]
         h, idx = self.hCalc()
-        hDiff = (h - h0*idx)
 
-        h = 2.0*h0 - 1.0*h1 + hDiff*deltaT2/c + f
+        h = (h - h0*idx)/c
 
-        h = np.mod(h, 0xFFFF)
+        h = (h - beta*(h0-h1)/deltaT)*deltaT2 + 2*h0 - h1 + f
+        
+
+        #h = 2.0*h0 - 1.0*h1 + hDiff*deltaT2/c + f
+        #h = (hn+h0)/(idx+1)
+
         h = np.clip(h, 0, 0xFFFF)
+        #h = np.mod(h, 0xFFFF)
         self.pixels[2] = h
 
     def diffuse(self, delta_t):
@@ -124,12 +129,14 @@ class FiniteDifference(Effect):
 
         if (self.influence & 0b0001) > 0:
             h[1:,:] = h[1:,:] + h0[:self.X_MAX-1,:]
-            h[0,:] = h[0,:] + h0[self.X_MAX-1,:]
+            #h[0,:] = h[0,:] + h0[self.X_MAX-1,:]
+            h[0,:] = h[0,:] + h0[1,:]
             idx = idx+1
 
         if (self.influence & 0b0010) > 0:
             h[:self.X_MAX-1,:] = h[:self.X_MAX-1,:] + h0[1:,:]
             h[self.X_MAX-1:,:] = h[self.X_MAX-1,:] + h0[0,:]
+            #h[self.X_MAX-1:,:] = h[self.X_MAX-1,:] + h0[self.X_MAX-2,:]
             idx = idx+1
 
         if (self.influence & 0b0100) > 0:
@@ -282,7 +289,7 @@ __all__ = [
          SolidBackground(),
          SeizureMode()
         ),
-    Scene("rotating_square",
+    Scene("waves_of_diffusion",
         NoOpCollaborationManager(),
         SolidBackground(color=(255,255,255), start_col=0, end_col=2, start_row=100, end_row=105),
         FrameRotator(rate = 0.5),
