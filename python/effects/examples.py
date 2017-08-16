@@ -93,14 +93,17 @@ class SampleEffectLauncher(MultiEffect):
 __all__ = [
     Scene(
         "spatial scene",
+        tags=[Scene.TAG_BACKGROUND],
         collaboration_manager=NoOpCollaborationManager(),
         effects=[SpatialStripesBackground()]),
     Scene(
         "adjustablebackground",
+        tags=[Scene.TAG_EXAMPLE],
         collaboration_manager=NoOpCollaborationManager(),
         effects=[SolidBackground(), AdjustableFillFromBottom()]),
     Scene(
         "launchdots",
+        tags=[Scene.TAG_EXAMPLE],
         collaboration_manager=NoOpCollaborationManager(),
         effects=[SolidBackground(color=(30, 30, 30)),
                  SampleEffectLauncher()]),

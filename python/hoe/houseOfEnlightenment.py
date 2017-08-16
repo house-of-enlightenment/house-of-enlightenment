@@ -49,6 +49,7 @@ def parse_command_line():
         action='store',
         type=str,
         help='First scene to display')
+    parser.add_argument('-t', '--tags', dest='tags', action='append')
     parser.add_argument('-v', '--verbose', dest='verbose', default=False, action='store_true')
 
     options = parser.parse_args()
@@ -103,13 +104,14 @@ def create_opc_client(server, verbose=False):
     return client
 
 
-def init_animation_framework(osc_server, opc_client, osc_stations, first_scene=None):
+def init_animation_framework(osc_server, opc_client, osc_stations, first_scene=None, tags=[]):
     # type: (OSCServer, Client, [OSCClient], str) -> AnimationFramework
     mgr = AF.AnimationFramework(
         osc_server=osc_server,
         opc_client=opc_client,
         osc_station_clients=osc_stations,
-        first_scene=first_scene)
+        first_scene=first_scene,
+        tags=tags)
     return mgr
 
 
@@ -196,7 +198,8 @@ def launch():
     opc_client = build_opc_client(config.verbose)
     stations = create_osc_station_clients(servers=STATE.servers["remote"]["osc_controls"])
     STATE.station_osc_clients = stations
-    framework = init_animation_framework(osc_server, opc_client, stations, config.scene)
+    framework = init_animation_framework(osc_server, opc_client, stations, config.scene,
+                                         config.tags)
 
     keyboard_thread = Thread(
         target=listen_for_keyboard, args=(framework, ), name="KeyboardListeningThread")

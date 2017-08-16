@@ -501,19 +501,23 @@ class Columns(Effect):
 __all__ = [
     Scene(
         "buttonchaser",
+        tags=[Scene.TAG_EXAMPLE, Scene.TAG_GAME],
         collaboration_manager=ButtonChaseController(draw_bottom_layer=True),
         effects=[ButtonRainbow(max_value=255 - 30), Pulser()]),
     Scene(
         "buttonloser",
+        tags=[Scene.TAG_GAME],
         collaboration_manager=ButtonChaseController(
-            draw_bottom_layer=True, backwards_progress=True),
+            draw_bottom_layer=True, backwards_progress=True, selection_time=1),
         effects=[ButtonRainbow(), Pulser()]),
     Scene(
         "wedges",
+        tags=[Scene.TAG_EXAMPLE],
         collaboration_manager=NoOpCollaborationManager(),
         effects=[GenericStatelessLauncher(wedge_factory, width=3, additive=False)]),
     Scene(
         "sinedots",
+        tags=[Scene.TAG_EXAMPLE],
         collaboration_manager=NoOpCollaborationManager(),
         effects=[
             SolidBackground(color=(30, 30, 30)),
@@ -523,17 +527,20 @@ __all__ = [
                 start_offsets=5 * np.sin(np.linspace(0, 8 * np.pi, STATE.layout.rows)))
         ]),
     Scene(
-        "lidartest",
+        "lidaropaque",
+        tags=[Scene.TAG_EXAMPLE],
         collaboration_manager=NoOpCollaborationManager(),
         effects=[SolidBackground(color=(30, 30, 30)),
                  OpaqueLidar()]),
     Scene(
         "lidarswap",
+        tags=[Scene.TAG_WIP],
         collaboration_manager=NoOpCollaborationManager(),
         effects=[Rainbow(hue_start=0, hue_end=255),
                  SwappingLidar()]),
     Scene(
         "risingtide",
+        tags=[Scene.TAG_WIP],
         collaboration_manager=NoOpCollaborationManager(),
         effects=[SolidBackground(), TideLauncher(),
                  FrameRotator()]),
@@ -549,6 +556,7 @@ __all__ = [
     #       ),
     Scene(
         "rainbowblackoutcolumns",
+        tags=[Scene.TAG_EXAMPLE],
         collaboration_manager=NoOpCollaborationManager(),
         effects=[
             Rainbow(hue_start=0, hue_end=255),
@@ -558,6 +566,7 @@ __all__ = [
         ]),
     Scene(
         "diskrainbow",
+        tags=[Scene.TAG_BACKGROUND],
         collaboration_manager=NoOpCollaborationManager(),
         effects=[Rainbow(hue_start=0, hue_end=255),
                  DiskPulsers()])

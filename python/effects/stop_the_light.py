@@ -114,6 +114,7 @@ class CollaborationCountBasedBackground(Effect):
 __all__ = [
     Scene(
         "stoplight",
+        tags=[Scene.TAG_GAME, Scene.TAG_WIP],
         collaboration_manager=StopTheLight(0, 2),
         effects=[CollaborationCountBasedBackground()])
 ]

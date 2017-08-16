@@ -20,7 +20,8 @@ class AnimationFramework(object):
                  opc_client,
                  osc_station_clients=(),
                  scenes=None,
-                 first_scene=None):
+                 first_scene=None,
+                 tags=[]):
         # type: (OSCServer, Client, List(OSCClient), {str, Scene}) -> None
         self.osc_server = osc_server
         self.opc_client = opc_client
@@ -28,7 +29,7 @@ class AnimationFramework(object):
         self.fps = STATE.fps
 
         # Load all scenes from effects package. Then set initial index and load it up
-        self.scenes = scenes or load_scenes()
+        self.scenes = scenes or load_scenes(tags=tags)
         self.curr_scene = None
         self.queued_scene = self.scenes[first_scene if first_scene else self.scenes.keys()[0]]
         self.change_scene()
@@ -168,7 +169,7 @@ class AnimationFramework(object):
         self.serve = False
 
 
-def load_scenes(effects_dir=None):
+def load_scenes(effects_dir=None, tags=[]):
     # type: (str) -> {str, Scene}
     if not effects_dir:
         pwd = os.path.dirname(__file__)
@@ -181,12 +182,12 @@ def load_scenes(effects_dir=None):
         pkg_name = os.path.basename(filename)[:-3]
         if pkg_name.startswith("_"):
             continue
-        load_scenes_from_file(pkg_name, scenes)
+        load_scenes_from_file(pkg_name, scenes, tags)
     print "Loaded %s scenes from %s directory\n" % (len(scenes), effects_dir)
     return scenes
 
 
-def load_scenes_from_file(pkg_name, scenes):
+def load_scenes_from_file(pkg_name, scenes, tags):
     # type: (str, {str, Scene}) -> None
     try:
         effect_dict = importlib.import_module(pkg_name)
@@ -197,8 +198,11 @@ def load_scenes_from_file(pkg_name, scenes):
             if scene.name in scenes:
                 print "Cannot register scene %s. Scene with name already exists" % scene.name
                 continue
-            print "Registering %s" % scene
-            scenes[scene.name] = scene
+            if not tags or any(tag in tags for tag in scene.tags):
+                print "Registering %s" % scene
+                scenes[scene.name] = scene
+            else:
+                print "Skipped %s. Tags %s not in %s" % (scene, scene.tags, tags)
     except ImportError:
         print "WARNING: could not load effect %s" % pkg_name
 
@@ -364,9 +368,11 @@ class EffectLauncher(MultiEffect):
 
 
 class Scene(MultiEffect):
-    TAG_BACKGROUND = 0
-    TAG_GAME = 1
-    TAG_TEST = 2
+    TAG_BACKGROUND = 'background'
+    TAG_GAME = 'game'
+    TAG_TEST = 'test'
+    TAG_EXAMPLE = 'example'
+    TAG_WIP = 'wip'  #  Work in Progress
 
     def __init__(self, name, tags=[TAG_BACKGROUND], collaboration_manager=None, effects=[]):
         # str, CollaborationManager, List[Effect] -> None

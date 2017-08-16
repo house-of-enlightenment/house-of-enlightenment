@@ -154,16 +154,19 @@ rainbow = Rainbow(hue_start=0, hue_end=255)
 __all__ = [
     Scene(
         "buttontoggler",
+        tags=[Scene.TAG_TEST],
         collaboration_manager=ButtonToggleResponderManager(),
         effects=[debugging_effects.PrintOSC()]),
     # A simple rainbow that rotates due to the FrameRotator
     Scene(
         "rotatingrainbow",
+        tags=[Scene.TAG_BACKGROUND],
         collaboration_manager=NoOpCollaborationManager(),
         effects=[rainbow, FrameRotator(rate=.75)]),
     # A rainbow that has been distorted into spirals by using a RANGE as the offset
     Scene(
         "funkrainbow",
+        tags=[Scene.TAG_BACKGROUND],
         collaboration_manager=NoOpCollaborationManager(),
         effects=[
             rainbow,
@@ -174,6 +177,7 @@ __all__ = [
     # A rainbow that follows a sine wave up (due to the offsets) and moves upwards due to a rolling offset function
     Scene(
         "sinerainbow",
+        tags=[Scene.TAG_BACKGROUND],
         collaboration_manager=NoOpCollaborationManager(),
         effects=[
             rainbow,

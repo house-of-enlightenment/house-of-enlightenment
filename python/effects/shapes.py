@@ -125,7 +125,8 @@ class Shape(Effect):
 
 __all__ = [
     Scene(
-        "diamond",
+        "sinediamond",
+        tags=[Scene.TAG_WIP],
         collaboration_manager=NoOpCollaborationManager(),
         effects=[
             SolidBackground(),
@@ -136,6 +137,7 @@ __all__ = [
         ]),
     Scene(
         "distortingdiamond",
+        tags=[Scene.TAG_WIP],
         collaboration_manager=NoOpCollaborationManager(),
         effects=[
             SolidBackground(),
@@ -143,6 +145,7 @@ __all__ = [
         ]),
     Scene(
         "uptriangle",
+        tags=[Scene.TAG_WIP],
         collaboration_manager=NoOpCollaborationManager(),
         effects=[
             SolidBackground(),

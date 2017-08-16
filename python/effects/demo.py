@@ -44,6 +44,7 @@ class LaunchRows(MultiEffect):
 __all__ = [
     Scene(
         "groupdemo",
+        tags=[Scene.TAG_EXAMPLE],
         collaboration_manager=NoOpCollaborationManager(),
         effects=[SolidBackground(color=(30, 30, 30)),
                  LaunchRows()])
