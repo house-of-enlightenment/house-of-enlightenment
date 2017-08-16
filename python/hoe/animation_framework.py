@@ -7,7 +7,6 @@ import sys
 import time
 from threading import Thread
 
-
 from OSC import OSCServer
 
 from hoe.pixels import Pixels
@@ -139,6 +138,7 @@ class AnimationFramework(object):
         self.serve = True
 
         fps_frame_time = 1.0 / self.fps
+        fps_warn_threshold = fps_frame_time * .2  # Warn if 20% overage
 
         print '\tsending pixels forever (quit or control-c to exit)...'
         self.is_running = True
@@ -152,13 +152,16 @@ class AnimationFramework(object):
             # Create the pixels, set all, then put
             pixels[:] = 0
             self.curr_scene.render(pixels, frame_start_time, self.get_osc_frame())
+            render_timestamp = time.time()
             pixels.put(self.opc_client)
-
+            completed_timestamp = time.time()
             # Crude way of trying to hit target fps
-            sleep_amount = target_frame_end_time - time.time()
+            sleep_amount = target_frame_end_time - completed_timestamp
             if sleep_amount <= 0:
-                print "WARNING: scene {} is rendering too slowly. This frame took {} seconds too long".format(
-                    self.curr_scene.name, sleep_amount)
+                if abs(sleep_amount) > fps_warn_threshold:
+                    print "WARNING: scene {} is rendering slowly. Total: {} Render: {} OPC: {}".format(
+                        self.curr_scene.name, completed_timestamp - frame_start_time,
+                        render_timestamp - frame_start_time, completed_timestamp - render_timestamp)
             else:
                 time.sleep(sleep_amount)
 
@@ -381,7 +384,8 @@ class Scene(MultiEffect):
         return "{}({})".format(self.__class__.__name__, self.name)
 
     def render(self, pixels, t, osc_data):
-        self.collaboration_state = self.collaboration_manager.compute_state(t, self.collaboration_state, osc_data)
+        self.collaboration_state = self.collaboration_manager.compute_state(
+            t, self.collaboration_state, osc_data)
         # TODO Why didn't super(MultiEffect, self) work?
         self.next_frame(pixels, t, self.collaboration_state, osc_data)
 
