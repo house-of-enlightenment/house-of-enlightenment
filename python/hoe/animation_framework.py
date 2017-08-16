@@ -155,22 +155,18 @@ class AnimationFramework(object):
             pixels.put(self.opc_client)
 
             # Crude way of trying to hit target fps
-            wait_for_next_frame(target_frame_end_time)
+            sleep_amount = target_frame_end_time - time.time()
+            if sleep_amount <= 0:
+                print "WARNING: scene {} is rendering too slowly. This frame took {} seconds too long".format(
+                    self.curr_scene.name, sleep_amount)
+            else:
+                time.sleep(sleep_amount)
 
         self.is_running = False
         print "Scene Manager Exited"
 
     def shutdown(self):
         self.serve = False
-
-
-def wait_for_next_frame(wait_until):
-    sleep_amount = wait_until - time.time()
-    if sleep_amount <= 0:
-        print "WARNING: scene is rendering too slowly. This frame took {} seconds too long".format(
-            sleep_amount)
-    else:
-        time.sleep(sleep_amount)
 
 
 def load_scenes(effects_dir=None):
