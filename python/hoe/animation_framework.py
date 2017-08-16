@@ -364,10 +364,15 @@ class EffectLauncher(MultiEffect):
 
 
 class Scene(MultiEffect):
-    def __init__(self, name, tags=[], collaboration_manager=None, effects=[]):
+    TAG_BACKGROUND = 0
+    TAG_GAME = 1
+    TAG_TEST = 2
+
+    def __init__(self, name, tags=[TAG_BACKGROUND], collaboration_manager=None, effects=[]):
         # str, CollaborationManager, List[Effect] -> None
         MultiEffect.__init__(self, *effects)
         self.name = name
+        self.tags = tags
         self.collaboration_manager = collaboration_manager
         if isinstance(collaboration_manager, Effect) and collaboration_manager not in self.effects:
             # print "WARNING: Scene %s has collaboration manager %s
