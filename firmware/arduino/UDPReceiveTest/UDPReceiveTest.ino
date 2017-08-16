@@ -109,8 +109,8 @@ void OSCMsgReceive() {
   if ((sizeOf = Udp.parsePacket()) > 0) {
     Serial.println("Recxeived a packet");
     while (sizeOf--) {
-      Serial.print("size is: ");
-      Serial.println(sizeOf);
+      //Serial.print("size is: ");
+      //Serial.println(sizeOf);
       msgIN.fill(Udp.read());
     }
     if (!msgIN.hasError()) {

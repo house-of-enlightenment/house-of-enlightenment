@@ -1,6 +1,6 @@
 
 //mapped to test console
-int inPins[5] = {A2, 4, 6, 5, 3};
+byte inPins[5] = {A2, 4, 6, 5, 3};
 byte outPins[5] = {9, 7, A1 , 8, A0};
 
 int buttonState[5] = {0, 0, 0, 0, 0};

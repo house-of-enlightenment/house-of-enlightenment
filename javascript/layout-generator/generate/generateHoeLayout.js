@@ -99,19 +99,26 @@ const processSlice = R.curry((sliceAt0, sliceIndex) => {
     };
   };
 
-  // https://github.com/house-of-enlightenment/house-of-enlightenment/issues/5
+  /**
+   * https://github.com/house-of-enlightenment/house-of-enlightenment/issues/5
+   * @param  {Number} strip the strip id (0 - 131)
+   * @return {String} the address
+   */
   const getAddress = (strip) => {
 
-    if (strip < 48){
+    if (strip < 36){
       return "10.0.0.32";
     }
-    else if (strip < 96){
+    else if (strip < 72){
       return "10.0.0.33";
     }
-    else {
+    else if (strip < 108) {
       return "10.0.0.34";
     }
-
+    else {
+      return "10.0.0.35";
+    }
+    
   };
 
 
