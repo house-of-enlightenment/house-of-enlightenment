@@ -276,9 +276,16 @@ class RotatingWedge(Effect):
     def next_frame(self, pixels, t, collaboration_state, osc_data):
         if self.angle == 0:
             if self.start_col < self.end_col:
-                pixels.update_slices(additive=self.additive, color=self.color, slices=[])
+                pixels.update_slices(
+                    additive=self.additive,
+                    color=self.color,
+                    slices=[(slice(0, None), slice(self.start_col, self.end_col))])
             else:
-                pixels.update_slices(additive=self.additive, color=self.color, slices=[])
+                pixels.update_slices(
+                    additive=self.additive,
+                    color=self.color,
+                    slices=[(slice(0, None), slice(self.end_col, None)), (slice(0, None), slice(
+                        0, self.end_col))])
 
         else:
             # TODO Combine Slices or get Indexes?
@@ -287,7 +294,7 @@ class RotatingWedge(Effect):
                       for r, c in enumerate(
                           np.arange(self.start_col, self.start_col + self.angle * STATE.layout.rows,
                                     self.angle))]
-            pixels.update_slices(additive=self.additive, color=self.color, slices=[])
+            pixels.update_slices(additive=self.additive, color=self.color, slices=slices)
         self.start_col = (self.start_col + self.direction) % STATE.layout.columns
         self.end_col = (self.end_col + self.direction) % STATE.layout.columns
 
@@ -494,39 +501,42 @@ class Columns(Effect):
 __all__ = [
     Scene(
         "buttonchaser",
-        ButtonChaseController(draw_bottom_layer=True),
-        SolidBackground(),
-        ButtonRainbow(max_value=255 - 30),
-        Pulser()),
-    Scene("buttonloser",
-          ButtonChaseController(draw_bottom_layer=True, backwards_progress=True),
-          SolidBackground(), ButtonRainbow(), Pulser()),
-    Scene("wedges",
-          NoOpCollaborationManager(),
-          RotatingWedge(), GenericStatelessLauncher(wedge_factory, width=3, additive=False)),
-    Scene("sinedots",
-          NoOpCollaborationManager(),
-          SolidBackground((100, 100, 100)),
-          examples.SampleEffectLauncher(),
-          FunctionFrameRotator(
-              func=FunctionFrameRotator.no_op,
-              start_offsets=5 * np.sin(np.linspace(0, 8 * np.pi, STATE.layout.rows)))),
+        collaboration_manager=ButtonChaseController(draw_bottom_layer=True),
+        effects=[ButtonRainbow(max_value=255 - 30), Pulser()]),
+    Scene(
+        "buttonloser",
+        collaboration_manager=ButtonChaseController(
+            draw_bottom_layer=True, backwards_progress=True),
+        effects=[ButtonRainbow(), Pulser()]),
+    Scene(
+        "wedges",
+        collaboration_manager=NoOpCollaborationManager(),
+        effects=[GenericStatelessLauncher(wedge_factory, width=3, additive=False)]),
+    Scene(
+        "sinedots",
+        collaboration_manager=NoOpCollaborationManager(),
+        effects=[
+            SolidBackground(color=(30, 30, 30)),
+            examples.SampleEffectLauncher(),
+            FunctionFrameRotator(
+                func=FunctionFrameRotator.no_op,
+                start_offsets=5 * np.sin(np.linspace(0, 8 * np.pi, STATE.layout.rows)))
+        ]),
     Scene(
         "lidartest",
-        NoOpCollaborationManager(),
-        #          Rainbow(hue_start=0, hue_end=255),
-        SolidBackground(color=(30, 30, 30)),
-        OpaqueLidar()),
+        collaboration_manager=NoOpCollaborationManager(),
+        effects=[SolidBackground(color=(30, 30, 30)),
+                 OpaqueLidar()]),
     Scene(
         "lidarswap",
-        NoOpCollaborationManager(),
-        Rainbow(hue_start=0, hue_end=255),
-        # FunctionFrameRotator(
-        #     func=FunctionFrameRotator.sample_roll_offset,
-        #     start_offsets=5 * np.sin(np.linspace(0, 8 * np.pi, STATE.layout.rows))),
-        SwappingLidar()),
-    Scene("risingtide",
-          NoOpCollaborationManager(), SolidBackground(), TideLauncher(), FrameRotator()),
+        collaboration_manager=NoOpCollaborationManager(),
+        effects=[Rainbow(hue_start=0, hue_end=255),
+                 SwappingLidar()]),
+    Scene(
+        "risingtide",
+        collaboration_manager=NoOpCollaborationManager(),
+        effects=[SolidBackground(), TideLauncher(),
+                 FrameRotator()]),
     # TODO This is currently just an eyesore
     # Scene("columnfunction",
     #       NoOpCollaborationManager(),
@@ -539,11 +549,16 @@ __all__ = [
     #       ),
     Scene(
         "rainbowblackoutcolumns",
-        NoOpCollaborationManager(),
-        Rainbow(hue_start=0, hue_end=255),
-        FrameRotator(rate=-.25),
-        Columns(color=(0, 0, 0), column_picker=partial(pick_mod_n, mod=10)),
-        FrameRotator(rate=.25)),
-    Scene("diskrainbow",
-          NoOpCollaborationManager(), Rainbow(hue_start=0, hue_end=255 - 30), DiskPulsers())
+        collaboration_manager=NoOpCollaborationManager(),
+        effects=[
+            Rainbow(hue_start=0, hue_end=255),
+            FrameRotator(rate=-.25),
+            Columns(color=(0, 0, 0), column_picker=partial(pick_mod_n, mod=10)),
+            FrameRotator(rate=.25)
+        ]),
+    Scene(
+        "diskrainbow",
+        collaboration_manager=NoOpCollaborationManager(),
+        effects=[Rainbow(hue_start=0, hue_end=255),
+                 DiskPulsers()])
 ]

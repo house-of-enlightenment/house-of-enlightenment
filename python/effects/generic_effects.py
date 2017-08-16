@@ -150,27 +150,35 @@ class NoOpCollaborationManager(CollaborationManager):
 
 # FIXME : A little hacky - trying to avoid circular dependencies on debugging_effects
 import debugging_effects
+rainbow = Rainbow(hue_start=0, hue_end=255)
 __all__ = [
-    Scene("buttontoggler",
-          ButtonToggleResponderManager(), SolidBackground(), debugging_effects.PrintOSC()),
+    Scene(
+        "buttontoggler",
+        collaboration_manager=ButtonToggleResponderManager(),
+        effects=[debugging_effects.PrintOSC()]),
     # A simple rainbow that rotates due to the FrameRotator
     Scene(
         "rotatingrainbow",
-        NoOpCollaborationManager(),
-        Rainbow(hue_start=0, hue_end=255),
-        FrameRotator(rate=.75)),
+        collaboration_manager=NoOpCollaborationManager(),
+        effects=[rainbow, FrameRotator(rate=.75)]),
     # A rainbow that has been distorted into spirals by using a RANGE as the offset
-    Scene("funkrainbow",
-          NoOpCollaborationManager(),
-          Rainbow(hue_start=0, hue_end=255),
-          FunctionFrameRotator(
-              func=FunctionFrameRotator.sample_rotating_offset,
-              start_offsets=range(STATE.layout.rows))),
+    Scene(
+        "funkrainbow",
+        collaboration_manager=NoOpCollaborationManager(),
+        effects=[
+            rainbow,
+            FunctionFrameRotator(
+                func=FunctionFrameRotator.sample_rotating_offset,
+                start_offsets=range(STATE.layout.rows))
+        ]),
     # A rainbow that follows a sine wave up (due to the offsets) and moves upwards due to a rolling offset function
-    Scene("sinerainbow",
-          NoOpCollaborationManager(),
-          Rainbow(hue_start=0, hue_end=255),
-          FunctionFrameRotator(
-              func=FunctionFrameRotator.sample_roll_offset,
-              start_offsets=5 * np.sin(np.linspace(0, 8 * np.pi, STATE.layout.rows))))
+    Scene(
+        "sinerainbow",
+        collaboration_manager=NoOpCollaborationManager(),
+        effects=[
+            rainbow,
+            FunctionFrameRotator(
+                func=FunctionFrameRotator.sample_roll_offset,
+                start_offsets=5 * np.sin(np.linspace(0, 8 * np.pi, STATE.layout.rows)))
+        ])
 ]

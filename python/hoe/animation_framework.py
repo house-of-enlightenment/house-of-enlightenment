@@ -7,7 +7,6 @@ import sys
 import time
 from threading import Thread
 
-
 from OSC import OSCServer
 
 from hoe.pixels import Pixels
@@ -365,7 +364,7 @@ class EffectLauncher(MultiEffect):
 
 
 class Scene(MultiEffect):
-    def __init__(self, name, collaboration_manager, *effects):
+    def __init__(self, name, tags=[], collaboration_manager=None, effects=[]):
         # str, CollaborationManager, List[Effect] -> None
         MultiEffect.__init__(self, *effects)
         self.name = name
@@ -381,7 +380,8 @@ class Scene(MultiEffect):
         return "{}({})".format(self.__class__.__name__, self.name)
 
     def render(self, pixels, t, osc_data):
-        self.collaboration_state = self.collaboration_manager.compute_state(t, self.collaboration_state, osc_data)
+        self.collaboration_state = self.collaboration_manager.compute_state(
+            t, self.collaboration_state, osc_data)
         # TODO Why didn't super(MultiEffect, self) work?
         self.next_frame(pixels, t, self.collaboration_state, osc_data)
 

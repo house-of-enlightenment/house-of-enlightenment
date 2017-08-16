@@ -14,6 +14,7 @@ The accurate method can cause a flicker.
 
 from hoe.state import STATE
 
+
 def consistent_speed_to_pixels(speed, fps=None):
     fps = fps or STATE.fps
     # only one of these will have a value, depending

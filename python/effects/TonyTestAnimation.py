@@ -9,6 +9,7 @@ from generic_effects import NoOpCollaborationManager
 from generic_effects import SolidBackground
 from random import randrange
 
+
 class TonyTestEffect(Effect):
     """Always return red"""
 
@@ -36,6 +37,6 @@ class Background1(Effect):
 
 
 __all__ = [
-    Scene("tonyscene1", NoOpCollaborationManager(), TonyTestEffect()),
-    Scene("tonyscene2", NoOpCollaborationManager(), Background1())
+    # Scene("tonyscene1", collaboration_manager=NoOpCollaborationManager()),
+    # Scene("tonyscene2", collaboration_manager=NoOpCollaborationManager())
 ]

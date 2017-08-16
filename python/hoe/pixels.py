@@ -42,7 +42,8 @@ class Pixels(object):
     def update_pairwise(self, additive, color, pairwise):
         zipped = zip(*pairwise)
         if zipped:
-            self.update_indicies(additive=additive, color=color, x_values=zipped[0], y_values=zipped[1])
+            self.update_indicies(
+                additive=additive, color=color, x_values=zipped[0], y_values=zipped[1])
 
     def update_indicies(self, additive, color, x_values, y_values):
         if additive:

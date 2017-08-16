@@ -49,9 +49,7 @@ class ColumnStreak(Effect):
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
         tail = max(self.row - self.streak_length + 1, self.bottom_row)
-        # print self.row, tail, pixels[tail:self.row+1,self.column], self.colors[self.row-tail::-1]
         pixels[tail:self.row + 1, self.column] = self.colors[self.row - tail::-1]
-
         self.row += 1
 
     def is_completed(self, t, osc_data):
@@ -89,12 +87,21 @@ class SampleEffectLauncher(MultiEffect):
         e = ColumnStreak(
             column=randrange(0 + s * per_section, (s + 1) * per_section), color=(255, 0, 0))
         self.effects.append(e)
+        print self.effects
 
 
 __all__ = [
-    Scene("spatial scene", NoOpCollaborationManager(), SpatialStripesBackground()),
-    Scene("adjustablebackground",
-          NoOpCollaborationManager(), SolidBackground(), AdjustableFillFromBottom()),
-    Scene("launchdots",
-          NoOpCollaborationManager(), SolidBackground((100, 100, 100)), SampleEffectLauncher()),
+    Scene(
+        "spatial scene",
+        collaboration_manager=NoOpCollaborationManager(),
+        effects=[SpatialStripesBackground()]),
+    Scene(
+        "adjustablebackground",
+        collaboration_manager=NoOpCollaborationManager(),
+        effects=[SolidBackground(), AdjustableFillFromBottom()]),
+    Scene(
+        "launchdots",
+        collaboration_manager=NoOpCollaborationManager(),
+        effects=[SolidBackground(color=(30, 30, 30)),
+                 SampleEffectLauncher()]),
 ]

@@ -44,8 +44,15 @@ class FailureEffect(Effect):
 from generic_effects import NoOpCollaborationManager
 from generic_effects import SolidBackground
 __all__ = [
-    Scene("osc printer", NoOpCollaborationManager(), PrintOSC(), SolidBackground(30, 30, 30)),
+    Scene(
+        "osc printer",
+        collaboration_manager=NoOpCollaborationManager(),
+        effects=[SolidBackground(30, 30, 30)]),
     # Not a real effect. Just testing failures in effect code against the gulp server
     # Scene("failquick", NoOpCollaborationManager(), SolidBackground(0, 255, 0), FailureEffect()),
-    Scene("bluewithdot", NoOpCollaborationManager(), SolidBackground(0, 255, 0), MovingDot())
+    Scene(
+        "bluewithdot",
+        collaboration_manager=NoOpCollaborationManager(),
+        effects=[SolidBackground(color=(0, 0, 255)),
+                 MovingDot()])
 ]

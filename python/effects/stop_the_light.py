@@ -112,6 +112,8 @@ class CollaborationCountBasedBackground(Effect):
 
 
 __all__ = [
-    Scene("stoplight",
-          StopTheLight(0, 2), SolidBackground((150, 150, 150)), CollaborationCountBasedBackground())
+    Scene(
+        "stoplight",
+        collaboration_manager=StopTheLight(0, 2),
+        effects=[CollaborationCountBasedBackground()])
 ]
