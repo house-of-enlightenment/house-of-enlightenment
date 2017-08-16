@@ -6,6 +6,8 @@ from generic_effects import NoOpCollaborationManager
 from generic_effects import SolidBackground
 import numpy as np
 import math
+import itertools
+from sympy.geometry import Polygon, Point
 
 
 # ---------------- Movement Functions -----------
@@ -70,6 +72,30 @@ def _diamond_indicies(half_height, half_width):
     return _populate_quadrants(_slope_indices(half_height, half_width)+[(0,half_width),(half_height,0)])
 
 
+def move_polygon_up(polygon, **kwargs):
+    polygon.polygon = polygon.polygon.translate(x=1,y=0)
+
+class PolygonEffect(Effect):
+    def __init__(self, color=(255,255,255), polygon=None, movement_function=None, start_col=0, start_row=0):
+        self.color = color
+        self.polygon = polygon
+        self.movement_function = movement_function
+        self.start_row, self.start_col = start_row, start_col
+        self.curr_row, self.curr_col = None, None
+
+    def scene_starting(self, now):
+        self.curr_row, self.curr_col = self.start_row, self.start_col
+
+    def is_completed(self, t, osc_data):
+        return self.curr_row >= STATE.layout.rows
+
+    def next_frame(self, pixels, now, collaboration_state, osc_data):
+        self.movement_function(polygon=self, now=now)
+        x_min, y_min, x_max, y_max = self.polygon.bounds
+        indices = filter(lambda p: p in self.polygon.vertices or any(p in s for s in self.polygon.sides) or self.polygon.encloses(Point(p)),
+                         itertools.product(range(x_min, x_max+1), range(y_min, y_max+1)))
+        cleaned_indices = cleanup_pairwise_indicies(indices)
+        pixels.update_pairwise(additive=False, color=self.color, pairwise=cleaned_indices)
 
 class Shape(Effect):
     def __init__(self, color=(255, 255, 255), indices=[(0, 0)], movement_function=None, start_col=0, start_row=0):
@@ -101,21 +127,9 @@ class Shape(Effect):
 
 __all__ = [
     Scene(
-        "diamond",
+        "triangle",
         NoOpCollaborationManager(),
         SolidBackground(),
-        Shape(indices=_diamond_indicies(4,4), movement_function=move_along_horizontal_sine_wave, start_row=20)
-    ),
-    Scene(
-        "distortingdiamond",
-        NoOpCollaborationManager(),
-        SolidBackground(),
-        Shape(indices=_diamond_indicies(5,5), movement_function=rotate_in_place, start_row=20)
-    ),
-    Scene(
-        "uptriangle",
-        NoOpCollaborationManager(),
-        SolidBackground(),
-        Shape(movement_function=move_up, indices=_upward_triangle_indicies(height=5))
+        PolygonEffect(polygon=Polygon((0,-2),(2,0),(0,2)), movement_function=move_polygon_up)
     )
 ]
