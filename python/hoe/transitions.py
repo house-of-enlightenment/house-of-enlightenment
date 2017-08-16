@@ -10,6 +10,8 @@ I generally like the effect of having an animation:
 """
 import numpy as np
 
+from hoe import utils
+
 
 class Transition(object):
     def __init__(self):
@@ -80,8 +82,9 @@ class HueTransition(Transition):
         start = np.random.randint(0, 256)
         # pick how much of the color wheel we're going to take
         # a longer slice will have more colors
-        length = 64 #np.random.randint(32, 64)
+        length = np.random.randint(48, 80)  # 64 - 16, 64 + 16
         end = start + length
+        #return np.array([-10, 54])
         return np.array([start, end])
 
     def update(self, now):
@@ -97,10 +100,45 @@ class CoordinatedTransition(Transition):
     def __init__(self):
         self.state = 'low'
         Transition.__init__(self)
-        self.first_point = 1
+        self.pts_a = list(self.yield_pts_a())
+        self.pts_a = np.array(self.pts_a + list(reversed(self.pts_a)))
+        self.pts_a = np.concatenate((self.pts_a, -self.pts_a))
+        self.idx_a = np.random.randint(0, len(self.pts_a))
+
+        self.pts_b = list(self.yield_pts_b())
+        self.pts_b = np.array(self.pts_b + list(reversed(self.pts_b)))
+        self.pts_b = np.concatenate((self.pts_b, -self.pts_b))
+        self.idx_b = np.random.randint(0, len(self.pts_b))
+
+    def yield_pts_b(self):
+        val = 0
+        diffs = [8, -4]
+        while val < 70:
+            for d in diffs:
+                val += d
+                yield val
+
+    def yield_pts_a(self):
+        val = 0
+        diffs = [10, -5]
+        while val < 56:
+            for d in diffs:
+                val += d
+                yield val
 
     def rnd_pt(self):
-        return np.random.randint(1, 66, (2,))
+        # --, rotation
+        if self.state == 'low':
+            self.state = 'high'
+            return np.array([4, 13])
+        else:
+            self.state = 'low'
+            return np.array([13, 4])
+        pt = np.array((self.pts_a[self.idx_a], self.pts_b[self.idx_b]))
+        self.idx_a = (self.idx_a + 1) % len(self.pts_a)
+        self.idx_b = (self.idx_b + 1) % len(self.pts_b)
+        return pt
+        # return np.random.randint(1, 66, (2,))
         # if np.random.rand() < .5:
 
         # else:
@@ -122,6 +160,7 @@ class CoordinatedTransition(Transition):
         #     return np.array((self.first_point, 60))
 
     def transition_period(self, now):
+        return utils.randrange(4, 9)
         diff = max(np.abs(self.end_pt - self.start_pt))
         return max(2, diff / 2)
 

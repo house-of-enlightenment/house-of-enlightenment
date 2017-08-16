@@ -63,9 +63,10 @@ def main():
         rotation = Rotate(hoe_layout.columns, coordinated.first())
         r_row = RainbowRow(hoe_layout, rotation)
         b_row = ConstantRow(hoe_layout, 5)
-        row = SwapRow(
-            (r_row, b_row),
-            (lambda: utils.randrange(10, 25), lambda: utils.randrange(4, 5)))
+        row = r_row
+        #row = SwapRow(
+        #    (r_row, b_row),
+        #    (lambda: utils.randrange(10, 25), lambda: utils.randrange(4, 5)))
     elif args.row == 'fader':
         row = FaderRow(hoe_layout, osc_queue)
     elif args.row == 'sine':
