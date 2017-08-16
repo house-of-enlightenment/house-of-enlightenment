@@ -20,7 +20,18 @@ python ./python/hoe/houseOfEnlightenment.py -l layout/hoeLayout.json -s layout/s
 python ./python/hoe/houseOfEnlightenment.py -f 30
 # To run in verbose mode (not much supports this yet):
 python ./python/hoe/houseOfEnlightenment.py -v
+# To load scenes with tags
+python ./python/hoe/houseOfEnlightenment.py -t test -t background
 ```
+
+## Tags
+Scenes can be given a set of tags to differentiate test scenes and demo ones from production-worthy ones. Currently, the following tags are supported:
+- background
+- game
+- test
+- example
+- wip
+The default is [] which will load all scenes. There is currently no exclusion of tags set up.
 
 # Interaction
 The python application allows for some command prompt input to assist in development and scene control. Currently the following are supported:
