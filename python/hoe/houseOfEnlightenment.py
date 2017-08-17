@@ -211,7 +211,7 @@ def launch():
     opc_client = build_opc_client(config.verbose)
     stations = create_osc_station_clients(servers=STATE.servers["remote"]["osc_controls"])
     STATE.station_osc_clients = stations
-    STATE.buttons = [StationButtons(station_id=s_id, client=client) for s_id,client in enumerate(stations)]
+    STATE.buttons = [StationButtons(client=client) for s_id, client in enumerate(stations)]
     framework = init_animation_framework(osc_server, opc_client, stations, config.scene,
                                          config.tags)
 
