@@ -1,13 +1,15 @@
+import numpy as np
+
 from hoe.animation_framework import Scene
 from hoe.animation_framework import Effect
 from hoe.animation_framework import CollaborationManager
 from hoe.animation_framework import MultiEffect
 from hoe.animation_framework import StoredOSCData
-from hoe.state import STATE
-from hoe.osc_utils import update_buttons
-from hoe.stations import StationButtons
+from hoe.collaboration import ButtonToggleResponderManager, NoOpCollaborationManager
 import hoe.color_utils
-import numpy as np
+from hoe.osc_utils import update_buttons
+from hoe.state import STATE
+from hoe.stations import StationButtons
 
 
 class SolidBackground(Effect):
@@ -128,25 +130,6 @@ class FunctionFrameRotator(Effect):
         offsets[:] = np.roll(offsets, 1)
 
 
-class ButtonToggleResponderManager(CollaborationManager):
-    """Each button press sends a toggle command back to the controller.
-
-        Currently useful for testing, but not much else.
-
-       TODO: Store the button state and send explicit on/off commands
-    """
-
-    def compute_state(self, t, collaboration_state, osc_data):
-        # type: (float, {}, StoredOSCData) -> None
-        for s, station in enumerate(osc_data.stations):
-            for b_id, val in station.button_presses.items():
-                STATE.buttons[s][b_id] = StationButtons.BUTTON_TOGGLE
-
-class NoOpCollaborationManager(CollaborationManager):
-    """A no-op collaboration manager for when you need a placeholder in your scene"""
-
-    def compute_state(self, t, collaboration_state, osc_data):
-        pass
 
 
 # FIXME : A little hacky - trying to avoid circular dependencies on debugging_effects

@@ -5,9 +5,9 @@ I generally like the effect of having an animation:
 - pick a target
 - smoothly transition to that target
 - once hitting the target, pick a new target and repeat
-
-
 """
+import operator as op
+
 import numpy as np
 
 from hoe import utils
@@ -98,6 +98,9 @@ class HueTransition(Transition):
 
 
 class CoordinatedTransition(Transition):
+    # allows for two transitions to act in a coordinated fashion
+    #
+    # This class is very much so a work in progress
     def __init__(self):
         self.state = 'low'
         Transition.__init__(self)
@@ -134,13 +137,14 @@ class CoordinatedTransition(Transition):
         # --, rotation
         # first value is pixels / second that the bottom row rotates
         # the second value is pixels / frame
-        return np.array((-30, 3))
         #return np.array([26, 26])
         if self.state == 'low':
             self.state = 'high'
-            return np.array([4, 13])
+            return np.array((16, 18))
+            return np.array([4, 11])
         else:
             self.state = 'low'
+            return np.array((16, 8))
             return np.array([13, 4])
         pt = np.array((self.pts_a[self.idx_a], self.pts_b[self.idx_b]))
         self.idx_a = (self.idx_a + 1) % len(self.pts_a)
@@ -179,31 +183,23 @@ class CoordinatedTransition(Transition):
 
     # this is the row rotation
     def first(self):
-        # Not proud of this, but too lazy to do it properly
-        # pylint: disable=no-self-argument
-        class Dummy(object):
-            def start(_, now):
-                self.start(now)
-
-            def update(_, now):
-                return self.update(now)[0]
-
-            def __call__(_, now):
-                return self.__call__(now)[0]
-
-        return Dummy()
+        return _SingleCoordinatedTransition(self, op.itemgetter(0))
 
     # this is the structure rotation
     def second(self):
-        # pylint: disable=no-self-argument
-        class Dummy(object):
-            def start(_, now):
-                self.start(now)
+        return _SingleCoordinatedTransition(self, op.itemgetter(1))
 
-            def update(_, now):
-                return self.update(now)[1]
 
-            def __call__(_, now):
-                return self.__call__(now)[1]
+class _SingleCoordinatedTransition(object):
+    def __init__(self, trans, getter):
+        self.trans = trans
+        self.getter = getter
 
-        return Dummy()
+    def start(self, now):
+        return self.trans.start(now)
+
+    def update(self, now):
+        return self.getter(self.trans.update(now))
+
+    def __call__(self, now):
+        return self.getter(self.trans(now))
