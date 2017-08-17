@@ -140,7 +140,7 @@ class ButtonToggleResponderManager(CollaborationManager):
         # type: (float, {}, StoredOSCData) -> None
         for s, station in enumerate(osc_data.stations):
             for b_id, val in station.button_presses.items():
-                STATE.buttons[s][b_id] = StationButtons.BUTTON_TOGGLE
+                STATE.stations[s].buttons[b_id] = StationButtons.BUTTON_TOGGLE
 
 class NoOpCollaborationManager(CollaborationManager):
     """A no-op collaboration manager for when you need a placeholder in your scene"""
