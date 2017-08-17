@@ -65,21 +65,21 @@ def get_next_movements(previous_move):
     if (previous_move == DOWN).all():
         return (DOWN, LEFT1, RIGHT1)
     if ((previous_move) == LEFT1).all():
-        return (LEFT1,)
+        return (LEFT1, )
     if ((previous_move) == LEFT2).all():
         pass
     if ((previous_move) == RIGHT1).all():
-        return (RIGHT1,)
+        return (RIGHT1, )
     if ((previous_move) == RIGHT2).all():
         pass
     raise ValueError('{} is not a valid move'.format(previous_move))
-
 
 
 class SinglePixelSourceDiamondShape(object):
     """One pixel in the middle changes, everything else feeds from that
     in a diamond shape
     """
+
     def __init__(self, layout):
         self.layout = layout
         self.hue_shift = 0
@@ -91,10 +91,9 @@ class SinglePixelSourceDiamondShape(object):
         self.my_pixels[:] = 25
         before_idx = []
         after_idx = []
-        queue = collections.deque((
-            (self.center, np.array([UP, DOWN, LEFT1, RIGHT1])),))
-        top = 215 #layout.BOTTOM_DISC.top
-        bottom = 0 #layout.BOTTOM_DISC.bottom
+        queue = collections.deque(((self.center, np.array([UP, DOWN, LEFT1, RIGHT1])), ))
+        top = 215  #layout.BOTTOM_DISC.top
+        bottom = 0  #layout.BOTTOM_DISC.bottom
         left = 48
         while queue:
             pt, movements = queue.popleft()
@@ -145,16 +144,9 @@ class SinglePixelSourceDiamondShape(object):
         # black out the back for a more realistic view
         pixels[:, 33:] = 5
 
-
     def random_step(self, color):
-        c = (color + np.array([
-            [0, 0, 1],
-            [0, 0, -1],
-            [0, 1, 0],
-            [0, -1, 0],
-            [1, 0, 0],
-            [-1, 0, 0]
-        ])[np.random.randint(0, 6)]) % 256
+        c = (color + np.array([[0, 0, 1], [0, 0, -1], [0, 1, 0], [0, -1, 0], [1, 0, 0], [-1, 0, 0]
+                               ])[np.random.randint(0, 6)]) % 256
         print c
         return c
 

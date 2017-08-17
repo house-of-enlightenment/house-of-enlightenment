@@ -19,4 +19,4 @@ pip install pylint pep8
 pip install .
 
 pep8 hoe scripts
-pylint -E --extension-pkg-whitelist=numpy hoe scripts/*
+pylint -E --extension-pkg-whitelist=numpy hoe scripts/*.py

@@ -183,11 +183,16 @@ def build_opc_client(verbose):
     if 'opc_server' in STATE.servers['remote']:
         return create_opc_client(server=STATE.servers["remote"]["opc_server"], verbose=verbose)
     else:
-        clients = [
-            create_opc_client(server_ip_port, verbose=verbose)
-            for server_ip_port in STATE.servers['remote']['opc_servers']
-        ]
-        return opc.MultiClient(clients, STATE.layout)
+        clients = {}
+        opc_servers = STATE.servers['remote']['opc_servers']
+        if 'layout' in opc_servers:
+            for server_ip_port in opc_servers['layout']:
+                cl = create_opc_client(server_ip_port, verbose=verbose)
+                clients[cl] = STATE.layout.address[cl.ip] # pylint: disable=no-member
+        if 'all' in opc_servers:
+            client = create_opc_client(opc_servers['all'][0], verbose)
+            clients[client] = range(STATE.layout.n_pixels)
+        return opc.MultiClient(clients)
 
 
 def launch():
