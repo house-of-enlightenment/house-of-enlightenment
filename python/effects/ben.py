@@ -1,27 +1,44 @@
 import numpy as np
 from hoe import color_utils
 import colorsys
+import sys
 from hoe.animation_framework import Scene
 from hoe.animation_framework import Effect
+from hoe.animation_framework import MultiEffect
 from generic_effects import NoOpCollaborationManager
 from generic_effects import SolidBackground
 from generic_effects import FrameRotator
 
 from hoe import color_utils
 from hoe.state import STATE
+from hoe.utils import faderInterpolate
+from hoe.utils import sliceForStation
 
 class SeizureMode(Effect):
-    def __init__(self):
+    def __init__(self, station = None, duration = None):
         self.foo = 1
-        self.slice = ( slice(0,STATE.layout.rows), slice(0, STATE.layout.columns))
+        if station is None:
+            self.slice = ( slice(0,STATE.layout.rows), slice(0, STATE.layout.columns))
+        else:
+            self.slice = sliceForStation(station)
+
         self.on = True
         self.delta_t = 0.05
         self.last_step = 0;
+        self.duration = duration
+        self.station = station
+        self.start_time = None
 
     def scene_starting(self, now):
-        pass
+        self.start_time = now
+        print(now)
 
     def next_frame(self, pixels, now, collaboration_state, osc_data):
+
+        if self.start_time is None:
+            self.start_time = now
+
+        self._set_speed_from(osc_data)
 
         if now - self.last_step > self.delta_t:
             self.last_step = now
@@ -31,6 +48,36 @@ class SeizureMode(Effect):
             pixels[self.slice] = (255,255,255)
         else:
             pixels[self.slice] = (0,0,0)
+
+    def is_completed(self, now, osc_data):
+        if self.duration is None:
+            return False # Run Forevas
+
+        return now > self.start_time + self.duration
+
+    def _set_speed_from(self, osc_data):
+        if self.station is None:
+            return
+
+        fader = osc_data.stations[self.station].faders[0]
+        self.delta_t = faderInterpolate(fader, 0.0005, 0.2)
+
+class LaunchSeizure(MultiEffect):
+
+    def __init__(self, station = None, button = 0 ):
+        MultiEffect.__init__(self)
+        self.station = station
+        self.button = 0
+
+    def before_rendering(self, pixels, now, collaboration_state, osc_data):
+        MultiEffect.before_rendering(self, pixels, now, collaboration_state, osc_data)
+        if self.count() > 0:
+            return
+
+        buttons = osc_data.stations[self.station].buttons
+        if buttons and self.button in buttons:
+            self.add_effect( SeizureMode(station=self.station, duration = 3) )
+
 
 class FiniteDifference(Effect):
     def __init__(self):
@@ -43,7 +90,7 @@ class FiniteDifference(Effect):
         self.influence = 0b1111
         self.isFixedBounary = False
         self.X_MAX = STATE.layout.rows
-        self.Y_MAX = STATE.layout.columns/2
+        self.Y_MAX = STATE.layout.columns
 
     def next_frame(self, pixels, now, collaboration_state, osc_data):
         if len(self.pixels) == 0:
@@ -74,7 +121,7 @@ class FiniteDifference(Effect):
         self.pixels.pop(0)
 
     ##
-    # Calculate next frame of explicit finite difference wave 
+    # Calculate next frame of explicit finite difference wave
     #
     def wave(self, pixels, deltaT, deltaT2):
         self.pixels.append(np.empty([self.X_MAX, self.Y_MAX], dtype=float))
@@ -284,6 +331,12 @@ __all__ = [
          effects=[
              SolidBackground(),
              SeizureMode()
+         ]
+        ),
+    Scene("seizure",
+        collaboration_manager=NoOpCollaborationManager(),
+        effects=[
+            LaunchSeizure(station = 0)
          ]
         ),
     Scene("waves_of_diffusion",

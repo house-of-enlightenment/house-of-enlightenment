@@ -356,6 +356,9 @@ class MultiEffect(Effect):
         for e in self.effects:
             e.scene_starting(now, osc_data)
 
+    def count(self):
+        return len(self.effects)
+
     def scene_ended(self):
         for e in self.effects:
             e.scene_ended()
