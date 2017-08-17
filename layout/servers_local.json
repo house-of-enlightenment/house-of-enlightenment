@@ -7,8 +7,8 @@
   },
   "remote": {
     "opc_server":"127.0.0.1:7890",
-    "protocol":"tcp",
     "osc_controls": {
+      "protocol":"tcp",
       "servers": [
         {
           "host":"127.0.0.1",

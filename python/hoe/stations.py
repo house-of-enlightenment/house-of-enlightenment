@@ -20,7 +20,9 @@ class StationClient(object):
 
     def send(self, buttons):
         self._ensure_connected()
-        self.socket.send(reduce(lambda x,y: str(x)+str(y), buttons))
+        data = reduce(lambda x,y: str(x)+str(y), buttons)
+        print "Sending data %s to %s" % (data, self.socket)
+        self.socket.send(data)
 
         # TODO handle connection/disconnect
 
