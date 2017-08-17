@@ -1,3 +1,4 @@
+# pylint: disable=all
 """When a player hits a target, a color splash flows up HoE
 """
 

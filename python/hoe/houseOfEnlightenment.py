@@ -188,7 +188,7 @@ def build_opc_client(verbose):
         if 'layout' in opc_servers:
             for server_ip_port in opc_servers['layout']:
                 cl = create_opc_client(server_ip_port, verbose=verbose)
-                clients[cl] = STATE.layout.address[cl.ip]
+                clients[cl] = STATE.layout.address[cl.ip] # pylint: disable=no-member
         if 'all' in opc_servers:
             client = create_opc_client(opc_servers['all'][0], verbose)
             clients[client] = range(STATE.layout.n_pixels)

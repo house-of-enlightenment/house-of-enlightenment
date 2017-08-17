@@ -103,10 +103,12 @@ class CoordinatedTransition(Transition):
         Transition.__init__(self)
         self.pts_a = list(self.yield_pts_a())
         self.pts_a = np.array(self.pts_a + list(reversed(self.pts_a)))
+        # pylint: disable=invalid-unary-operand-type
         self.pts_a = np.concatenate((self.pts_a, -self.pts_a))
         self.idx_a = np.random.randint(0, len(self.pts_a))
 
         self.pts_b = list(self.yield_pts_b())
+        # pylint: disable=invalid-unary-operand-type
         self.pts_b = np.array(self.pts_b + list(reversed(self.pts_b)))
         self.pts_b = np.concatenate((self.pts_b, -self.pts_b))
         self.idx_b = np.random.randint(0, len(self.pts_b))
@@ -177,6 +179,8 @@ class CoordinatedTransition(Transition):
 
     # this is the row rotation
     def first(self):
+        # Not proud of this, but too lazy to do it properly
+        # pylint: disable=no-self-argument
         class Dummy(object):
             def start(_, now):
                 self.start(now)
@@ -191,6 +195,7 @@ class CoordinatedTransition(Transition):
 
     # this is the structure rotation
     def second(self):
+        # pylint: disable=no-self-argument
         class Dummy(object):
             def start(_, now):
                 self.start(now)

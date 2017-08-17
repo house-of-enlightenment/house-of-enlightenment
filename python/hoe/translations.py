@@ -96,8 +96,8 @@ class UpAndExpandEffect(object):
         self.clr = 0
 
     def next_frame(self, now, pixels):
-        self.paint_color_widths()
-        self.set_new_color_widths()
+        self.paint_color_widths(pixels)
+        self.set_new_color_widths(now)
 
     def set_new_color_widths(self, now):
         px = self.speed(now)
@@ -133,12 +133,13 @@ class Rotate(object):
 
     Args:
         n: number of items in the array
+        rotation_speed: a transition instance that returns how fast we're rotating
     """
 
     def __init__(self, n, rotation_speed=None):
         self.rotation = 0
         self.n = n
-        self.rotation_speed = rotation_speed or transitions.SpeedTransition(now, 5, 55)
+        self.rotation_speed = rotation_speed or transitions.SpeedTransition(5, 55)
 
     def start(self, now):
         self.last_time = now
