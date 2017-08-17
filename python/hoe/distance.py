@@ -9,7 +9,14 @@ The consistent method only allows for movements in a fixed amount.
 That means that if you want to move 100 pixels a second at 30fps,
 you'll actually end up going 3pixels / frame or 90 pixels per second.
 
+There is potentially another approach where, for example, if you
+wanted 50 pixels / sec you would move 2 pixels / frame unles
+frame_number % 3 == 0 then move only 1 pixel. I haven't figured out
+how to generalize this or what it would look like in practice so it
+hasn't been implemented.
+
 The accurate method can cause a flicker.
+
 """
 
 from hoe.state import STATE
@@ -60,6 +67,9 @@ class PixelsPerFrame(object):
         return self.pixels_per_frame
 
 
+# this class will move the proper number of pixels regardless
+# of FPS; But it looks funny as the output isn't
+# consistent, so I haven't really found a use for it.
 class AccurateSpeedToPixels(object):
     def __init__(self, speed):
         self.speed = speed

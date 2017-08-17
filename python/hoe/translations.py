@@ -37,7 +37,7 @@ class UpAndRotateEffect(object):
     def next_frame(self, now, pixels):
         pixels_up = self.up_speed(now)
         pixels_rotate = int(self.rotate_speed(now))
-        # print 'blah:', pixels_rotate
+        #print 'Rotating Structure', pixels_rotate
         # if now - self.last_time > 3:
         #     self.rotate_speed.pixels_per_frame = (
         #         self.rotate_speed.pixels_per_frame + np.random.randint(-5, 5)) % 66

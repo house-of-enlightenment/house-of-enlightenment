@@ -84,7 +84,7 @@ class HueTransition(Transition):
         # a longer slice will have more colors
         length = np.random.randint(48, 80)  # 64 - 16, 64 + 16
         end = start + length
-        #return np.array([-10, 54])
+        return np.array([-10, 54])
         return np.array([start, end])
 
     def update(self, now):
@@ -127,7 +127,12 @@ class CoordinatedTransition(Transition):
                 yield val
 
     def rnd_pt(self):
+        # row, structure
         # --, rotation
+        # first value is pixels / second that the bottom row rotates
+        # the second value is pixels / frame
+        return np.array((-30, 3))
+        #return np.array([26, 26])
         if self.state == 'low':
             self.state = 'high'
             return np.array([4, 13])

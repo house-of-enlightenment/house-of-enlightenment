@@ -56,11 +56,13 @@ def main():
     server = osc_utils.create_osc_server()
     # pylint: disable=no-value-for-parameter
     server.addMsgHandler("/input/fader", lambda *args: osc_queue.put(args[2][-1]))
+
+    coordinated = CoordinatedTransition()
+    rotation = Rotate(hoe_layout.columns, coordinated.first())
+
     if args.row == 'single':
-        row = SingleColumn(hoe_layout)
+        row = SingleColumn(hoe_layout, rotation)
     elif args.row == 'rainbow':
-        coordinated = CoordinatedTransition()
-        rotation = Rotate(hoe_layout.columns, coordinated.first())
         r_row = RainbowRow(hoe_layout, rotation)
         b_row = ConstantRow(hoe_layout, 5)
         row = r_row
@@ -124,16 +126,18 @@ class SingleColumn(object):
     Can be useful to see how the shape flows up the HoE.
     """
 
-    def __init__(self, layout):
+    def __init__(self, layout, rotate=None):
         self.layout = layout
-        self.rotate = Rotate(layout.columns)
+        self.rotate = rotate or Rotate(layout.columns)
+        self.hue = 0
 
     def start(self, now):
         self.rotate.start(now)
 
     def __call__(self, now):
         row = np.zeros((self.layout.columns, 3), np.uint8)
-        row[10, :] = (255, 0, 0)
+        row[10, :] = (255, 0, 0) #color_utils.hsv2rgb((self.hue, 255, 255))
+        self.hue = (self.hue + 16) % 256
         return self.rotate(row, now)
 
 
