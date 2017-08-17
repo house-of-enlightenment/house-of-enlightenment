@@ -40,7 +40,7 @@ class StationButtons(object):
     BUTTON_TOGGLE = 'toggle'
 
     def __init__(self, initial_state=BUTTON_ON):
-        self._buttons = [initial_state]*5
+        self._buttons = [initial_state] * 5
         self._last_change_timestamp = time.time()
         self._last_update_timestamp = 0
 
@@ -67,6 +67,7 @@ class StationButtons(object):
     def set_all(self, on=True):
         self._buttons = [1 if on else 0] * 5
         self._last_change_timestamp = time.time()
+
 
 class StationClient(object):
     def __init__(self, s_id, host, port, timeout=0.5):
@@ -127,7 +128,6 @@ class StationClient(object):
 
         return True
 
-
         # TODO handle connection/disconnect
 
 
@@ -142,6 +142,7 @@ class OscStationClient(object):
     def disconnect(self):
         # No-Op? This class is temporary anyway
         pass
+
 
 class MultiReceiverStationClient(object):
     def __init__(self, simulator_client, arduino_client):
@@ -162,20 +163,30 @@ def _init_station_clients():
     assert "remote" in STATE.servers and "station_controls" in STATE.servers["remote"], "remote/station_controls not specified"
     servers = STATE.servers["remote"]["station_controls"]
 
-    assert "protocol" not in servers or servers["protocol"] == "tcp", "Unknown protocol %s" % servers["protocol"]
+    assert "protocol" not in servers or servers["protocol"] == "tcp", "Unknown protocol %s" % servers[
+        "protocol"]
     print "Establishing TCP socket connection to stations"
     simulator_clients, arduino_clients = None, None
     if "simulator" in servers:
-        assert len(servers["simulator"]) == STATE.layout.sections, "Wrong number of servers specified"
-        simulator_clients = [StationClient(s_id=s_id, host=server["host"], port=int(server["port"]))
-                                for s_id, server in enumerate(servers["simulator"])]
+        assert len(
+            servers["simulator"]) == STATE.layout.sections, "Wrong number of servers specified"
+        simulator_clients = [
+            StationClient(s_id=s_id, host=server["host"], port=int(server["port"]))
+            for s_id, server in enumerate(servers["simulator"])
+        ]
     if "arduinos" in servers:
-        assert len(servers["arduinos"]) == STATE.layout.sections, "Wrong number of servers specified"
-        arduino_clients = [StationClient(s_id=s_id, host=server["host"], port=int(server["port"]))
-                                for s_id, server in enumerate(servers["arduinos"])]
+        assert len(
+            servers["arduinos"]) == STATE.layout.sections, "Wrong number of servers specified"
+        arduino_clients = [
+            StationClient(s_id=s_id, host=server["host"], port=int(server["port"]))
+            for s_id, server in enumerate(servers["arduinos"])
+        ]
     assert simulator_clients or arduino_clients, "Could not find simulator or arduino clients"
     if simulator_clients and arduino_clients:
-        return [MultiReceiverStationClient(simulator, arduino) for simulator,arduino in zip(simulator_clients, arduino_clients)]
+        return [
+            MultiReceiverStationClient(simulator, arduino)
+            for simulator, arduino in zip(simulator_clients, arduino_clients)
+        ]
     elif simulator_clients:
         return simulator_clients
     else:

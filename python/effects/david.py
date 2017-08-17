@@ -94,9 +94,11 @@ class ButtonChaseController(Effect, CollaborationManager):
         self.flash_timer = (self.flash_timer + 1) % 20
 
         if self.flash_timer == 0:
-            STATE.stations[self.next_button[0]].buttons[self.next_button[1]] = StationButtons.BUTTON_ON
+            STATE.stations[self.next_button[0]].buttons[self.next_button[
+                1]] = StationButtons.BUTTON_ON
         elif self.flash_timer == 10:
-            STATE.stations[self.next_button[0]].buttons[self.next_button[1]] = StationButtons.BUTTON_OFF
+            STATE.stations[self.next_button[0]].buttons[self.next_button[
+                1]] = StationButtons.BUTTON_OFF
 
         collaboration_state["on"] = self.on
         collaboration_state["off"] = self.off
@@ -163,6 +165,7 @@ class ButtonChaseController(Effect, CollaborationManager):
         STATE.stations[self.next_button[0]].buttons[self.next_button[1]] = StationButtons.BUTTON_ON
         print "Next is now", local_next
         return False
+
 
 class ButtonRainbow(Effect):
     def __init__(self,

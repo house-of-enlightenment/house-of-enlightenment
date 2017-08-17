@@ -17,13 +17,12 @@ class ArrangeBlocks(af.Effect):
         for block, loc in zip(self.blocks, self.block_locations):
             station = STATE.layout.STATIONS[loc]
             pixels[0, station.left:station.right] = block
- 
+
 
 __all__ = [
     af.Scene(
         'arrange-blocks',
         tags=[af.Scene.TAG_GAME],
         collaboration_manager=collaboration.NoOpCollaborationManager(),
-        effects=[ArrangeBlocks()]
-    )
+        effects=[ArrangeBlocks()])
 ]

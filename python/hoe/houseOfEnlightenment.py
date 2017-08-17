@@ -109,10 +109,7 @@ def create_opc_client(server, verbose=False):
 def init_animation_framework(osc_server, opc_client, first_scene=None, tags=[]):
     # type: (OSCServer, Client, [OSCClient], str) -> AnimationFramework
     mgr = AF.AnimationFramework(
-        osc_server=osc_server,
-        opc_client=opc_client,
-        first_scene=first_scene,
-        tags=tags)
+        osc_server=osc_server, opc_client=opc_client, first_scene=first_scene, tags=tags)
     return mgr
 
 
@@ -158,6 +155,7 @@ def listen_for_keyboard(scene):
 
         sleep(.1)
 
+
 def build_opc_client(verbose):
     if 'opc_server' in STATE.servers['remote']:
         return create_opc_client(server=STATE.servers["remote"]["opc_server"], verbose=verbose)
@@ -167,7 +165,7 @@ def build_opc_client(verbose):
         if 'layout' in opc_servers:
             for server_ip_port in opc_servers['layout']:
                 cl = create_opc_client(server_ip_port, verbose=verbose)
-                clients[cl] = STATE.layout.address[cl.ip] # pylint: disable=no-member
+                clients[cl] = STATE.layout.address[cl.ip]  # pylint: disable=no-member
         if 'all' in opc_servers:
             client = create_opc_client(opc_servers['all'][0], verbose)
             clients[client] = range(STATE.layout.n_pixels)

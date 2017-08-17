@@ -144,6 +144,7 @@ class ButtonToggleResponderManager(CollaborationManager):
             for b_id, val in station.button_presses.items():
                 STATE.stations[s].buttons[b_id] = StationButtons.BUTTON_TOGGLE
 
+
 class NoOpCollaborationManager(CollaborationManager):
     """A no-op collaboration manager for when you need a placeholder in your scene"""
 

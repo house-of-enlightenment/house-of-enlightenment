@@ -16,12 +16,7 @@ from hoe.osc_utils import update_buttons
 
 
 class AnimationFramework(object):
-    def __init__(self,
-                 osc_server,
-                 opc_client,
-                 scenes=None,
-                 first_scene=None,
-                 tags=[]):
+    def __init__(self, osc_server, opc_client, scenes=None, first_scene=None, tags=[]):
         # type: (OSCServer, Client, List(OSCClient), {str, Scene}) -> None
         self.osc_server = osc_server
         self.opc_client = opc_client
@@ -37,7 +32,6 @@ class AnimationFramework(object):
 
         self.osc_data = StoredOSCData()
         self.setup_osc_input_handlers({0: 50})
-
 
     def next_scene_handler(self, path, tags, args, source):
         if not args or args[0] == "":
@@ -60,6 +54,7 @@ class AnimationFramework(object):
         # Set up scene control
         self.osc_server.addMsgHandler("/scene/next", self.next_scene_handler)
         self.osc_server.addMsgHandler("/scene/select", self.select_scene_handler)
+
         # self.osc_server.addMsgHandler("/scene/picknew", self.pick_new_scene_handler)
 
         # Set up buttons
@@ -104,7 +99,7 @@ class AnimationFramework(object):
             # Cache the scene queue locally so it can't be changed on us
             next_scene, last_scene, self.queued_scene = self.queued_scene, self.curr_scene, None
             next_scene.scene_starting(now, osc_data)
-            self.curr_scene = next_scene    # Go!
+            self.curr_scene = next_scene  # Go!
             print '\tScene %s started\n' % self.curr_scene
             # Now give the last scene a chance to cleanup
             if last_scene:
@@ -181,11 +176,9 @@ class AnimationFramework(object):
                 if abs(sleep_amount) > fps_warn_threshold:
                     # Note: possible change_scene() is called in between. Issue is trivial though
                     msg = "WARNING: scene {} is rendering slowly. Total: {} Render: {} OPC: {}"
-                    print msg.format(
-                        self.curr_scene.name,
-                        completed_timestamp - frame_start_time,
-                        render_timestamp - frame_start_time,
-                        completed_timestamp - render_timestamp)
+                    print msg.format(self.curr_scene.name, completed_timestamp - frame_start_time,
+                                     render_timestamp - frame_start_time,
+                                     completed_timestamp - render_timestamp)
             else:
                 time.sleep(sleep_amount)
 
@@ -264,7 +257,8 @@ class StoredStationData(object):
 
     def __str__(self):
         return "%s{buttons=%s, faders=%s, changed=%s}" % (self.__class__.__name__,
-                                                          str(self.button_presses), str(self.faders),
+                                                          str(self.button_presses),
+                                                          str(self.faders),
                                                           str(self.contains_change))
 
     def button_pressed(self, button):
@@ -280,9 +274,8 @@ class StoredOSCData(object):
     def __init__(self, last_data=None, num_stations=6, lidar_removal_time=.5):
         self.stations = [
             StoredStationData(
-                station_id = i,
-                last_data=last_data.stations[i] if last_data else None,
-                )
+                station_id=i,
+                last_data=last_data.stations[i] if last_data else None, )
             for i in range(num_stations)
         ]
         self.contains_change = False

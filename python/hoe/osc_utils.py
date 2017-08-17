@@ -60,7 +60,7 @@ def update_buttons(client, station_id, updates, timeout=None):
         return
 
     if isinstance(updates, type([])):
-        updates = { idx:updates[idx] for idx in range(len(updates)) }
+        updates = {idx: updates[idx] for idx in range(len(updates))}
 
     if len(updates) == 1:
         client.send(

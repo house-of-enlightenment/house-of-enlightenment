@@ -24,8 +24,12 @@ class Layout(object):
     TOP_DISC = Disc(139, 160, 191)
     DISC_MIDPOINT = (BOTTOM_DISC.top + TOP_DISC.bottom) / 2
     STATIONS = [
-        Station(0,11), Station(11, 22), Station(22,33),
-        Station(33, 44), Station(44, 55), Station(55, 66)
+        Station(0, 11),
+        Station(11, 22),
+        Station(22, 33),
+        Station(33, 44),
+        Station(44, 55),
+        Station(55, 66)
     ]
 
     def __init__(self, pixels, rows=ROWS, columns=COLUMNS, sections=SECTIONS):

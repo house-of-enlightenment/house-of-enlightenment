@@ -29,4 +29,5 @@ class Global(Borg):
         self.fps = None
         self.verbose = False
 
+
 STATE = Global()
