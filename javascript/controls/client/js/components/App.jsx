@@ -45,27 +45,33 @@ export default class App extends React.Component {
     // to toggle a button
     ws.onmessage = (message) => {
 
-      const { stationId, buttonId, onOrOff } = JSON.parse(message.data);
+      const { stationId, buttonStates } = JSON.parse(message.data);
 
       const { controls } = this.state;
 
-      // create a lens to look deep inside the controls stucture to find the
-      // current button disabled state
-      const buttonLens = R.lensPath([ stationId, "buttons", buttonId, "isDisabled" ]);
+      // create a lens to look at the buttons for this stationId
+      const buttonLens = R.lensPath([ stationId, "buttons" ]);
 
-      // see server/parseOscMessage.js
-      const getDisabledState = function(){
+      // see server/parseMessage.js
+      const getDisabledState = function(onOrOff){
         switch (onOrOff){
           case 0:
             return true;
           case 1:
             return false;
-          case 2:
-            return !R.view(buttonLens, controls); // toggle
         }
       };
 
-      const newControls = R.set(buttonLens, getDisabledState(), controls);
+      // update the array of buttons by merging in isDisabled
+      const updateButtons = buttons => {
+        return buttons.map((button, i) => {
+          return R.merge(button, {
+            isDisabled: getDisabledState(buttonStates[i])
+          });
+        });
+      };
+
+      const newControls = R.over(buttonLens, updateButtons, controls);
 
       this.setState({
         controls: newControls
