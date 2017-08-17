@@ -1,13 +1,15 @@
+import numpy as np
+
 from hoe.animation_framework import Scene
 from hoe.animation_framework import Effect
 from hoe.animation_framework import CollaborationManager
 from hoe.animation_framework import MultiEffect
 from hoe.animation_framework import StoredOSCData
-from hoe.state import STATE
-from hoe.osc_utils import update_buttons
-from hoe.stations import StationButtons
+from hoe.collaboration import ButtonToggleResponderManager, NoOpCollaborationManager
 import hoe.color_utils
-import numpy as np
+from hoe.osc_utils import update_buttons
+from hoe.state import STATE
+from hoe.stations import StationButtons
 
 
 class SolidBackground(Effect):

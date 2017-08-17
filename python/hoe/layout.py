@@ -10,6 +10,10 @@ _GROUPBY = ["address", "section", "strip", "stripIndex", "topOrBottom", "row", "
 # Bottom and top are subjective as there is no distinct line
 Disc = collections.namedtuple('Disc', 'bottom center top')
 
+# Designate which columns belong to which station
+# left endpoint is inclusive, right is exclusive
+Station = collections.namedtuple('Station', 'left right')
+
 ROWS = 216
 COLUMNS = 66
 SECTIONS = 6
@@ -19,6 +23,10 @@ class Layout(object):
     BOTTOM_DISC = Disc(39, 62, 109)
     TOP_DISC = Disc(139, 160, 191)
     DISC_MIDPOINT = (BOTTOM_DISC.top + TOP_DISC.bottom) / 2
+    STATIONS = [
+        Station(0,11), Station(11, 22), Station(22,33),
+        Station(33, 44), Station(44, 55), Station(55, 66)
+    ]
 
     def __init__(self, pixels, rows=ROWS, columns=COLUMNS, sections=SECTIONS):
         self.pixels = pixels
