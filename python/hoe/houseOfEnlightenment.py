@@ -15,7 +15,7 @@ from hoe import osc_utils
 from hoe.layout import Layout
 from hoe.state import STATE
 from hoe.play_lidar import play_lidar
-from hoe.stations import StationButtons
+from hoe.stations import Stations
 
 
 # -------------------------------------------------------------------------------
@@ -66,6 +66,7 @@ def parse_command_line():
     STATE.layout = Layout(parse_json_file(options.layout_file))
     STATE.servers = parse_json_file(options.servers)
     STATE.fps = options.fps
+    STATE.verbose = options.verbose
     return options
 
 
@@ -105,7 +106,7 @@ def create_opc_client(server, verbose=False):
     return client
 
 
-def init_animation_framework(osc_server, opc_client, osc_stations, first_scene=None, tags=[]):
+def init_animation_framework(osc_server, opc_client, first_scene=None, tags=[]):
     # type: (OSCServer, Client, [OSCClient], str) -> AnimationFramework
     mgr = AF.AnimationFramework(
         osc_server=osc_server,
@@ -157,28 +158,6 @@ def listen_for_keyboard(scene):
 
         sleep(.1)
 
-
-def create_osc_station_clients(servers):
-    if not servers or "servers" not in servers:
-        print "OSC stations addressed not specified. No feedback will be sent"
-        return
-
-    if "mode" in servers and servers["mode"] == "single":
-        print "Establishing single OSC client to stations at ", servers["servers"]
-        client = osc_utils.get_osc_client(
-            host=servers["servers"][0]["host"],
-            port=int(servers["servers"][0]["port"]),
-            say_hello=True)
-        return [client for _ in range(STATE.layout.sections)]
-    else:
-        assert len(servers["servers"]) == STATE.layout.sections, "Wrong number of servers specified"
-        print "Establishing OSC clients to stations at", servers["servers"]
-        return [
-            osc_utils.get_osc_client(host=server["host"], port=int(server["port"]), say_hello=True)
-            for server in servers["servers"]
-        ]
-
-
 def build_opc_client(verbose):
     if 'opc_server' in STATE.servers['remote']:
         return create_opc_client(server=STATE.servers["remote"]["opc_server"], verbose=verbose)
@@ -201,11 +180,11 @@ def launch():
         host=STATE.servers["hosting"]["osc_server"]["host"],
         port=int(STATE.servers["hosting"]["osc_server"]["port"]))
     opc_client = build_opc_client(config.verbose)
-    stations = create_osc_station_clients(servers=STATE.servers["remote"]["osc_controls"])
-    STATE.station_osc_clients = stations
-    STATE.buttons = [StationButtons(station_id=s_id, client=client) for s_id,client in enumerate(stations)]
-    framework = init_animation_framework(osc_server, opc_client, stations, config.scene,
-                                         config.tags)
+    # stations = create_osc_station_clients(servers=STATE.servers["remote"]["osc_controls"])
+    # STATE.station_osc_clients = stations
+    # STATE.buttons = [StationButtons(client=client) for s_id, client in enumerate(stations)]
+    STATE.stations = Stations()
+    framework = init_animation_framework(osc_server, opc_client, config.scene, config.tags)
 
     keyboard_thread = Thread(
         target=listen_for_keyboard, args=(framework, ), name="KeyboardListeningThread")

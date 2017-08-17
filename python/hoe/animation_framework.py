@@ -172,9 +172,7 @@ class AnimationFramework(object):
             pixels.put(self.opc_client)
 
             # Update all the button light as needed!
-            for station in STATE.buttons:
-                # print station
-                station.send_button_light_update(force=False)
+            STATE.stations.send_button_updates()
 
             # Okay, now we're done for real. Wait for target FPS and warn if too slow
             completed_timestamp = time.time()

@@ -5,13 +5,14 @@ const path      = require("path");
 const morgan    = require("morgan"); // express logger
 const fs        = require("fs");
 
-const createOSCServer = require("./createOSCServer.js");
+const createControlsServers = require("./createControlsServers.js");
 const createWebsocket = require("./createWebsocket.js");
 const parseClientMessage = require("./parseClientMessage.js");
-const parseOscMessage = require("./parseOscMessage.js");
+const parseMessage = require("./parseMessage.js");
 
 const buildDirectory = path.resolve(__dirname, "../build");
 const indexHtml = path.resolve(buildDirectory, "index.html");
+
 
 
 const yargs = require("yargs")
@@ -26,7 +27,6 @@ const yargs = require("yargs")
   .help()
   .argv;
 
-console.log(`OSC messages will be sent to ${yargs["osc-server"]}:7000`)
 
 /*
 
@@ -56,16 +56,21 @@ app.get("/", function(req, res){
 
 app.use(express.static(buildDirectory));
 
-const oscServer = createOSCServer(onOscMessage, yargs["osc-server"]);
+const oscServer = createControlsServers({
+  onMessage,
+  address: yargs["osc-server"],
+  port: 7000
+});
+
 const wss = createWebsocket(onClientMessage);
 
 
 
 // when we get a message from the python script,
 // forward it to the websocket client
-function onOscMessage(oscMessage){
+function onMessage({ data, stationId }){
 
-  const jsonMessage = parseOscMessage(oscMessage);
+  const jsonMessage = parseMessage({ data, stationId });
 
   console.log("received message from python:", jsonMessage);
 
@@ -79,7 +84,7 @@ function onClientMessage(jsonMessage){
 
   const oscMessage = parseClientMessage(jsonMessage);
 
-  console.log("Sending OSC: ", JSON.stringify(oscMessage));
+  console.log(`Sending OSC ${yargs["osc-server"]}:7000:`, JSON.stringify(oscMessage));
 
   // send osc messages to the python script (listening on port 7000)
   // yargs["osc-server"] will be 127.0.0.1 locally,
