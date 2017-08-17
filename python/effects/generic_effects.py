@@ -2,8 +2,10 @@ from hoe.animation_framework import Scene
 from hoe.animation_framework import Effect
 from hoe.animation_framework import CollaborationManager
 from hoe.animation_framework import MultiEffect
+from hoe.animation_framework import StoredOSCData
 from hoe.state import STATE
 from hoe.osc_utils import update_buttons
+from hoe.stations import StationButtons
 import hoe.color_utils
 import numpy as np
 
@@ -91,7 +93,7 @@ class FunctionFrameRotator(Effect):
         self.frame = 0
         self.start_t = None
 
-    def scene_starting(self, now):
+    def scene_starting(self, now, osc_data):
         self.frame = 0
         self.start_t = None
 
@@ -135,11 +137,10 @@ class ButtonToggleResponderManager(CollaborationManager):
     """
 
     def compute_state(self, t, collaboration_state, osc_data):
+        # type: (float, {}, StoredOSCData) -> None
         for s, station in enumerate(osc_data.stations):
-            for b in station.buttons:
-                if station.client:
-                    update_buttons(station_id=s, client=station.client, updates={b: 2}, timeout=1)
-
+            for b_id, val in station.button_presses.items():
+                STATE.buttons[s][b_id] = StationButtons.BUTTON_TOGGLE
 
 class NoOpCollaborationManager(CollaborationManager):
     """A no-op collaboration manager for when you need a placeholder in your scene"""

@@ -1,9 +1,9 @@
 from hoe import color_utils
-from hoe.animation_framework import Scene
-from hoe.animation_framework import Effect
+from hoe.animation_framework import Scene, Effect, MultiEffect
 from hoe.animation_framework import CollaborationManager
-from hoe.animation_framework import EffectFactory
-from hoe.animation_framework import MultiEffect
+from hoe.animation_framework import StoredOSCData
+from hoe.animation_framework import StoredStationData
+from hoe.stations import StationButtons
 from hoe.state import STATE
 from random import choice
 from random import randint
@@ -64,35 +64,30 @@ class ButtonChaseController(Effect, CollaborationManager):
         self.next_button = None
         self.flash_timer = 0
 
-    def reset_state(self):
+    def reset_state(self, osc_data):
+        # type: (StoredOSCData) -> None
         """Resets the state for on, off, buttons, and timer"""
         self.on = []
         self.off = [c for c in self.all_combos]
         self.next_button = None
         self.flash_timer = 0
-        self.pick_next()
-
-        for s, client in enumerate(STATE.station_osc_clients):
-            hoe.osc_utils.update_buttons(
-                client=client,
-                station_id=s,
-                updates={
-                    b: hoe.osc_utils.BUTTON_ON if (s, b) in self.on else hoe.osc_utils.BUTTON_OFF
-                    for b in range(STATE.button_count)
-                })
+        for station in STATE.buttons:
+            for i in range(len(station)):
+                station[i] = StationButtons.BUTTON_OFF
+        self.pick_next(osc_data=osc_data)
 
     def compute_state(self, t, collaboration_state, osc_data):
         # type: (long, {}, StoredOSCData) -> {}
-        if self.next_button[1] in osc_data.stations[self.next_button[0]].buttons:
+        if self.next_button[1] in osc_data.stations[self.next_button[0]].button_presses:
             collaboration_state["last_hit_button"] = self.next_button
             collaboration_state["last_hit_time"] = t
-            if self.pick_next():
+            if self.pick_next(osc_data=osc_data):
                 collaboration_state.clear()
         else:
             collaboration_state.pop("last_hit_button", None)
             if "last_hit_time" in collaboration_state and collaboration_state["last_hit_time"] + self.selection_time < t:
                 # Too late!
-                self.pick_next(missed=True)
+                self.pick_next(osc_data=osc_data, missed=True)
                 # Tick forward
                 collaboration_state["last_hit_time"] = t
             # collaboration_state.pop("last_hit_time", None)  # Leave this for now for timing
@@ -100,9 +95,9 @@ class ButtonChaseController(Effect, CollaborationManager):
         self.flash_timer = (self.flash_timer + 1) % 20
 
         if self.flash_timer == 0:
-            self.send_update(self.next_button, hoe.osc_utils.BUTTON_ON)
+            STATE.buttons[self.next_button[0]][self.next_button[1]] = StationButtons.BUTTON_ON
         elif self.flash_timer == 10:
-            self.send_update(self.next_button, hoe.osc_utils.BUTTON_OFF)
+            STATE.buttons[self.next_button[0]][self.next_button[1]] = StationButtons.BUTTON_OFF
 
         collaboration_state["on"] = self.on
         collaboration_state["off"] = self.off
@@ -126,10 +121,11 @@ class ButtonChaseController(Effect, CollaborationManager):
             c = self.next_button[0] * 11 + self.next_button[1] * 2
             pixels[0:2, c:c + 2 + self.next_button[1] / 4] = self.button_colors[self.next_button[1]]
 
-    def scene_starting(self, now):
-        self.reset_state()
+    def scene_starting(self, now, osc_data):
+        self.reset_state(osc_data=osc_data)
 
-    def pick_next(self, missed=False):
+    def pick_next(self, osc_data, missed=False):
+        # type: (StoredOSCData, bool) -> bool
         self.flash_timer = 0
 
         if not missed and not self.off:
@@ -158,25 +154,16 @@ class ButtonChaseController(Effect, CollaborationManager):
         if missed:
             if last_button and last_button != local_next:
                 # Turn off unless in edge case
-                self.send_update(last_button, hoe.osc_utils.BUTTON_OFF)
+                STATE.buttons[last_button[0]][last_button[1]] = StationButtons.BUTTON_OFF
             if lost_button and lost_button != local_next:
-                self.send_update(lost_button, hoe.osc_utils.BUTTON_OFF)
+                STATE.buttons[lost_button[0]][lost_button[1]] = StationButtons.BUTTON_OFF
         else:
             if last_button:
-                self.send_update(last_button, hoe.osc_utils.BUTTON_ON)
+                STATE.buttons[last_button[0]][last_button[1]] = StationButtons.BUTTON_ON
 
-        self.send_update(self.next_button, hoe.osc_utils.BUTTON_ON)
+        STATE.buttons[self.next_button[0]][self.next_button[1]] = StationButtons.BUTTON_ON
         print "Next is now", local_next
         return False
-
-    def send_update(self, button, update):
-        """Actually update a button"""
-        # TODO: Queue this and send when ready
-        client = STATE.station_osc_clients[self.next_button[0]]
-        if client:
-            hoe.osc_utils.update_buttons(
-                station_id=button[0], client=client, updates={button[1]: update})
-
 
 class ButtonRainbow(Effect):
     def __init__(self,
@@ -195,7 +182,7 @@ class ButtonRainbow(Effect):
         self.column_success = None
         self.frame = 0
 
-    def scene_starting(self, now):
+    def scene_starting(self, now, osc_data):
         self.column_success = color_utils.bi_rainbow(
             STATE.layout.columns,
             hue_start=self.hue_start,
@@ -301,7 +288,7 @@ class RotatingWedge(Effect):
 
 def button_launch_checker(t, collaboration_state, osc_data):
     for i in range(len(osc_data.stations)):
-        if osc_data.stations[i].buttons:
+        if osc_data.stations[i].button_presses:
             return True
     return False
 
@@ -455,7 +442,7 @@ class TideLauncher(MultiEffect):
     def before_rendering(self, pixels, t, collaboration_state, osc_data):
         MultiEffect.before_rendering(self, pixels, t, collaboration_state, osc_data)
         for s in range(STATE.layout.sections):
-            if osc_data.stations[s].buttons:
+            if osc_data.stations[s].button_presses:
                 self.launch_effect(t, s)
 
     def launch_effect(self, t, s):

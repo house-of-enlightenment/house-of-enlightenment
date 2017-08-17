@@ -27,7 +27,6 @@ class Global(Borg):
         self.servers = None
         self.station_osc_clients = None
         self.fps = None
-        self.button_count = 5
-
+        self.buttons = None
 
 STATE = Global()

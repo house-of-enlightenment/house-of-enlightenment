@@ -12,33 +12,32 @@ from OSC import OSCServer
 from hoe.pixels import Pixels
 from hoe.state import STATE
 from hoe.opc import Client
+from hoe.osc_utils import update_buttons
 
 
 class AnimationFramework(object):
     def __init__(self,
                  osc_server,
                  opc_client,
-                 osc_station_clients=(),
                  scenes=None,
                  first_scene=None,
                  tags=[]):
         # type: (OSCServer, Client, List(OSCClient), {str, Scene}) -> None
         self.osc_server = osc_server
         self.opc_client = opc_client
-        self.osc_station_clients = osc_station_clients
         self.fps = STATE.fps
 
         # Load all scenes from effects package. Then set initial index and load it up
         self.scenes = scenes or load_scenes(tags=tags)
         self.curr_scene = None
         self.queued_scene = self.scenes[first_scene if first_scene else self.scenes.keys()[0]]
-        self.change_scene()
 
         self.serve = False
         self.is_running = False
 
-        self.osc_data = StoredOSCData(clients=osc_station_clients)
+        self.osc_data = StoredOSCData()
         self.setup_osc_input_handlers({0: 50})
+
 
     def next_scene_handler(self, path, tags, args, source):
         if not args or args[0] == "":
@@ -47,7 +46,6 @@ class AnimationFramework(object):
             self.next_scene(int(args[0]))
 
     def select_scene_handler(self, path, tags, args, source):
-        # TODO: Call specific scenes
         if args[0] == "":
             self.next_scene()
         else:
@@ -62,6 +60,7 @@ class AnimationFramework(object):
         # Set up scene control
         self.osc_server.addMsgHandler("/scene/next", self.next_scene_handler)
         self.osc_server.addMsgHandler("/scene/select", self.select_scene_handler)
+        # self.osc_server.addMsgHandler("/scene/picknew", self.pick_new_scene_handler)
 
         # Set up buttons
         def handle_button(path, tags, args, source):
@@ -97,12 +96,19 @@ class AnimationFramework(object):
         print "Registered all OSC Handlers"
 
     # ---- EFFECT CONTROL METHODS -----
-    def change_scene(self):
-        now = time.time()
-        self.queued_scene.scene_starting(now)
-        self.curr_scene = self.queued_scene
-        print '\tScene %s started\n' % self.curr_scene
-        self.curr_scene.scene_ended()
+    def poll_next_scene(self, now, osc_data):
+        """Change the scene by taking the queued scene and swapping it in.
+        """
+
+        if self.queued_scene:
+            # Cache the scene queue locally so it can't be changed on us
+            next_scene, last_scene, self.queued_scene = self.queued_scene, self.curr_scene, None
+            next_scene.scene_starting(now, osc_data)
+            self.curr_scene = next_scene    # Go!
+            print '\tScene %s started\n' % self.curr_scene
+            # Now give the last scene a chance to cleanup
+            if last_scene:
+                last_scene.scene_ended()
 
     def get_osc_frame(self, clear=True):
         # type: (bool) -> StoredOSCData
@@ -113,13 +119,17 @@ class AnimationFramework(object):
         return last_frame
 
     def next_scene(self, increment=1):
+        """ Move the selected scene forward or back from the at-large pool"""
         curr_idx = self.scenes.keys().index(self.curr_scene.name)
         new_idx = (curr_idx + increment) % len(self.scenes)
         self.pick_scene(self.scenes.keys()[new_idx])
 
     def pick_scene(self, scene_name):
-        self.queued_scene = self.scenes[scene_name]
-        self.change_scene()
+        """ Change to a specific scene """
+        if scene_name in self.scenes.keys():
+            self.queued_scene = self.scenes[scene_name]
+        else:
+            print "Could not change scenes. Scene %s does not exist" % scene_name
 
     # ---- LIFECYCLE (START/STOP) METHODS ----
 
@@ -149,17 +159,29 @@ class AnimationFramework(object):
             # TODO : Does this create lots of GC?
             frame_start_time = time.time()
             target_frame_end_time = frame_start_time + fps_frame_time
+            osc_frame = self.get_osc_frame()
+
+            self.poll_next_scene(now=frame_start_time, osc_data=osc_frame)
 
             # Create the pixels, set all, then put
             pixels[:] = 0
-            self.curr_scene.render(pixels, frame_start_time, self.get_osc_frame())
+            self.curr_scene.render(pixels, frame_start_time, osc_frame)
             render_timestamp = time.time()
+
+            #Now send
             pixels.put(self.opc_client)
+
+            # Update all the button light as needed!
+            for station in STATE.buttons:
+                # print station
+                station.send_button_light_update(force=False)
+
+            # Okay, now we're done for real. Wait for target FPS and warn if too slow
             completed_timestamp = time.time()
-            # Crude way of trying to hit target fps
             sleep_amount = target_frame_end_time - completed_timestamp
             if sleep_amount <= 0:
                 if abs(sleep_amount) > fps_warn_threshold:
+                    # Note: possible change_scene() is called in between. Issue is trivial though
                     print "WARNING: scene {} is rendering slowly. Total: {} Render: {} OPC: {}".format(
                         self.curr_scene.name, completed_timestamp - frame_start_time,
                         render_timestamp - frame_start_time, completed_timestamp - render_timestamp)
@@ -228,24 +250,24 @@ class LidarData(object):
 
 
 class StoredStationData(object):
-    def __init__(self, client=None, last_data=None):
-        self.buttons = {}
+    def __init__(self, station_id, last_data=None):
+        # type: (OSCClient, StoredStationData) -> None
+        self.button_presses = {}
+        self.station_id = station_id
         if last_data is None:
             self.faders = {}
-            self.client = client
         else:
             # TODO Check with python folks. Is this a memory leak?
             self.faders = last_data.faders
-            self.client = last_data.client
         self.contains_change = False
 
     def __str__(self):
         return "%s{buttons=%s, faders=%s, changed=%s}" % (self.__class__.__name__,
-                                                          str(self.buttons), str(self.faders),
+                                                          str(self.button_presses), str(self.faders),
                                                           str(self.contains_change))
 
     def button_pressed(self, button):
-        self.buttons[button] = 1
+        self.button_presses[button] = 1
         self.contains_change = True
 
     def fader_changed(self, fader, value):
@@ -254,11 +276,12 @@ class StoredStationData(object):
 
 
 class StoredOSCData(object):
-    def __init__(self, clients=None, last_data=None, num_stations=6, lidar_removal_time=.5):
+    def __init__(self, last_data=None, num_stations=6, lidar_removal_time=.5):
         self.stations = [
             StoredStationData(
+                station_id = i,
                 last_data=last_data.stations[i] if last_data else None,
-                client=clients[i] if clients and i < len(clients) else None)
+                )
             for i in range(num_stations)
         ]
         self.contains_change = False
@@ -317,7 +340,7 @@ class Effect(object):
         raise NotImplementedError("All effects must implement next_frame")
         # TODO: Use abc
 
-    def scene_starting(self, now):
+    def scene_starting(self, now, osc_data):
         pass
 
     def scene_ended(self):
@@ -332,10 +355,12 @@ class MultiEffect(Effect):
         Effect.__init__(self)
         self.effects = list(effects)
 
-    def scene_starting(self, now):
-        """Initialize a scene"""
+    def scene_starting(self, now, osc_data):
+        """Initialize a scene
+        :param osc_data:
+        """
         for e in self.effects:
-            e.scene_starting(now)
+            e.scene_starting(now, osc_data)
 
     def scene_ended(self):
         for e in self.effects:

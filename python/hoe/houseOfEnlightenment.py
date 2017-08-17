@@ -15,6 +15,7 @@ from hoe import osc_utils
 from hoe.layout import Layout
 from hoe.state import STATE
 from hoe.play_lidar import play_lidar
+from hoe.stations import StationButtons
 
 
 # -------------------------------------------------------------------------------
@@ -109,7 +110,6 @@ def init_animation_framework(osc_server, opc_client, osc_stations, first_scene=N
     mgr = AF.AnimationFramework(
         osc_server=osc_server,
         opc_client=opc_client,
-        osc_station_clients=osc_stations,
         first_scene=first_scene,
         tags=tags)
     return mgr
@@ -198,6 +198,7 @@ def launch():
     opc_client = build_opc_client(config.verbose)
     stations = create_osc_station_clients(servers=STATE.servers["remote"]["osc_controls"])
     STATE.station_osc_clients = stations
+    STATE.buttons = [StationButtons(station_id=s_id, client=client) for s_id,client in enumerate(stations)]
     framework = init_animation_framework(osc_server, opc_client, stations, config.scene,
                                          config.tags)
 

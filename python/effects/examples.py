@@ -78,7 +78,7 @@ class SampleEffectLauncher(MultiEffect):
     def before_rendering(self, pixels, t, collaboration_state, osc_data):
         MultiEffect.before_rendering(self, pixels, t, collaboration_state, osc_data)
         for s in range(STATE.layout.sections):
-            if osc_data.stations[s].buttons:
+            if osc_data.stations[s].button_presses:
                 self.launch_effect(t, s)
 
     def launch_effect(self, t, s):

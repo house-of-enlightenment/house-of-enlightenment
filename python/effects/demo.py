@@ -18,7 +18,7 @@ class SolidRow(Effect):
         end_col = end_col if end_col else STATE.layout.columns
         self.col_slice = slice(start_col, end_col)
 
-    def scene_starting(self):
+    def scene_starting(self, osc_data):
         self.curr_row = self.start_row
 
     def next_frame(self, pixels, now, collaboration_state, osc_data):
@@ -33,7 +33,7 @@ class LaunchRows(MultiEffect):
     def before_rendering(self, pixels, t, collaboration_state, osc_data):
         MultiEffect.before_rendering(self, pixels, t, collaboration_state, osc_data)
         for sid, station in enumerate(osc_data.stations):
-            if station.buttons:
+            if station.button_presses:
                 self.add_effect(
                     SolidRow(
                         color=(randrange(0, 255), randrange(0, 255), randrange(0, 255)),
