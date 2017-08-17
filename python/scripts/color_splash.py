@@ -1,3 +1,4 @@
+# pylint: disable=all
 """When a player hits a target, a color splash flows up HoE
 """
 
@@ -21,6 +22,7 @@ import stream_up as su
 import stop_the_light as stl
 
 FADER_VALUES = {i: 0 for i in range(6)}
+
 
 def main():
     # TODO: copy and paste is bad, mkay.

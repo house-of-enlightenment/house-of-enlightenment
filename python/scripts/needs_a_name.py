@@ -125,13 +125,12 @@ class Breathe(object):
         self.n_colors = n_colors
         self.layout = layout
         # randomly place each color into the pixel array
-        self.sources = np.random.randint(0, self.n_colors , len(layout.pixels))
+        self.sources = np.random.randint(0, self.n_colors, len(layout.pixels))
 
     def start(self, now):
         self.count = 0
         hue = np.random.randint(0, 256)
-        self.color_transitions = [
-            ColorTransition(hue, i).start(now) for i in range(self.n_colors)]
+        self.color_transitions = [ColorTransition(hue, i).start(now) for i in range(self.n_colors)]
 
     def swap(self):
         # this method of swapping looked like crap
@@ -154,7 +153,7 @@ class Breathe(object):
     def rotate(self):
         part_a = self.layout.grid[:, 1:]
         part_b = self.layout.grid[:, :1]
-        before_idx = self.layout.grid[:,:]
+        before_idx = self.layout.grid[:, :]
         after_idx = np.concatenate((part_a, part_b), axis=1)
         self.sources[after_idx] = self.sources[before_idx]
 
@@ -235,11 +234,7 @@ class ColorTransition(su.Transition):
         val = int(val / 31.0 * 255)
         # In playing around, full saturation looked the best
         sat = 255
-        hsv = np.array((
-            self.hue,
-            sat,
-            color_utils._GAMMA_CORRECTION[val]
-        ))
+        hsv = np.array((self.hue, sat, color_utils._GAMMA_CORRECTION[val]))
         return hsv
 
 
@@ -272,12 +267,8 @@ def dark():
 
 def weighted_bright():
     """Returns a medium to high bright value, with preference towards bright"""
-    return np.random.choice(
-        [17, 18, 19, 20, 21] * 1 +
-        [22, 23, 24, 25, 26] * 2 +
-        [27, 28, 29, 30, 31] * 3
-    )
-
+    return np.random.choice([17, 18, 19, 20, 21] * 1 + [22, 23, 24, 25, 26] * 2 +
+                            [27, 28, 29, 30, 31] * 3)
 
 
 if __name__ == '__main__':

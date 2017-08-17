@@ -19,6 +19,7 @@ class UpAndRotateEffect(object):
         layout: layout object
         row: the source for the new rows at the bottom
     """
+
     def __init__(self, layout, row, up_speed=None, rotate_speed=None):
         self.layout = layout
         self.up_speed = up_speed or consistent_speed_to_pixels(50)  # rows / second
@@ -95,8 +96,8 @@ class UpAndExpandEffect(object):
         self.clr = 0
 
     def next_frame(self, now, pixels):
-        self.paint_color_widths()
-        self.set_new_color_widths()
+        self.paint_color_widths(pixels)
+        self.set_new_color_widths(now)
 
     def set_new_color_widths(self, now):
         px = self.speed(now)
@@ -124,7 +125,7 @@ class UpAndExpandEffect(object):
     def new_color(self, now):
         # need this to follow a linear brightness
         return color_utils.color_correct(
-            int(color_utils.remap(np.sin(4*np.pi*now), -1, 1, 0, 255)))
+            int(color_utils.remap(np.sin(4 * np.pi * now), -1, 1, 0, 255)))
 
 
 class Rotate(object):
@@ -132,11 +133,13 @@ class Rotate(object):
 
     Args:
         n: number of items in the array
+        rotation_speed: a transition instance that returns how fast we're rotating
     """
+
     def __init__(self, n, rotation_speed=None):
         self.rotation = 0
         self.n = n
-        self.rotation_speed = rotation_speed or transitions.SpeedTransition(now, 5, 55)
+        self.rotation_speed = rotation_speed or transitions.SpeedTransition(5, 55)
 
     def start(self, now):
         self.last_time = now

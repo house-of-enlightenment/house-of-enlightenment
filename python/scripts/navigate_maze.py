@@ -16,7 +16,6 @@ from hoe import osc_utils
 # TODO: fix this. Move the stream_up code somewhere shared
 import stream_up as su
 
-
 WALL = (255, 255, 255)
 OPEN = (0, 0, 0)
 OUTSIDE = (255, 0, 0)
@@ -28,8 +27,8 @@ BORDER = 10
 def read_maze(border=BORDER):
     with open('maze.csv') as f:
         data = list(reversed(list(csv.reader(f))))
-    height = len(data) + 2*border
-    width = len(data[0]) + 2*border
+    height = len(data) + 2 * border
+    width = len(data[0]) + 2 * border
     depth = 3
     maze = np.full((height, width, depth), OUTSIDE, np.uint8)
     start = None
@@ -73,7 +72,7 @@ def get_center(area):
 
 
 def slice_maze(maze, position, area):
-    left, right, bottom, top  = get_extents(position, area)
+    left, right, bottom, top = get_extents(position, area)
     sub_maze = maze[left:right, bottom:top]
     return sub_maze
 
@@ -85,7 +84,7 @@ def draw_maze(maze, position):
     maze is an array of True / False. WALLs are drawn where
     True. False values are replaced with OPENs
     """
-    shape = maze.shape + (3,)
+    shape = maze.shape + (3, )
     # need to "broadcast" the T/F values 3 times, one
     # for each RGB value
     maze_3 = np.repeat(maze, 3).reshape(shape)
@@ -127,9 +126,9 @@ class MazeEffect(object):
     def next_frame(self, now, pixels):
         self.update_position()
         viewable = slice_maze(self.maze, self.position, self.area)
-        pixels[:self.area[0], 30:30+self.area[1]] = viewable
+        pixels[:self.area[0], 30:30 + self.area[1]] = viewable
         center = get_center(self.area)
-        pixels[center[0], 30+center[1]] = PLAYER
+        pixels[center[0], 30 + center[1]] = PLAYER
 
     def update_position(self):
         try:

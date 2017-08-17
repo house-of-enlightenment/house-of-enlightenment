@@ -160,9 +160,12 @@ class AnimationFramework(object):
             sleep_amount = target_frame_end_time - completed_timestamp
             if sleep_amount <= 0:
                 if abs(sleep_amount) > fps_warn_threshold:
-                    print "WARNING: scene {} is rendering slowly. Total: {} Render: {} OPC: {}".format(
-                        self.curr_scene.name, completed_timestamp - frame_start_time,
-                        render_timestamp - frame_start_time, completed_timestamp - render_timestamp)
+                    msg = "WARNING: scene {} is rendering slowly. Total: {} Render: {} OPC: {}"
+                    print msg.format(
+                        self.curr_scene.name,
+                        completed_timestamp - frame_start_time,
+                        render_timestamp - frame_start_time,
+                        completed_timestamp - render_timestamp)
             else:
                 time.sleep(sleep_amount)
 
@@ -376,7 +379,7 @@ class Scene(MultiEffect):
     TAG_GAME = 'game'
     TAG_TEST = 'test'
     TAG_EXAMPLE = 'example'
-    TAG_WIP = 'wip'  #  Work in Progress
+    TAG_WIP = 'wip'  # Work in Progress
 
     def __init__(self, name, tags=[TAG_BACKGROUND], collaboration_manager=None, effects=[]):
         # str, CollaborationManager, List[Effect] -> None
