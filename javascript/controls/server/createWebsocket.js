@@ -23,7 +23,7 @@ module.exports = function createWebsocket(onClientMessage){
     // when a message arrives (button clicked, etc), alert the caller
     ws.on("message", function incoming(message) {
 
-      console.log("Controls message: %s", message);
+      // console.log(`Controls message: ${message}`);
       onClientMessage(message);
     });
   });
