@@ -2,17 +2,14 @@ import numpy as np
 from hoe import color_utils
 import colorsys
 import sys
-from hoe.animation_framework import Scene
-from hoe.animation_framework import Effect
-from hoe.animation_framework import MultiEffect
+from hoe.animation_framework import Scene, Effect, MultiEffect
 from generic_effects import NoOpCollaborationManager
 from generic_effects import SolidBackground
 from generic_effects import FrameRotator
 
 from hoe import color_utils
 from hoe.state import STATE
-from hoe.utils import faderInterpolate
-from hoe.utils import sliceForStation
+from hoe.utils import faderInterpolate, sliceForStation
 
 class SeizureMode(Effect):
     def __init__(self, station = None, duration = None):
@@ -74,7 +71,7 @@ class LaunchSeizure(MultiEffect):
         if self.count() > 0:
             return
 
-        buttons = osc_data.stations[self.station].buttons
+        buttons = osc_data.stations[self.station].button_presses
         if buttons and self.button in buttons:
             self.add_effect( SeizureMode(station=self.station, duration = 3) )
 
@@ -129,11 +126,10 @@ class FiniteDifference(Effect):
         if deltaT2 < 10:
             return
 
-        f = np.zeros([self.X_MAX,self.Y_MAX], dtype=np.uint16)
-        for i in range(self.X_MAX):
-            for j in range(self.Y_MAX):
-                f[i,j] = self.forceConstant if pixels[i,j][0] == 0xFF else 0
-
+        # Calculate Force based on if if pixel is all white
+        pix = np.array(pixels[:,:][:], dtype=np.uint32)
+        color = (pix[:,:,0] << 16) | (pix[:,:,1] << 8) | (pix[:,:,2])
+        f = np.where(color >= 0xFFFFFF, self.forceConstant, 0)
 
         c = self.velocityConstant
         beta = self.diffusionConstant
