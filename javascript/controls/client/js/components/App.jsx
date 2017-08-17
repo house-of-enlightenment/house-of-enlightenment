@@ -81,21 +81,21 @@ export default class App extends React.Component {
 
   onButtonClick = R.curry((stationId, buttonId) => {
 
-    console.log("button", stationId, buttonId);
-
     const { ws } = this.props;
 
-    ws.send(JSON.stringify({
+    const message = JSON.stringify({
       stationId: stationId,
       type: "button",
       id: buttonId
-    }));
+    });
+
+    console.log(message);
+
+    ws.send(message);
   });
 
 
   onFaderChange = R.curry((stationId, faderId, value) => {
-
-    console.log("fader", stationId, faderId, value);
 
     const { ws } = this.props;
     const { controls } = this.state;
@@ -108,12 +108,16 @@ export default class App extends React.Component {
       controls: newControls
     });
 
-    ws.send(JSON.stringify({
+    const message = JSON.stringify({
       stationId: stationId,
       type: "fader",
       id: faderId,
       value
-    }));
+    });
+
+    console.log(message);
+
+    ws.send(message);
   });
 
 

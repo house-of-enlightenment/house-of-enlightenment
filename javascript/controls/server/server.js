@@ -27,8 +27,6 @@ const yargs = require("yargs")
   .help()
   .argv;
 
-console.log(`OSC messages will be sent to ${yargs["osc-server"]}:7000`)
-
 
 /*
 
@@ -58,7 +56,12 @@ app.get("/", function(req, res){
 
 app.use(express.static(buildDirectory));
 
-const oscServer = createControlsServers(onMessage, yargs["osc-server"]);
+const oscServer = createControlsServers({
+  onMessage,
+  address: yargs["osc-server"],
+  port: 7000
+});
+
 const wss = createWebsocket(onClientMessage);
 
 
@@ -81,7 +84,7 @@ function onClientMessage(jsonMessage){
 
   const oscMessage = parseClientMessage(jsonMessage);
 
-  console.log("Sending OSC: ", JSON.stringify(oscMessage));
+  console.log(`Sending OSC ${yargs["osc-server"]}:7000:`, JSON.stringify(oscMessage));
 
   // send osc messages to the python script (listening on port 7000)
   // yargs["osc-server"] will be 127.0.0.1 locally,
