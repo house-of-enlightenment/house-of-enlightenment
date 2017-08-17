@@ -23,12 +23,17 @@ module.exports = function hoeTask(projectRoot) {
 
   const yargs = require("yargs").options({
     "layout": {
-      default: undefined,
+      default: "layout/hoeLayout.json",
+      type: "string"
+    },
+    "osc-server": {
+      default: "127.0.0.1",
       type: "string"
     }
   }).argv;
 
-  const layout = yargs.layout || "layout/hoeLayout.json";
+
+  const layout = yargs.layout;
 
   /**
    * main entry hoe task
@@ -97,6 +102,7 @@ module.exports = function hoeTask(projectRoot) {
     // start the controls server
     createNodemonTask("controls-nodemon", {
       script: path.resolve(controlsServerDir, "server.js"),
+      args: ["--osc-server", yargs["osc-server"]],
       watch: [ controlsServerDir ]
     });
 
@@ -134,7 +140,7 @@ module.exports = function hoeTask(projectRoot) {
     // run the node server
     // https://stackoverflow.com/questions/10232192/exec-display-stdout-live
     const server = spawn("node",
-      ["javascript/hoe/server/server.js", "--layout", layout],
+      ["javascript/hoe/server/server.js"],
       { cwd: `${projectRoot}` }
     );
 

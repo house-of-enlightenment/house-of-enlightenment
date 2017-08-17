@@ -10,6 +10,13 @@ const createJsTask          = require("../tasks/createJsTask.js");
 const createNodemonTask     = require("../tasks/createNodemonTask.js");
 const createBrowserSyncTask = require("../tasks/createBrowserSyncTask.js");
 
+const yargs = require("yargs").options({
+  "osc-server": {
+    default: "127.0.0.1",
+    type: "string"
+  }
+}).argv;
+
 
 // task to read the layout file and run the controls server with that file
 module.exports = function controlsTask(projectRoot) {
@@ -102,7 +109,10 @@ module.exports = function controlsTask(projectRoot) {
     // run the node server
     // https://stackoverflow.com/questions/10232192/exec-display-stdout-live
     const server = spawn("node",
-      ["javascript/controls/server/server.js"],
+      [
+        "javascript/controls/server/server.js",
+        "--osc-server", yargs["osc-server"]
+      ],
       { cwd: `${projectRoot}` }
     );
 

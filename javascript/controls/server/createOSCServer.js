@@ -10,6 +10,8 @@ module.exports = function createOSCServer(onOscMessage){
     metadata: true
   });
 
+  console.log("Controls listening for OSC messaages on port 57121");
+
 
   oscServer.open();
 

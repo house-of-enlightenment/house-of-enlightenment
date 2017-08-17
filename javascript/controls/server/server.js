@@ -14,6 +14,20 @@ const buildDirectory = path.resolve(__dirname, "../build");
 const indexHtml = path.resolve(buildDirectory, "index.html");
 
 
+const yargs = require("yargs")
+  .options({
+    "osc-server": {
+      alias: "o",
+      describe: "ip of the server to send OSC data to",
+      required: false,
+      default: "127.0.0.1"
+    }
+  })
+  .help()
+  .argv;
+
+console.log(`OSC messages will be sent to ${yargs["osc-server"]}:7000`)
+
 /*
 
   Python >>OSC>> oscServer >>JSON>> Websocket
@@ -42,7 +56,7 @@ app.get("/", function(req, res){
 
 app.use(express.static(buildDirectory));
 
-const oscServer = createOSCServer(onOscMessage);
+const oscServer = createOSCServer(onOscMessage, yargs["osc-server"]);
 const wss = createWebsocket(onClientMessage);
 
 
@@ -53,7 +67,7 @@ function onOscMessage(oscMessage){
 
   const jsonMessage = parseOscMessage(oscMessage);
 
-  // console.log("sending jsonMessage:", jsonMessage);
+  console.log("received message from python:", jsonMessage);
 
   wss.broadcast(jsonMessage);
 }
@@ -65,10 +79,12 @@ function onClientMessage(jsonMessage){
 
   const oscMessage = parseClientMessage(jsonMessage);
 
-  // console.log("Sending OSC: ", JSON.stringify(oscMessage));
+  console.log("Sending OSC: ", JSON.stringify(oscMessage));
 
   // send osc messages to the python script (listening on port 7000)
-  oscServer.send(oscMessage, "127.0.0.1", 7000);
+  // yargs["osc-server"] will be 127.0.0.1 locally,
+  // or something else if python is running on another machine
+  oscServer.send(oscMessage, yargs["osc-server"], 7000);
 
 }
 

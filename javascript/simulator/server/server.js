@@ -6,7 +6,7 @@ const morgan    = require("morgan"); // express logger
 const net       = require("net");
 const WebSocket = require("ws");
 const fs        = require("fs");
-
+const createOpcMessageBuffer = require("./createOpcMessageBuffer.js");
 
 const yargs = require("yargs")
   .options({
@@ -96,17 +96,21 @@ net.createServer(function (socket) {
 
   ws.on("open", function open() {
 
-    // forward socket messages from python to the browser
-    socket.on("data", function (data) {
-      if (data.length != 42772) {
-        console.log('data length is funny: ' + data.length + '. It should be 42772')
+    // buffer to handle partial opc messages
+    // see createOpcMessageBuffer.js for details
+    const opcMessageBuffer = createOpcMessageBuffer({
+      onCompleteMessage: (opcMessage) => {
+        ws.send(opcMessage, function ack(error){
+          if (error){
+            console.log("error sending OPC to websocket client (3030)");
+          }
+        });
       }
-      ws.send(data, function ack(error){
-        if (error){
-          console.log("error sending OPC to websocket client (3030)");
-        }
-      });
     });
+
+    // forward socket messages from python to the browser
+    socket.on("data", opcMessageBuffer);
+
 
   });
 
@@ -124,7 +128,7 @@ net.createServer(function (socket) {
     console.log("websocket client error!");
     console.log("request: ", req);
     console.log("response", res);
-  })
+  });
 
   socket.on("close", function() {
     console.log("Socket server closed (7890)");
@@ -135,8 +139,6 @@ net.createServer(function (socket) {
 }).listen(7890, () => {
   console.log("Forwarding OPC input from port 7890 to 3030");
 });
-
-
 
 
 
