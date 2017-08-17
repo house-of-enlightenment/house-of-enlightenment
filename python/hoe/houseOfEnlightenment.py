@@ -15,7 +15,7 @@ from hoe import osc_utils
 from hoe.layout import Layout
 from hoe.state import STATE
 from hoe.play_lidar import play_lidar
-from hoe.stations import StationButtons
+from hoe.stations import StationButtons, StationClient, OscStationClient
 
 
 # -------------------------------------------------------------------------------
@@ -163,19 +163,27 @@ def create_osc_station_clients(servers):
         print "OSC stations addressed not specified. No feedback will be sent"
         return
 
+    if "protocol" in servers and servers["protocol"] == "tcp":
+        print "Establishing TCP socket connection to stations at", servers["servers"]
+        assert len(servers["servers"]) == STATE.layout.sections, "Wrong number of servers specified"
+        return [
+            StationClient(s_id = s_id, host=server["host"], port=int(server["port"]))
+            for s_id, server in enumerate(servers["servers"])
+        ]
+
     if "mode" in servers and servers["mode"] == "single":
         print "Establishing single OSC client to stations at ", servers["servers"]
         client = osc_utils.get_osc_client(
             host=servers["servers"][0]["host"],
             port=int(servers["servers"][0]["port"]),
             say_hello=True)
-        return [client for _ in range(STATE.layout.sections)]
+        return [OscStationClient(s_id, client) for s_id in range(STATE.layout.sections)]
     else:
         assert len(servers["servers"]) == STATE.layout.sections, "Wrong number of servers specified"
         print "Establishing OSC clients to stations at", servers["servers"]
         return [
-            osc_utils.get_osc_client(host=server["host"], port=int(server["port"]), say_hello=True)
-            for server in servers["servers"]
+            OscStationClient(s_id, osc_utils.get_osc_client(host=server["host"], port=int(server["port"]), say_hello=True))
+            for s_id, server in enumerate(servers["servers"])
         ]
 
 
