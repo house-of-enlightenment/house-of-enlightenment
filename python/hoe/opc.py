@@ -227,23 +227,40 @@ class MultiClient(object):
 
     The pixels are broken into parts, as determined by the address field
     of the pixel in the layout file
+
+    Attributes:
+        clients_map: a map from client to index values corresponding to pixels that client
+            needs to send data too
     """
 
-    def __init__(self, clients, layout):
-        ips = set(c.ip for c in clients)
-        assert ips == set(layout.address.keys()), 'client ips do not match addresses in layout'
-        self.clients = clients
-        self.layout = layout
-        self.idx = {c: layout.address[c.ip] for c in clients}
+    def __init__(self, clients_map):
+        self.clients_map = clients_map
+
+    @property
+    def clients(self):
+        return list(self.clients_map.keys())
 
     def put_pixels(self, pixels, channel=0):
         pixels = np.array(pixels)
         # pixels = color_utils.color_correct(pixels)
         for client in self.clients:
-            client.put_pixels(pixels[self.idx[client]])
+            client.put_pixels(pixels[self.clients_map[client]])
 
     def disconnect(self):
         return all([c.disconnect() for c in self.clients])
 
     def can_connect(self):
         return all([c.can_connect() for c in self.clients])
+
+    @classmethod
+    def fromlayout(cls, clients, layout):
+        """Generate a client to pixel map from the layout
+
+        Args:
+            clients: a list of opc clients
+            layout: layout object used to allocate pixels to clients
+        """
+        ips = set(c.ip for c in clients)
+        assert ips == set(layout.address.keys()), 'client ips do not match addresses in layout'
+        mapping = {c: layout.address[c.ip] for c in clients}
+        return cls(mapping)

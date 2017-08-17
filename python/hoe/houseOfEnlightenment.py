@@ -183,11 +183,29 @@ def build_opc_client(verbose):
     if 'opc_server' in STATE.servers['remote']:
         return create_opc_client(server=STATE.servers["remote"]["opc_server"], verbose=verbose)
     else:
-        clients = [
-            create_opc_client(server_ip_port, verbose=verbose)
-            for server_ip_port in STATE.servers['remote']['opc_servers']
-        ]
-        return opc.MultiClient(clients, STATE.layout)
+        clients = []
+        opc_servers = STATE.servers['remote']['opc_servers']
+        if 'layout' in opc_servers:
+            client = build_opc_client_for_layout(opc_servers['layout'], verbose)
+            clients.append(client)
+        if 'all' in opc_servers:
+            client = create_opc_client(opc_servers['all'][0], verbose)
+            clients.append(client)
+        if len(clients) == 1:
+            return clients[0]
+        else:
+            # each client should get all of the pixels
+            all_pixels = range(STATE.layout.n_pixels)
+            return opc.MultiClient({c: all_pixels for c in clients})
+
+
+def build_opc_client_for_layout(servers, verbose):
+    clients = [
+        create_opc_client(server_ip_port, verbose=verbose)
+        for server_ip_port in servers
+    ]
+    return opc.MultiClient.fromlayout(clients, STATE.layout)
+
 
 
 def launch():
