@@ -27,15 +27,16 @@ function createGeometry(layout) {
     const opcArray = JSON.parse(event.data);
     const [ channel, command, lengthHigh, lengthLow, ...data ] = opcArray;
 
-    var dataSize = lengthHigh * 256 + lengthLow
-    if (dataSize != data.length) {
-      console.log('recieved data != expected data');
-      console.log('high:', lengthHigh);
-      console.log('low:', lengthLow);
-      console.log('expected:', dataSize);
-      console.log('actual:', data.length);
+    const dataSize = lengthHigh * 256 + lengthLow;
+    if (dataSize !== data.length) {
+      console.log("recieved data !== expected data, dropping frame");
+      console.log("high:", lengthHigh);
+      console.log("low:", lengthLow);
+      console.log("expected:", dataSize);
+      console.log("actual:", data.length);
       return;
     }
+
 
     // change the colors of the LEDS based on the OPC signal
     R.compose(

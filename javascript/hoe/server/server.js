@@ -6,17 +6,6 @@ const morgan    = require("morgan"); // express logger
 const fs        = require("fs");
 const request   = require("request");
 
-const yargs = require("yargs")
-  .options({
-    "layout": {
-      alias: "l",
-      describe: "path to layout file",
-      required: true
-    }
-  })
-  .help()
-  .argv;
-
 
 const buildDirectory = path.resolve(__dirname, "../build");
 const indexHtml = path.resolve(buildDirectory, "index.html");
