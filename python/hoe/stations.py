@@ -19,6 +19,13 @@ class Stations(object):
         for station in self._stations:
             station.buttons.send_button_light_update(station.client, force)
 
+    def shutdown(self):
+        for client in self._clients:
+            try:
+                client.disconnect()
+            except:
+                print "Error shutting down client", client
+
 
 class Station(object):
     def __init__(self, client, buttons=None):

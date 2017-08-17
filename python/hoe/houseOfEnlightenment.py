@@ -198,6 +198,7 @@ def launch():
     finally:
         framework.shutdown()
         opc_client.disconnect()
+        STATE.stations.shutdown()
     # TODO: This was deadlocking
     # osc_server.shutdown()
 
