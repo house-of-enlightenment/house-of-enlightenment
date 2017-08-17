@@ -19,6 +19,7 @@ class UpAndRotateEffect(object):
         layout: layout object
         row: the source for the new rows at the bottom
     """
+
     def __init__(self, layout, row, up_speed=None, rotate_speed=None):
         self.layout = layout
         self.up_speed = up_speed or consistent_speed_to_pixels(50)  # rows / second
@@ -124,7 +125,7 @@ class UpAndExpandEffect(object):
     def new_color(self, now):
         # need this to follow a linear brightness
         return color_utils.color_correct(
-            int(color_utils.remap(np.sin(4*np.pi*now), -1, 1, 0, 255)))
+            int(color_utils.remap(np.sin(4 * np.pi * now), -1, 1, 0, 255)))
 
 
 class Rotate(object):
@@ -133,6 +134,7 @@ class Rotate(object):
     Args:
         n: number of items in the array
     """
+
     def __init__(self, n, rotation_speed=None):
         self.rotation = 0
         self.n = n

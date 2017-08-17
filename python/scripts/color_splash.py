@@ -22,6 +22,7 @@ import stop_the_light as stl
 
 FADER_VALUES = {i: 0 for i in range(6)}
 
+
 def main():
     # TODO: copy and paste is bad, mkay.
     client = opc.Client('localhost:7890')

@@ -26,7 +26,6 @@ from hoe.sources import *
 from hoe.transitions import *
 from hoe import utils
 
-
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
@@ -136,11 +135,9 @@ class SingleColumn(object):
 
     def __call__(self, now):
         row = np.zeros((self.layout.columns, 3), np.uint8)
-        row[10, :] = (255, 0, 0) #color_utils.hsv2rgb((self.hue, 255, 255))
+        row[10, :] = (255, 0, 0)  #color_utils.hsv2rgb((self.hue, 255, 255))
         self.hue = (self.hue + 16) % 256
         return self.rotate(row, now)
-
-
 
 
 if __name__ == '__main__':

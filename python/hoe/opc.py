@@ -258,7 +258,7 @@ class MultiClient(object):
         for my_client in self.clients:
             if client and my_client == client:
                 self.clients_map.pop(client)
-            if ip_address and my_client.ip == ip_address
+            if ip_address and my_client.ip == ip_address:
                 self.clients_map.pop(client)
 
     @classmethod

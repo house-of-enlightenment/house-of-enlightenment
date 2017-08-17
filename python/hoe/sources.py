@@ -18,11 +18,11 @@ class _Row(object):
 
 class SineRow(_Row):
     def __call__(self, now, **kwargs):
-        v = np.sin(np.pi*now)
+        v = np.sin(np.pi * now)
         val = color_utils.remap(v, -1, 1, 0, 255)
         color = color_utils.hsv2rgb((0, 255, val))
         color = (val, 0, 0)
-        return np.array([color]*self.layout.columns)
+        return np.array([color] * self.layout.columns)
 
 
 BRIGHTNESS_B = np.linspace(0, 255, 32).astype(int)
@@ -39,7 +39,7 @@ class LinearBrightness(_Row):
         self.delta = 1
 
     def __call__(self, now, **kwargs):
-        v = np.sin(np.pi*now)
+        v = np.sin(np.pi * now)
         c = color_utils.remap(v, -1, 1, 0, 31)
         color_a = (color_utils.linear_brightness(c), 0, 0)
         color_b = (0, BRIGHTNESS_B[int(c)], 0)
@@ -49,9 +49,8 @@ class LinearBrightness(_Row):
         if self.idx == 0 or self.idx == 31:
             self.delta *= -1
         n = int(self.layout.columns / 4)
-        return np.array(
-            [color_a] * n + [(0, 0, 0)] * (n + 1) +
-            [color_b] * n + [(0, 0, 0)] * (n + 1))
+        return np.array([color_a] * n + [(0, 0, 0)] * (n + 1) + [color_b] * n + [(0, 0, 0)] *
+                        (n + 1))
 
 
 # This doesn't fit within the framework right now, the osc
@@ -116,9 +115,9 @@ class RainbowRow(_Row):
         sat, val = self.sv.update(now)
         # mirror the hues so that we don't get any sharp edges
         return color_utils.bi_rainbow(self.layout.columns, hue[0], hue[1], sat, val)
-            # np.concatenate(
-            # (color_utils.rainbow(self.layout.columns / 2, hue[0], hue[1], sat, val),
-            #  color_utils.rainbow(self.layout.columns / 2, hue[1], hue[0], sat, val)))
+        # np.concatenate(
+        # (color_utils.rainbow(self.layout.columns / 2, hue[0], hue[1], sat, val),
+        #  color_utils.rainbow(self.layout.columns / 2, hue[1], hue[0], sat, val)))
 
 
 class ConstantRow(_Row):

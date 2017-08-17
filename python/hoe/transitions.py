@@ -51,6 +51,7 @@ class Transition(object):
 
 class SpeedTransition(Transition):
     """Every `delay` seconds, pick a new random value"""
+
     def __init__(self, lower, upper):
         self.lower = lower
         self.upper = upper
@@ -62,6 +63,7 @@ class SpeedTransition(Transition):
 
 class SVTransition(Transition):
     """Transition from one plane in Saturation-Value space to another"""
+
     def rnd_pt(self):
         # pick a saturation between 128-256 (128 is very pastel, 256 is full saturation)
         # drastically favoring full saturation
@@ -69,8 +71,7 @@ class SVTransition(Transition):
             #[135, 143, 151, 159] * 1 +
             #[167, 175, 183, 191] * 2 +
             #[199, 207, 215, 223] * 3 +
-            [231, 239, 247, 255] * 4
-        )
+            [231, 239, 247, 255] * 4)
         # pick a value between 192-256 (probably a very minor effect)
         val = np.random.randint(196, 256)
         return np.array([sat, val])
@@ -179,10 +180,13 @@ class CoordinatedTransition(Transition):
         class Dummy(object):
             def start(_, now):
                 self.start(now)
+
             def update(_, now):
                 return self.update(now)[0]
+
             def __call__(_, now):
                 return self.__call__(now)[0]
+
         return Dummy()
 
     # this is the structure rotation
@@ -190,8 +194,11 @@ class CoordinatedTransition(Transition):
         class Dummy(object):
             def start(_, now):
                 self.start(now)
+
             def update(_, now):
                 return self.update(now)[1]
+
             def __call__(_, now):
                 return self.__call__(now)[1]
+
         return Dummy()
