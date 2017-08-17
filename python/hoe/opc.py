@@ -252,6 +252,15 @@ class MultiClient(object):
     def can_connect(self):
         return all([c.can_connect() for c in self.clients])
 
+    def remove_client(self, client=None, ip_address=None):
+        assert client or ip_address
+        assert not (client and ip_address)
+        for my_client in self.clients:
+            if client and my_client == client:
+                self.clients_map.pop(client)
+            if ip_address and my_client.ip == ip_address
+                self.clients_map.pop(client)
+
     @classmethod
     def fromlayout(cls, clients, layout):
         """Generate a client to pixel map from the layout
@@ -260,7 +269,12 @@ class MultiClient(object):
             clients: a list of opc clients
             layout: layout object used to allocate pixels to clients
         """
-        ips = set(c.ip for c in clients)
-        assert ips == set(layout.address.keys()), 'client ips do not match addresses in layout'
-        mapping = {c: layout.address[c.ip] for c in clients}
+        mapping = map_clients(clients, layout)
         return cls(mapping)
+
+
+def map_clients(clients, layout):
+    ips = set(c.ip for c in clients)
+    assert ips == set(layout.address.keys()), 'client ips do not match addresses in layout'
+    mapping = {c: layout.address[c.ip] for c in clients}
+    return mapping
