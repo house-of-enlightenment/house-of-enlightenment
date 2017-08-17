@@ -1,4 +1,5 @@
 import numpy as np
+from hoe import color_utils
 import colorsys
 from hoe.animation_framework import Scene
 from hoe.animation_framework import Effect
@@ -37,11 +38,12 @@ class FiniteDifference(Effect):
         self.time = []
         self.forceConstant = 400
         self.velocityConstant = 30000
+        #self.diffusionConstant = 0.001
         self.diffusionConstant = 0.00001
         self.influence = 0b1111
         self.isFixedBounary = False
         self.X_MAX = STATE.layout.rows
-        self.Y_MAX = STATE.layout.columns / 2
+        self.Y_MAX = STATE.layout.columns/2
 
     def next_frame(self, pixels, now, collaboration_state, osc_data):
         if len(self.pixels) == 0:
@@ -56,26 +58,24 @@ class FiniteDifference(Effect):
 
         self.pixels.append(np.empty([self.X_MAX, self.Y_MAX], dtype=np.uint16))
 
-        #for i in range(self.X_MAX):
-            #for j in range(self.Y_MAX):
-                #is_on = True if pixels[i,j][0] > 0 else False
-                #self.wave_old(i,j, is_on, deltaT2)
-
         self.wave(pixels, deltaT, deltaT2)
         self.setPixels(pixels)
 
     def setPixels(self, pixels):
-        for i in range(self.X_MAX):
-            for j in range(self.Y_MAX):
-                #v = int(self.pixels[2][i,j]) >> 8
-                #pixels[i,j] = (v,v,v)
-                v = float(self.pixels[2][i,j])
-                (r,g,b) =  colorsys.hsv_to_rgb(v/0xFFFF,1,1)
-                pixels[i,j] = (r*0xFF, g*0xFF, b*0xFF)
+
+        hsv = np.zeros((self.X_MAX, self.Y_MAX, 3), np.uint8)
+        hsv[:,:,0] = self.pixels[2]/0xFFFF*0xFF
+        hsv[:,:,1] = 0xFF
+        hsv[:,:,2] = 0xFF
+
+        rgb = color_utils.hsv2rgb(hsv)
+        pixels[:self.X_MAX,:self.Y_MAX] = rgb
 
         self.pixels.pop(0)
 
-
+    ##
+    # Calculate next frame of explicit finite difference wave 
+    #
     def wave(self, pixels, deltaT, deltaT2):
         self.pixels.append(np.empty([self.X_MAX, self.Y_MAX], dtype=float))
 
@@ -85,7 +85,7 @@ class FiniteDifference(Effect):
         f = np.zeros([self.X_MAX,self.Y_MAX], dtype=np.uint16)
         for i in range(self.X_MAX):
             for j in range(self.Y_MAX):
-                f[i,j] = self.forceConstant if pixels[i,j][0] > 0 else 0
+                f[i,j] = self.forceConstant if pixels[i,j][0] == 0xFF else 0
 
 
         c = self.velocityConstant
@@ -95,17 +95,10 @@ class FiniteDifference(Effect):
 
         h0 = self.pixels[1]
         h, idx = self.hCalc()
-
         h = (h - h0*idx)/c
-
         h = (h - beta*(h0-h1)/deltaT)*deltaT2 + 2*h0 - h1 + f
-        
-
-        #h = 2.0*h0 - 1.0*h1 + hDiff*deltaT2/c + f
-        #h = (hn+h0)/(idx+1)
 
         h = np.clip(h, 0, 0xFFFF)
-        #h = np.mod(h, 0xFFFF)
         self.pixels[2] = h
 
     def diffuse(self, delta_t):
@@ -118,10 +111,14 @@ class FiniteDifference(Effect):
         h0 = self.pixels[1]
         h, idx = self.hCalc()
         hDiff = (h - h0*idx)
-        h = hDif*delta_t/v + h0
+        h = hDiff*delta_t/v + h0
 
         self.pixels[2] = np.clip(h, 0, 0xFFFF)
 
+    ##
+    # This is the differences between node i,j and it's closest neighbors
+    # it's used in calculateing spatial derivitives
+    #
     def hCalc(self):
         h = np.zeros([self.X_MAX,self.Y_MAX], dtype=np.uint32)
         idx = 0
@@ -129,14 +126,12 @@ class FiniteDifference(Effect):
 
         if (self.influence & 0b0001) > 0:
             h[1:,:] = h[1:,:] + h0[:self.X_MAX-1,:]
-            #h[0,:] = h[0,:] + h0[self.X_MAX-1,:]
             h[0,:] = h[0,:] + h0[1,:]
             idx = idx+1
 
         if (self.influence & 0b0010) > 0:
             h[:self.X_MAX-1,:] = h[:self.X_MAX-1,:] + h0[1:,:]
             h[self.X_MAX-1:,:] = h[self.X_MAX-1,:] + h0[0,:]
-            #h[self.X_MAX-1:,:] = h[self.X_MAX-1,:] + h0[self.X_MAX-2,:]
             idx = idx+1
 
         if (self.influence & 0b0100) > 0:
@@ -285,15 +280,19 @@ class Diffusion(Effect):
 
 __all__ = [
     Scene("seizure_mode",
-         NoOpCollaborationManager(),
-         SolidBackground(),
-         SeizureMode()
+         collaboration_manager=NoOpCollaborationManager(),
+         effects=[
+             SolidBackground(),
+             SeizureMode()
+         ]
         ),
     Scene("waves_of_diffusion",
-        NoOpCollaborationManager(),
-        SolidBackground(color=(255,255,255), start_col=0, end_col=2, start_row=100, end_row=105),
-        FrameRotator(rate = 0.5),
-        FiniteDifference()
+         collaboration_manager=NoOpCollaborationManager(),
+         effects=[
+             SolidBackground(color=(255,255,255), start_col=0, end_col=2, start_row=100, end_row=105),
+             FrameRotator(rate = 0.5),
+             FiniteDifference()
+        ]
         )
 ]
 
