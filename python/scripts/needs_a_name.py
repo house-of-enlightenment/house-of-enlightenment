@@ -130,7 +130,8 @@ class Breathe(object):
     def start(self, now):
         self.count = 0
         hue = np.random.randint(0, 256)
-        self.color_transitions = [ColorTransition(hue, now, i) for i in range(self.n_colors)]
+        self.color_transitions = [
+            ColorTransition(hue, i).start(now) for i in range(self.n_colors)]
 
     def swap(self):
         # this method of swapping looked like crap
@@ -166,18 +167,18 @@ class ColorTransition(su.Transition):
     PERIOD = 2
     GAP = 0.025
 
-    def __init__(self, hue, now, idx):
+    def __init__(self, hue, idx):
         # using uint8 so that we don't have to take mod all of the time
         self.reference_hue = np.uint8(hue)
         self.switched_reference_hue = False
         self.set_hue()
         self.stage = -1
-        self.target_time = now
+        #self.target_time = now
         self.value = 0
         self.idx = idx
         self.switch_stage = np.random.randint(0, self.N_STAGES)
         self.switch_ref_hue_on_next_reset = False
-        su.Transition.__init__(self, now)
+        su.Transition.__init__(self)
 
     def set_hue(self):
         if np.random.rand() < .2:
@@ -198,7 +199,7 @@ class ColorTransition(su.Transition):
         # handle actions from the end of last stage
         if self.switch_ref_hue_on_next_reset:
             # print 'Updating hue', self.stage, self.idx
-            assert self.end < 12
+            assert self.end_pt < 12
             self.update_reference_hue()
             self.set_hue()
             self.switch_ref_hue_on_next_reset = False
