@@ -23,8 +23,8 @@ byte mac[] = {
 }; // you can find this written on the board of some Arduino Ethernets or shields
 
 //mapped to test console
-int inPins[5] = {A2, 4, 6, 5, 3};
-byte outPins[5] = {9, 7, A1 , 8, A0};
+byte inPins[5] = {6, 5, 4, A3, A2};
+byte outPins[5] = {7, 8,9, A0, A1 };
 const byte sliderIn[2] = {A6};
 
 int sliderVals[1] = {0};
@@ -111,9 +111,9 @@ void checkInputs() {
         // only toggle the LED if the new button state is HIGH
         if (buttonState[i] == LOW) {
           ledState[i] = !ledState[i];
-          //          Serial.print("Buttoon ");
-          //          Serial.print(i);
-          //          Serial.println(" was pressed");
+                    Serial.print("Buttoon ");
+                    Serial.print(i);
+                    Serial.println(" was pressed");
           buttonPress(i);
         }
       }

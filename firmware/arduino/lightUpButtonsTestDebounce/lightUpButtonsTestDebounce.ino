@@ -1,7 +1,8 @@
 
-//mapped to test console
-byte inPins[5] = {A2, 4, 6, 5, 3};
-byte outPins[5] = {9, 7, A1 , 8, A0};
+//mapped to final boards
+// Yellow, Green, White, Red, Blue
+byte inPins[5] = {6, 5, 4, A3, A2};
+byte outPins[5] = {7, 8,9, A0, A1 };
 
 int buttonState[5] = {0, 0, 0, 0, 0};
 int lastButtonState[5] = {0, 0, 0, 0, 0};
@@ -82,8 +83,11 @@ void lightUpButtons() {
   for (int i = 0; i < 5; i++) {
     int sensorVal = digitalRead(inPins[i]);
     if (sensorVal == HIGH) {
+      
       digitalWrite(outPins[i], LOW);
     } else {
+      Serial.print("lighting pin:");
+      Serial.println(i);
       digitalWrite(outPins[i], HIGH);
     }
   }
