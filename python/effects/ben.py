@@ -76,24 +76,32 @@ class LaunchSeizure(MultiEffect):
             self.add_effect( SeizureMode(station=self.station, duration = 3) )
 
 
+##
+# This runs an explicit 2d wave equation.
+# Slider => Damping: Higher value, more damping
+# Up/Down (3/2): => Input force from strong negitive to strong positive, force is applied based on all white pixels
+# Left/Right (1/0): => Slower / Faster wave propagation.
+# Center (4): Reset => Zeros out waves
+#
 class FiniteDifference(Effect):
-    def __init__(self):
+    def __init__(self, station = None, master_station=None):
         self.pixels = []
         self.time = []
         self.forceConstant = 400
-        self.velocityConstant = 30000
-        #self.diffusionConstant = 0.001
-        self.diffusionConstant = 0.00001
+        self.velocityConstant = 20000.0 # Lower Value == Faster Speed
+        self.diffusionConstant = 0.00001 # Bigger Value == More Damping
         self.influence = 0b1111
         self.isFixedBounary = False
         self.X_MAX = STATE.layout.rows
         self.Y_MAX = STATE.layout.columns
+        self.master_station = master_station
 
     def next_frame(self, pixels, now, collaboration_state, osc_data):
-        if len(self.pixels) == 0:
+        if len(self.pixels) == 0 or self._should_zero(osc_data):
+            self.pixels = []
             self.pixels.append(np.empty([self.X_MAX, self.Y_MAX], dtype=float))
             self.pixels.append(np.empty([self.X_MAX, self.Y_MAX], dtype=float))
-            self.time = [now*1000, (now-0.5)*1000]
+            self.time = [now*1000, (now-0.3)*1000]
 
         deltaT  = (now*1000 - self.time[0])
         deltaT2 = deltaT*(self.time[0]-self.time[1])
@@ -102,8 +110,60 @@ class FiniteDifference(Effect):
 
         self.pixels.append(np.empty([self.X_MAX, self.Y_MAX], dtype=np.uint16))
 
+        self._set_damping(osc_data)
+        self._set_velocity(osc_data)
+        self._set_force(osc_data)
+
         self.wave(pixels, deltaT, deltaT2)
         self.setPixels(pixels)
+
+    def _should_zero(self, osc_data):
+        if self.master_station is None:
+            return
+
+        buttons = osc_data.stations[self.master_station].button_presses
+        return buttons and 4 in buttons
+
+    def _set_force(self, osc_data):
+        if self.master_station is None:
+            return
+
+        buttons = osc_data.stations[self.master_station].button_presses
+        if not buttons:
+            return
+
+        if 2 in buttons:
+            self.forceConstant = max(-1000, self.forceConstant - 100)
+            print(self.forceConstant)
+
+        if 3 in buttons:
+            self.forceConstant = min(1000, self.forceConstant + 100)
+            print(self.forceConstant)
+
+
+    def _set_velocity(self, osc_data):
+        if self.master_station is None:
+            return
+
+        buttons = osc_data.stations[self.master_station].button_presses
+        if not buttons:
+            return
+
+        if 1 in buttons:
+            self.velocityConstant = min(50000, self.velocityConstant*1.1)
+            print(self.velocityConstant)
+
+        if 0 in buttons:
+            self.velocityConstant = max(3000, self.velocityConstant*0.9)
+            print(self.velocityConstant)
+
+
+    def _set_damping(self, osc_data):
+        if self.master_station is None:
+            return
+
+        fader = osc_data.stations[self.master_station].faders[0]
+        self.diffusionConstant = faderInterpolate(fader, 0.00000001, 0.001)
 
     def setPixels(self, pixels):
 
@@ -129,7 +189,7 @@ class FiniteDifference(Effect):
         # Calculate Force based on if if pixel is all white
         pix = np.array(pixels[:,:][:], dtype=np.uint32)
         color = (pix[:,:,0] << 16) | (pix[:,:,1] << 8) | (pix[:,:,2])
-        f = np.where(color >= 0xFFFFFF, self.forceConstant, 0)
+        f = np.where(color >= 0xFFFFFF, self.forceConstant, 0)[:self.X_MAX,:self.Y_MAX]
 
         c = self.velocityConstant
         beta = self.diffusionConstant
@@ -336,12 +396,13 @@ __all__ = [
          ]
         ),
     Scene("waves_of_diffusion",
-         collaboration_manager=NoOpCollaborationManager(),
-         effects=[
-             SolidBackground(color=(255,255,255), start_col=0, end_col=2, start_row=100, end_row=105),
-             FrameRotator(rate = 0.5),
-             FiniteDifference()
-        ]
+        tags=[Scene.TAG_BACKGROUND],
+        collaboration_manager=NoOpCollaborationManager(),
+        effects=[
+            SolidBackground(color=(255,255,255), start_col=0, end_col=2, start_row=100, end_row=105),
+            FrameRotator(rate = 0.5),
+            FiniteDifference(master_station=0)
+            ]
         )
 ]
 
