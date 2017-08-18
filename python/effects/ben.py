@@ -11,6 +11,8 @@ from hoe import color_utils
 from hoe.state import STATE
 from hoe.utils import faderInterpolate, sliceForStation
 
+from random import randint, uniform
+
 class SeizureMode(Effect):
     def __init__(self, station = None, duration = None):
         self.foo = 1
@@ -28,7 +30,6 @@ class SeizureMode(Effect):
 
     def scene_starting(self, now):
         self.start_time = now
-        print(now)
 
     def next_frame(self, pixels, now, collaboration_state, osc_data):
 
@@ -87,28 +88,40 @@ class FiniteDifference(Effect):
     def __init__(self, station = None, master_station=None):
         self.pixels = []
         self.time = []
-        self.forceConstant = 400
-        self.velocityConstant = 20000.0 # Lower Value == Faster Speed
-        self.diffusionConstant = 0.00001 # Bigger Value == More Damping
+        self.faderValue = None
         self.influence = 0b1111
         self.isFixedBounary = False
         self.X_MAX = STATE.layout.rows
         self.Y_MAX = STATE.layout.columns
         self.master_station = master_station
 
+    def _reset(self, now):
+        # Reset Constants
+        self.forceConstant = randint(300,700)
+        self.velocityConstant = randint(10000,30000) # Lower Value == Faster Speed
+        self.diffusionConstant = uniform(0.0000001,0.0001) # Bigger Value == More Damping
+
+        print("force: " + str(self.forceConstant))
+        print("1/velocity: " + str(self.velocityConstant))
+        print("damping: " + str(self.diffusionConstant))
+
+        # Reset Pixels
+        self.pixels = []
+        self.pixels.append(np.zeros([self.X_MAX, self.Y_MAX], dtype=float))
+        self.pixels.append(np.zeros([self.X_MAX, self.Y_MAX], dtype=float))
+
+        self.time = [(now-0.3)*1000, (now-0.6)*1000]
+
     def next_frame(self, pixels, now, collaboration_state, osc_data):
         if len(self.pixels) == 0 or self._should_zero(osc_data):
-            self.pixels = []
-            self.pixels.append(np.empty([self.X_MAX, self.Y_MAX], dtype=float))
-            self.pixels.append(np.empty([self.X_MAX, self.Y_MAX], dtype=float))
-            self.time = [now*1000, (now-0.3)*1000]
+            self._reset(now)
 
         deltaT  = (now*1000 - self.time[0])
         deltaT2 = deltaT*(self.time[0]-self.time[1])
         self.time[1] = self.time[0]
         self.time[0] = now*1000
 
-        self.pixels.append(np.empty([self.X_MAX, self.Y_MAX], dtype=np.uint16))
+        self.pixels.append(np.zeros([self.X_MAX, self.Y_MAX], dtype=np.uint16))
 
         self._set_damping(osc_data)
         self._set_velocity(osc_data)
@@ -163,7 +176,11 @@ class FiniteDifference(Effect):
             return
 
         fader = osc_data.stations[self.master_station].faders[0]
-        self.diffusionConstant = faderInterpolate(fader, 0.00000001, 0.001)
+        if self.faderValue is not None and fader != self.faderValue:
+            self.diffusionConstant = faderInterpolate(fader, 0.00000001, 0.001)
+            print(self.diffusionConstant)
+
+        self.faderValue = fader
 
     def setPixels(self, pixels):
 
