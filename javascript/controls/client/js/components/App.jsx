@@ -126,18 +126,20 @@ export default class App extends React.Component {
     const { controls } = this.state;
 
     return (
-      <div className="controls-set">
-        {
-          controls.map((c, i) => (
-            <Controls key={i}
-              id={i}
-              buttons={c.buttons}
-              faders={c.faders}
-              onButtonClick={this.onButtonClick(i)}
-              onFaderChange={this.onFaderChange(i)}
-            />
-          ))
-        }
+      <div style={{ textAlign: "center" }}>
+        <div className="controls-set">
+          {
+            controls.map((c, i) => (
+              <Controls key={i}
+                id={i}
+                buttons={c.buttons}
+                faders={c.faders}
+                onButtonClick={this.onButtonClick(i)}
+                onFaderChange={this.onFaderChange(i)}
+              />
+            ))
+          }
+        </div>
       </div>
     );
   }
