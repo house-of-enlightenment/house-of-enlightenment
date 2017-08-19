@@ -12,15 +12,44 @@ const assert = require('assert');
  */
 module.exports = function createOpcMessageBuffer({ onCompleteMessage }) {
 
+  let headerPartsAvailable;
   let messageParts;
   let entireMessageSize;
 
+
+  function handlePartialHeader(dataChunk) {
+    totalLength = dataChunk.length + headerPartsAvailable;
+    buffer = Buffer.concat([messageParts, dataChunk])
+    assert(totalLength == buffer.length, totalLength + ' != ' + buffer.length);
+    if (totalLength >= 4) {
+      // we have enough data to process normally now
+      reset();
+      parseNewChunk(buffer);
+    } else {
+      // not enough data yet. so just save this and hope some more
+      // data comes in
+      headerPartsAvailable = totalLength;
+      messageParts = buffer;
+    }
+  }
+
   function parseNewChunk(dataChunk) {
+    assert(messageParts.length == 0);
+    // yeah, seriously, I saw a couple messages of length 3
+    if (dataChunk.length < 4) {
+      handlePartialHeader(dataChunk);
+      return
+    }
+    headerPartsAvailable = 4;
     channel = dataChunk[0];
     command = dataChunk[1];
     lengthHigh = dataChunk[2];
     lengthLow = dataChunk[3];
     const dataSize = lengthHigh * 256 + lengthLow;
+    if (isNaN(dataSize)) {
+      console.log('Got a NaN data size!');
+      console.log(dataChunk);
+    }
     if (dataSize + 4 == dataChunk.length) {
       // we have a full message.  just pass it along
       onCompleteMessage(dataChunk);
@@ -52,6 +81,7 @@ module.exports = function createOpcMessageBuffer({ onCompleteMessage }) {
   function reset() {
     messageParts = Buffer.alloc(0);
     entireMessageSize = 0;
+    headerPartsAvailable = 0;
   }
 
   reset();
@@ -67,7 +97,11 @@ module.exports = function createOpcMessageBuffer({ onCompleteMessage }) {
     }
     // we already have some of the message, add the remainder / what we can
     else {
-      parseExistingChunk(dataChunk);
+      if (headerPartsAvailable >= 4) {
+        parseExistingChunk(dataChunk);
+      } else {
+        handlePartialHeader(dataChunk);
+      }
     }
   };
 
