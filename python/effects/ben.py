@@ -120,6 +120,7 @@ class FiniteDifference(Effect):
         self.time[1] = self.time[0]
         self.time[0] = now*1000
 
+        # pylint: disable=no-member
         self.pixels.append(np.zeros([self.X_MAX, self.Y_MAX], dtype=np.uint16))
 
         self._set_damping(osc_data)
@@ -203,6 +204,7 @@ class FiniteDifference(Effect):
             return
 
         # Calculate Force based on if if pixel is all white
+        # pylint: disable=no-member
         pix = np.array(pixels[:,:][:], dtype=np.uint32)
         color = (pix[:,:,0] << 16) | (pix[:,:,1] << 8) | (pix[:,:,2])
         f = np.where(color >= 0xFFFFFF, self.force_constant, 0)[:self.X_MAX,:self.Y_MAX]
@@ -239,6 +241,7 @@ class FiniteDifference(Effect):
     # it's used in calculateing spatial derivitives
     #
     def hCalc(self):
+        # pylint: disable=no-member
         h = np.zeros([self.X_MAX,self.Y_MAX], dtype=np.uint32)
         idx = 0
         h0 = self.pixels[1]
@@ -323,11 +326,13 @@ class Diffusion(Effect):
 
     def next_frame(self, pixels, now, collaboration_state, osc_data):
         if len(self.pixels) == 0:
+            # pylint: disable=no-member
             self.pixels.append(np.empty([self.X_MAX, self.Y_MAX], dtype=np.uint16))
 
         delta_t = (now - self.last_step)*1000
         self.last_step = now
 
+        # pylint: disable=no-member
         self.pixels.append(np.empty([self.X_MAX, self.Y_MAX], dtype=np.uint16))
 
         for i in range(self.X_MAX):
