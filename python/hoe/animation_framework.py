@@ -9,10 +9,12 @@ from threading import Thread
 
 from OSC import OSCServer
 
+from hoe.collaboration import CollaborationManager
 from hoe.pixels import Pixels
 from hoe.state import STATE
 from hoe.opc import Client
 from hoe.osc_utils import update_buttons
+
 
 
 class AnimationFramework(object):
@@ -223,7 +225,8 @@ def load_scenes_from_file(pkg_name, scenes, tags):
                 scenes[scene.name] = scene
             else:
                 print "Skipped %s. Tags %s not in %s" % (scene, scene.tags, tags)
-    except ImportError:
+    except ImportError as e:
+        print e
         print "WARNING: could not load effect %s" % pkg_name
 
 
