@@ -18,9 +18,11 @@ pip install -r requirements.txt
 pip install pylint pep8
 pip install .
 
-pep8 hoe scripts effects
-pylint -E --extension-pkg-whitelist=numpy hoe scripts/*.py effects
 pytest tests
 
 cd tests
 python run_all_scenes_with_reader.py
+cd -
+
+pylint -E --extension-pkg-whitelist=numpy hoe scripts/*.py effects
+pep8 hoe scripts effects
