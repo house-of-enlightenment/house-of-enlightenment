@@ -16,7 +16,7 @@ set -o xtrace
 cd python
 pip install -r requirements.txt
 pip install pylint pep8
-pip install .
+pip install -e .
 
 pytest tests
 

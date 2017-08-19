@@ -214,6 +214,7 @@ class Client(object):
         except socket.error:
             self._debug('put_pixels: connection lost.  could not send pixels.')
             self._socket = None
+            raise
             return False
 
 

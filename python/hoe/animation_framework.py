@@ -130,7 +130,7 @@ class AnimationFramework(object):
 
     # ---- LIFECYCLE (START/STOP) METHODS ----
 
-    def serve_in_background(self):
+    def serve_in_background(self, daemon=True):
         # [function] -> Thread
 
         # Run scene manager in the background
