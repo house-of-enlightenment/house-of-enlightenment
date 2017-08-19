@@ -398,7 +398,7 @@ class Diffusion(Effect):
 
         self.pixels[1][x,y] = h
 
-__all__ = [
+SCENES = [
     Scene("seizure_mode",
          collaboration_manager=NoOpCollaborationManager(),
          effects=[

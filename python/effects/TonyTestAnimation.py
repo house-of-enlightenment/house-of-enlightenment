@@ -36,7 +36,7 @@ class Background1(Effect):
         pixels[ii] = (r * 255, g * 255, b * 255)
 
 
-__all__ = [
+SCENES = [
     # Scene("tonyscene1", collaboration_manager=NoOpCollaborationManager()),
     # Scene("tonyscene2", collaboration_manager=NoOpCollaborationManager())
 ]

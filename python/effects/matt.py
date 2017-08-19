@@ -474,7 +474,7 @@ class Noise(Effect):
             self.min += 1
             self.range += 10
 
-__all__ = [
+SCENES = [
     Scene("smash",
           NoOpCollaborationManager(),
           Noise()),

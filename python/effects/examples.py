@@ -90,7 +90,7 @@ class SampleEffectLauncher(MultiEffect):
         print self.effects
 
 
-__all__ = [
+SCENES = [
     Scene(
         "spatial scene",
         tags=[Scene.TAG_BACKGROUND],

@@ -487,7 +487,7 @@ class Columns(Effect):
             pixels[:, columns] = self.color
 
 
-__all__ = [
+SCENES = [
     Scene(
         "buttonchaser",
         tags=[Scene.TAG_EXAMPLE, Scene.TAG_GAME],

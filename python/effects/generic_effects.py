@@ -133,7 +133,7 @@ class FunctionFrameRotator(Effect):
 # FIXME : A little hacky - trying to avoid circular dependencies on debugging_effects
 import debugging_effects
 rainbow = Rainbow(hue_start=0, hue_end=255)
-__all__ = [
+SCENES = [
     Scene(
         "buttontoggler",
         tags=[Scene.TAG_TEST],

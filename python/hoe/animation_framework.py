@@ -213,7 +213,7 @@ def load_scenes_from_file(pkg_name, scenes, tags):
     # type: (str, {str, Scene}) -> None
     try:
         effect_dict = importlib.import_module(pkg_name)
-        for scene in effect_dict.__all__:
+        for scene in effect_dict.SCENES:
             if not isinstance(scene, Scene):
                 print "Got scene %s not of type Scene" % scene
                 continue

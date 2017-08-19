@@ -19,7 +19,7 @@ class ArrangeBlocks(af.Effect):
             pixels[0, station.left:station.right] = block
 
 
-__all__ = [
+SCENES = [
     af.Scene(
         'arrange-blocks',
         tags=[af.Scene.TAG_GAME],

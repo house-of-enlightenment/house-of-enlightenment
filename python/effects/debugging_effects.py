@@ -43,7 +43,7 @@ class FailureEffect(Effect):
 # FIXME : A little hacky - trying to avoid circular dependencies with generic_effects
 from generic_effects import NoOpCollaborationManager
 from generic_effects import SolidBackground
-__all__ = [
+SCENES = [
     Scene(
         "osc printer",
         tags=[Scene.TAG_TEST],

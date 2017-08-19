@@ -195,7 +195,7 @@ class CollaborationCountBasedBackground(Effect):
             pixels[ii] = self.color
 
 
-__all__ = [
+SCENES = [
     Scene(
         "tetherball",
         tags=[Scene.TAG_GAME, Scene.TAG_WIP],
