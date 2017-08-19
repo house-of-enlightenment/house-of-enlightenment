@@ -30,7 +30,7 @@ class SeizureMode(Effect):
         self.station = station
         self.start_time = None
 
-    def scene_starting(self, now):
+    def scene_starting(self, now, osc_data):
         self.start_time = now
 
     def next_frame(self, pixels, now, collaboration_state, osc_data):

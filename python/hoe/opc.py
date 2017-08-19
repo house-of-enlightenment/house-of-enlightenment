@@ -71,7 +71,6 @@ class Client(object):
         """
         self.verbose = verbose
         self.address = server_ip_port
-
         self._long_connection = long_connection
 
         self.ip, self.port = server_ip_port.split(':')
