@@ -11,12 +11,12 @@ import math
 from hoe.state import STATE
 
 
-class Arc(Effect):
+class ZigZag(Effect):
     def __init__(self, color=(0, 255, 0), start_row=2, start_col=16, height=214, end_row=2, end_col=26):
         self.color = color
         self.start_row = start_row
         self.start_col = start_col
-        self.height = height
+        self.cur_height = 0
         self.end_row = end_row
         self.end_col = end_col
         self.milliseconds = 0
@@ -26,32 +26,32 @@ class Arc(Effect):
 
 
     def next_frame(self, pixels, now, collaboration_state, osc_data):
-        for y in range(self.start_row, STATE.layout.rows):
-            x = int(self.start_col + round(math.sin(y+6)))
-            pixels[y, x] = self.color
-            pixels[y, self.start_col] = (255, 0, 0)
+        self.cur_height = self.cur_height + 4
+        for y in range(self.start_row, self.cur_height):
+            # zig zag is 11 wide
+            # there is probably a better way to do this...
+            mod = (y % (10*2))
+            if mod <= 5:
+                x = mod
+            elif mod > 5 and mod < 16:
+                x = -mod + 11 - 1
+            else: # >= 16
+                x = mod - 20
+
+            # pixels[y, self.start_col] = (255, 0, 0)
+            pixels[y, self.start_col + x] = self.color
+            pixels[y, self.start_col + x-1] = self.color
+            pixels[y, self.start_col + x+1] = self.color
 
     def is_completed(self, t, osc_data):
-        return False
-
-
-class LaunchRows(MultiEffect):
-    def before_rendering(self, pixels, t, collaboration_state, osc_data):
-        MultiEffect.before_rendering(self, pixels, t, collaboration_state, osc_data)
-        for sid, station in enumerate(osc_data.stations):
-            if station.button_presses:
-                self.add_effect(
-                    SolidRow(
-                        color=(randrange(0, 255), randrange(0, 255), randrange(0, 255)),
-                        start_col=11 * sid + randint(0, 11),
-                        end_col=11 * (sid + 1) + randint(0, 11)))
+        return self.cur_height >= STATE.layout.rows-1
 
 
 SCENES = [
     Scene(
-        "arc",
+        "zigzag",
         tags=[Scene.TAG_EXAMPLE],
         collaboration_manager=NoOpCollaborationManager(),
         effects=[SolidBackground(color=(30, 30, 30)),
-                 Arc()])
+                 ZigZag()])
 ]
