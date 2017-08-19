@@ -273,7 +273,7 @@ class RotatingWedge(Effect):
                 pixels.update_slices(
                     additive=self.additive,
                     color=self.color,
-                    slices=[(slice(0, None), slice(self.end_col, None)), (slice(0, None), slice(
+                    slices=[(slice(0, None), slice(self.start_col, None)), (slice(0, None), slice(
                         0, self.end_col))])
 
         else:
@@ -363,14 +363,24 @@ class DavesAbstractLidarClass(Effect):
                     col_left=col_left,
                     col_right=col_right)
 
-    def get_default_column_slices(self, col_left, col_right):
-        if col_right < col_left:
-            return [slice(0, col_right), slice(col_left, None)]
+    def get_default_slices(self, row_bottom, row_top, col_start, col_end):
+        """ Return an array of pairwise slices from bottom->top and left->right with column wraparound
+        Currently does not support:
+            right->left
+            top->bottom
+            start_col>total columns
+            start_col<0
+            end_col - start_col>total columns (would light everything)
+        """
+
+        row_slice = slice(row_bottom, row_top)
+        if col_end < col_start:
+            return [(row_slice,slice(0, col_end)), (row_slice, slice(col_start, None))]
         else:
             # print "No wrap"
-            return [slice(col_left, col_right)]
+            return [(row_slice, slice(col_start, col_end))]
 
-    def render_lidar_input(self, pixels, obj_id, row_slice, col_left, col_right):
+    def render_lidar_input(self, pixels, obj_id, row_bottom, row_top, col_left, col_right):
         # TODO: Should this just be a passed in function instead of needing to subclass?
         raise NotImplementedError
 
@@ -379,8 +389,8 @@ class OpaqueLidar(DavesAbstractLidarClass):
     def render_lidar_input(self, pixels, obj_id, row_bottom, row_top, col_left, col_right):
         color = np.asarray((0, 0, 0), np.uint8)
         color[obj_id % 3] = (255 - 30) / 2
-        # FIXME - Where did the slice go?
-        pixels.update_slices(additive=True, color=color, slices=[])
+        pixels.update_slices(additive=True, color=color, slices=self.get_default_slices(row_bottom, row_top, col_left,
+                                                                                        col_right))
 
 
 class SwappingLidar(DavesAbstractLidarClass):
@@ -500,7 +510,6 @@ SCENES = [
         collaboration_manager=ButtonChaseController(
             draw_bottom_layer=True, backwards_progress=True, selection_time=1),
         effects=[ButtonRainbow(), Pulser()]),
-    # FIXME - Flicker on vertical wedges!!!!
     Scene(
         "wedges",
         tags=[Scene.TAG_EXAMPLE],
