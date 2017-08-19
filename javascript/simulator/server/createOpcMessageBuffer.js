@@ -1,4 +1,6 @@
-const assert = require('assert');
+const assert = require("assert");
+
+
 /**
  * The OPC message from python are a buffer of number in OPC format
  * The first 3rd and 4th byte tell the length of the data, so one message
@@ -18,9 +20,11 @@ module.exports = function createOpcMessageBuffer({ onCompleteMessage }) {
 
 
   function handlePartialHeader(dataChunk) {
-    totalLength = dataChunk.length + headerPartsAvailable;
-    buffer = Buffer.concat([messageParts, dataChunk])
-    assert(totalLength == buffer.length, totalLength + ' != ' + buffer.length);
+    const totalLength = dataChunk.length + headerPartsAvailable;
+    const buffer = Buffer.concat([messageParts, dataChunk]);
+
+    assert(totalLength == buffer.length, totalLength + " != " + buffer.length);
+
     if (totalLength >= 4) {
       // we have enough data to process normally now
       reset();
@@ -38,18 +42,21 @@ module.exports = function createOpcMessageBuffer({ onCompleteMessage }) {
     // yeah, seriously, I saw a couple messages of length 3
     if (dataChunk.length < 4) {
       handlePartialHeader(dataChunk);
-      return
+      return;
     }
     headerPartsAvailable = 4;
-    channel = dataChunk[0];
-    command = dataChunk[1];
-    lengthHigh = dataChunk[2];
-    lengthLow = dataChunk[3];
+
+    const channel = dataChunk[0];
+    const command = dataChunk[1];
+    const lengthHigh = dataChunk[2];
+    const lengthLow = dataChunk[3];
     const dataSize = lengthHigh * 256 + lengthLow;
+
     if (isNaN(dataSize)) {
-      console.log('Got a NaN data size!');
+      console.log("Got a NaN data size!");
       console.log(dataChunk);
     }
+
     if (dataSize + 4 == dataChunk.length) {
       // we have a full message.  just pass it along
       onCompleteMessage(dataChunk);
@@ -60,18 +67,21 @@ module.exports = function createOpcMessageBuffer({ onCompleteMessage }) {
   }
 
   function parseExistingChunk(dataChunk) {
-    remaining = entireMessageSize - messageParts.length;
+    const remaining = entireMessageSize - messageParts.length;
+
     assert(
       remaining > 0,
-      remaining + ' remaining: ' + entireMessageSize + ' - ' + messageParts.length);
+      remaining + " remaining: " + entireMessageSize + " - " + messageParts.length
+    );
+
     if (dataChunk.length < remaining) {
       messageParts = Buffer.concat([messageParts, dataChunk]);
     } else if (dataChunk.length == remaining) {
-      completeMessage = Buffer.concat([messageParts, dataChunk]);
+      const completeMessage = Buffer.concat([messageParts, dataChunk]);
       onCompleteMessage(completeMessage);
       reset();
     } else {
-      completeMessage = Buffer.concat([messageParts, dataChunk.slice(0, remaining)])
+      const completeMessage = Buffer.concat([messageParts, dataChunk.slice(0, remaining)]);
       onCompleteMessage(completeMessage);
       reset();
       parseNewChunk(dataChunk.slice(remaining));
@@ -88,8 +98,6 @@ module.exports = function createOpcMessageBuffer({ onCompleteMessage }) {
 
   // complete or parital chunk
   return (dataChunk) => {
-    start = Date.now();
-    /* 1. add the dataChunk to the messageParts */
 
     // this is the start of a message
     if (messageParts.length == 0) {
