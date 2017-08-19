@@ -1,4 +1,5 @@
 .controls-set {
-    display: flex;
-    justify-content: center;
+    display: inline-flex;
+    max-width: 100%;
+    overflow-x: auto;
 }
