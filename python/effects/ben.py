@@ -9,7 +9,7 @@ from generic_effects import FrameRotator
 
 from hoe import color_utils
 from hoe.state import STATE
-from hoe.utils import faderInterpolate, sliceForStation
+from hoe.utils import fader_interpolate
 
 from random import randint, uniform
 
@@ -19,7 +19,7 @@ class SeizureMode(Effect):
         if station is None:
             self.slice = ( slice(0,STATE.layout.rows), slice(0, STATE.layout.columns))
         else:
-            self.slice = sliceForStation(station)
+            self.slice = STATE.layout.STATIONS[station]
 
         self.on = True
         self.delta_t = 0.05
@@ -58,7 +58,7 @@ class SeizureMode(Effect):
             return
 
         fader = osc_data.stations[self.station].faders[0]
-        self.delta_t = faderInterpolate(fader, 0.0005, 0.2)
+        self.delta_t = fader_interpolate(fader, 0.0005, 0.2)
 
 class LaunchSeizure(MultiEffect):
 
@@ -88,22 +88,21 @@ class FiniteDifference(Effect):
     def __init__(self, station = None, master_station=None):
         self.pixels = []
         self.time = []
-        self.faderValue = None
+        self.fader_value = None
         self.influence = 0b1111
-        self.isFixedBounary = False
         self.X_MAX = STATE.layout.rows
         self.Y_MAX = STATE.layout.columns
         self.master_station = master_station
 
     def _reset(self, now):
         # Reset Constants
-        self.forceConstant = randint(300,700)
-        self.velocityConstant = randint(10000,30000) # Lower Value == Faster Speed
-        self.diffusionConstant = uniform(0.0000001,0.0001) # Bigger Value == More Damping
+        self.force_constant = randint(300,700)
+        self.velocity_constant = randint(10000,30000) # Lower Value == Faster Speed
+        self.diffusion_constant = uniform(0.0000001,0.0001) # Bigger Value == More Damping
 
-        print("force: " + str(self.forceConstant))
-        print("1/velocity: " + str(self.velocityConstant))
-        print("damping: " + str(self.diffusionConstant))
+        print("force: " + str(self.force_constant))
+        print("1/velocity: " + str(self.velocity_constant))
+        print("damping: " + str(self.diffusion_constant))
 
         # Reset Pixels
         self.pixels = []
@@ -116,8 +115,8 @@ class FiniteDifference(Effect):
         if len(self.pixels) == 0 or self._should_zero(osc_data):
             self._reset(now)
 
-        deltaT  = (now*1000 - self.time[0])
-        deltaT2 = deltaT*(self.time[0]-self.time[1])
+        delta_t  = (now*1000 - self.time[0])
+        delta_t2 = delta_t*(self.time[0]-self.time[1])
         self.time[1] = self.time[0]
         self.time[0] = now*1000
 
@@ -127,8 +126,8 @@ class FiniteDifference(Effect):
         self._set_velocity(osc_data)
         self._set_force(osc_data)
 
-        self.wave(pixels, deltaT, deltaT2)
-        self.setPixels(pixels)
+        self.wave(pixels, delta_t, delta_t2)
+        self.set_pixels(pixels)
 
     def _should_zero(self, osc_data):
         if self.master_station is None:
@@ -146,12 +145,12 @@ class FiniteDifference(Effect):
             return
 
         if 2 in buttons:
-            self.forceConstant = max(-1000, self.forceConstant - 100)
-            print(self.forceConstant)
+            self.force_constant = max(-1000, self.force_constant - 100)
+            print(self.force_constant)
 
         if 3 in buttons:
-            self.forceConstant = min(1000, self.forceConstant + 100)
-            print(self.forceConstant)
+            self.force_constant = min(1000, self.force_constant + 100)
+            print(self.force_constant)
 
 
     def _set_velocity(self, osc_data):
@@ -163,12 +162,12 @@ class FiniteDifference(Effect):
             return
 
         if 1 in buttons:
-            self.velocityConstant = min(50000, self.velocityConstant*1.1)
-            print(self.velocityConstant)
+            self.velocity_constant = min(50000, self.velocity_constant*1.1)
+            print(self.velocity_constant)
 
         if 0 in buttons:
-            self.velocityConstant = max(3000, self.velocityConstant*0.9)
-            print(self.velocityConstant)
+            self.velocity_constant = max(3000, self.velocity_constant*0.9)
+            print(self.velocity_constant)
 
 
     def _set_damping(self, osc_data):
@@ -176,13 +175,13 @@ class FiniteDifference(Effect):
             return
 
         fader = osc_data.stations[self.master_station].faders[0]
-        if self.faderValue is not None and fader != self.faderValue:
-            self.diffusionConstant = faderInterpolate(fader, 0.00000001, 0.001)
-            print(self.diffusionConstant)
+        if self.fader_value is not None and fader != self.fader_value:
+            self.diffusion_constant = fader_interpolate(fader, 0.00000001, 0.001)
+            print(self.diffusion_constant)
 
-        self.faderValue = fader
+        self.fader_value = fader
 
-    def setPixels(self, pixels):
+    def set_pixels(self, pixels):
 
         hsv = np.zeros((self.X_MAX, self.Y_MAX, 3), np.uint8)
         hsv[:,:,0] = self.pixels[2]/0xFFFF*0xFF
@@ -197,26 +196,26 @@ class FiniteDifference(Effect):
     ##
     # Calculate next frame of explicit finite difference wave
     #
-    def wave(self, pixels, deltaT, deltaT2):
+    def wave(self, pixels, delta_t, delta_t2):
         self.pixels.append(np.empty([self.X_MAX, self.Y_MAX], dtype=float))
 
-        if deltaT2 < 10:
+        if delta_t2 < 10:
             return
 
         # Calculate Force based on if if pixel is all white
         pix = np.array(pixels[:,:][:], dtype=np.uint32)
         color = (pix[:,:,0] << 16) | (pix[:,:,1] << 8) | (pix[:,:,2])
-        f = np.where(color >= 0xFFFFFF, self.forceConstant, 0)[:self.X_MAX,:self.Y_MAX]
+        f = np.where(color >= 0xFFFFFF, self.force_constant, 0)[:self.X_MAX,:self.Y_MAX]
 
-        c = self.velocityConstant
-        beta = self.diffusionConstant
+        c = self.velocity_constant
+        beta = self.diffusion_constant
         h1 = self.pixels[0]
         h = np.zeros([self.X_MAX,self.Y_MAX], dtype=float)
 
         h0 = self.pixels[1]
         h, idx = self.hCalc()
         h = (h - h0*idx)/c
-        h = (h - beta*(h0-h1)/deltaT)*deltaT2 + 2*h0 - h1 + f
+        h = (h - beta*(h0-h1)/delta_t)*delta_t2 + 2*h0 - h1 + f
 
         h = np.clip(h, 0, 0xFFFF)
         self.pixels[2] = h
@@ -227,7 +226,7 @@ class FiniteDifference(Effect):
         if delta_t < 10:
             return
 
-        v = self.diffusionConstant
+        v = self.diffusion_constant
         h0 = self.pixels[1]
         h, idx = self.hCalc()
         hDiff = (h - h0*idx)
@@ -266,14 +265,14 @@ class FiniteDifference(Effect):
 
         return h, idx
 
-    def wave_old(self, x, y, is_on, deltaT2):
-        if deltaT2 < 10:
+    def wave_old(self, x, y, is_on, delta_t2):
+        if delta_t2 < 10:
             return
 
         u = [0,0,0,0]
         idx = 0
 
-        boundary = 0 if self.isFixedBounary else self.pixels[1][x,y]
+        boundary = 0 if self.is_fixed_boundary else self.pixels[1][x,y]
 
         if (self.influence & 0b0001) > 0:
             value = boundary if x == 0 else self.pixels[1][x-1, y]
@@ -292,7 +291,7 @@ class FiniteDifference(Effect):
             u[idx] = value
             idx = idx + 1
 
-        c = self.velocityConstant
+        c = self.velocity_constant
         h0 = self.pixels[1][x,y]
         h1 = self.pixels[0][x,y]
         h = 0.0
@@ -300,9 +299,9 @@ class FiniteDifference(Effect):
         for i in range(idx):
             h = h + u[i] - h0
 
-        f = self.forceConstant if is_on else 0
+        f = self.force_constant if is_on else 0
 
-        h = 2*h0 - h1 + h*deltaT2/c + f;
+        h = 2*h0 - h1 + h*delta_t2/c + f;
 
         if h < 0 :
             h = 0
@@ -317,8 +316,8 @@ class Diffusion(Effect):
         self.pixels = []
         self.last_step = 0
         self.influence = 0b1111
-        self.diffusionConstant = 1000
-        self.isFixedBounary = True
+        self.diffusion_constant = 1000
+        self.is_fixed_boundary = True
         self.X_MAX = STATE.layout.rows
         self.Y_MAX = STATE.layout.columns
 
@@ -336,9 +335,9 @@ class Diffusion(Effect):
                 is_on = True if pixels[i,j][0] > 0 else False
                 self.diffuse(i,j, is_on, delta_t)
 
-        self.setPixels(pixels)
+        self.set_pixels(pixels)
 
-    def setPixels(self, pixels):
+    def set_pixels(self, pixels):
         for i in range(self.X_MAX):
             for j in range(self.Y_MAX):
                 v = float(self.pixels[1][i,j])
@@ -359,7 +358,7 @@ class Diffusion(Effect):
         u = []
         idx = 0
 
-        boundary = 0 if self.isFixedBounary else self.pixels[0][x,y]
+        boundary = 0 if self.is_fixed_boundary else self.pixels[0][x,y]
 
         if (self.influence & 0b0001) > 0:
             value = boundary if x == 0 else self.pixels[0][x-1, y]
@@ -378,7 +377,7 @@ class Diffusion(Effect):
             u.append(value)
             idx = idx + 1
 
-        v = self.diffusionConstant
+        v = self.diffusion_constant
         h0 = self.pixels[0][x,y]
         h = 0.0
 
@@ -416,7 +415,7 @@ SCENES = [
         tags=[Scene.TAG_BACKGROUND],
         collaboration_manager=NoOpCollaborationManager(),
         effects=[
-            SolidBackground(color=(255,255,255), start_col=0, end_col=2, start_row=100, end_row=105),
+            SolidBackground(color=(255,255,255), start_col=0, end_col=2, start_row=30, end_row=35),
             FrameRotator(rate = 0.5),
             FiniteDifference(master_station=0)
             ]
