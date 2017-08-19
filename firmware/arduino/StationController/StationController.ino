@@ -8,25 +8,60 @@
 EthernetUDP Udp;
 
 //the Arduino's IP
-IPAddress ip(10, 0, 0, 55);
+//const byte stationId = 0;
+//IPAddress ip(10, 0, 0, 55);
+//byte mac[] = {
+//  0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED
+//}
+
+const byte stationId = 1;
+IPAddress ip(10, 0, 0, 56);
+byte mac[] = {
+  0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xEE
+};
+
+//const byte stationId = 2;
+//IPAddress ip(10, 0, 0, 57);
+//byte mac[] = {
+//  0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED
+//};
+
+//const byte stationId = 3;
+//IPAddress ip(10, 0, 0, 58);
+//byte mac[] = {
+//  0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED
+//};
+
+//const byte stationId = 4;
+//IPAddress ip(10, 0, 0, 59);
+//byte mac[] = {
+//  0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED
+//};
+
+//const byte stationId = 5;
+//IPAddress ip(10, 0, 0, 60);
+//byte mac[] = {
+//  0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED
+//};
+
 //destination IP
-IPAddress outIp(10, 0, 0, 30);
+IPAddress outIp(10, 0, 0, 1);
 const unsigned int outPort = 7000;
 const unsigned int inPort = 9000;
 
-const byte stationId = 0;
+
 
 EthernetServer server = EthernetServer(inPort);
 
-byte mac[] = {
-  0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED
-}; // you can find this written on the board of some Arduino Ethernets or shields
+//byte mac[] = {
+//  0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED
+//}; // you can find this written on the board of some Arduino Ethernets or shields
 
 //mapped to test console
 const unsigned int nButtons = 5;
 const unsigned int nSliders = 1;
 byte inPins[nButtons] = {6, 5, 4, A3, A2};
-byte outPins[nButtons] = {7, 8,9, A0, A1 };
+byte outPins[nButtons] = {7, 8, 9, A0, A1 };
 const byte sliderIn[nSliders] = {A6};
 
 int sliderVals[nSliders] = {0};
@@ -67,16 +102,16 @@ void setup() {
   for (int i = 0; i < nButtons; i++) {
     digitalWrite(outPins[i], LOW);
   }
-  for (int i = 0; i < nSliders; i++) {
-    pinMode(sliderIn[i], INPUT);
-  }
+  //  for (int i = 0; i < nSliders; i++) {
+  //    pinMode(sliderIn[i], INPUT);
+  //  }
 
 }
 
 
 void loop() {
   checkInputs();
-  readSliders();
+  // readSliders();
   receiveMessage();
 }
 
@@ -116,9 +151,9 @@ void checkInputs() {
         // only toggle the LED if the new button state is HIGH
         if (buttonState[i] == LOW) {
           ledState[i] = !ledState[i];
-//          Serial.print("Buttoon ");
-//          Serial.print(i);
-//          Serial.println(" was pressed");
+          //          Serial.print("Buttoon ");
+          //          Serial.print(i);
+          //          Serial.println(" was pressed");
           buttonPress(i);
         }
       }
@@ -192,7 +227,7 @@ void receiveMessage() {
       //Serial.write(msg, size);
       free(msg);
     }
-   // Serial.println("");
+    // Serial.println("");
     //client.println("DATA from Server!");
     //client.stop();
   }

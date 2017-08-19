@@ -130,7 +130,7 @@ class AnimationFramework(object):
 
     # ---- LIFECYCLE (START/STOP) METHODS ----
 
-    def serve_in_background(self):
+    def serve_in_background(self, daemon=True):
         # [function] -> Thread
 
         # Run scene manager in the background
@@ -145,47 +145,52 @@ class AnimationFramework(object):
 
         self.serve = True
 
-        fps_frame_time = 1.0 / self.fps
-        fps_warn_threshold = fps_frame_time * .2  # Warn if 20% overage
+        self.fps_frame_time = 1.0 / self.fps
+        self.fps_warn_threshold = self.fps_frame_time * .2  # Warn if 20% overage
 
         print '\tsending pixels forever (quit or control-c to exit)...'
         self.is_running = True
-        pixels = Pixels(STATE.layout)
+        self.pixels = Pixels(STATE.layout)
 
-        while self.serve:
-            # TODO : Does this create lots of GC?
-            frame_start_time = time.time()
-            target_frame_end_time = frame_start_time + fps_frame_time
-            osc_frame = self.get_osc_frame()
+        try:
+            while self.serve:
+                self._serve()
+        finally:
+            self.is_running = False
+            print "Scene Manager Exited"
 
-            self.poll_next_scene(now=frame_start_time, osc_data=osc_frame)
+    def _serve(self):
+        # TODO : Does this create lots of GC?
+        frame_start_time = time.time()
+        target_frame_end_time = frame_start_time + self.fps_frame_time
+        osc_frame = self.get_osc_frame()
 
-            # Create the pixels, set all, then put
-            pixels[:] = 0
-            self.curr_scene.render(pixels, frame_start_time, osc_frame)
-            render_timestamp = time.time()
+        self.poll_next_scene(now=frame_start_time, osc_data=osc_frame)
 
-            #Now send
-            pixels.put(self.opc_client)
+        # Create the pixels, set all, then put
+        self.pixels[:] = 0
+        self.curr_scene.render(self.pixels, frame_start_time, osc_frame)
+        render_timestamp = time.time()
 
-            # Update all the button light as needed!
-            STATE.stations.send_button_updates()
+        #Now send
+        self.pixels.put(self.opc_client)
 
-            # Okay, now we're done for real. Wait for target FPS and warn if too slow
-            completed_timestamp = time.time()
-            sleep_amount = target_frame_end_time - completed_timestamp
-            if sleep_amount <= 0:
-                if abs(sleep_amount) > fps_warn_threshold:
-                    # Note: possible change_scene() is called in between. Issue is trivial though
-                    msg = "WARNING: scene {} is rendering slowly. Total: {} Render: {} OPC: {}"
-                    print msg.format(self.curr_scene.name, completed_timestamp - frame_start_time,
-                                     render_timestamp - frame_start_time,
-                                     completed_timestamp - render_timestamp)
-            else:
-                time.sleep(sleep_amount)
+        # Update all the button light as needed!
+        STATE.stations.send_button_updates()
 
-        self.is_running = False
-        print "Scene Manager Exited"
+        # Okay, now we're done for real. Wait for target FPS and warn if too slow
+        completed_timestamp = time.time()
+        sleep_amount = target_frame_end_time - completed_timestamp
+        if sleep_amount <= 0:
+            if abs(sleep_amount) > self.fps_warn_threshold:
+                # Note: possible change_scene() is called in between. Issue is trivial though
+                msg = "WARNING: scene {} is rendering slowly. Total: {} Render: {} OPC: {}"
+                print msg.format(self.curr_scene.name, completed_timestamp - frame_start_time,
+                                 render_timestamp - frame_start_time,
+                                 completed_timestamp - render_timestamp)
+        else:
+            time.sleep(sleep_amount)
+
 
     def shutdown(self):
         self.serve = False
