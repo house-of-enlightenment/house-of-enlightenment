@@ -33,7 +33,7 @@ class ZigZag(Effect):
         for y in range(bottom, top):
             # zig zag is 11 wide
             # there is probably a better way to do this...
-            # 0-20 repeated
+            # 0-19 repeated
             mod = (y % (10*2))
             if mod <= 5:
                 x = mod
@@ -60,3 +60,17 @@ SCENES = [
         effects=[SolidBackground(color=(30, 30, 30)),
                  ZigZag()])
 ]
+
+
+
+# 5 |             x
+# 4 |          x     x
+# 3 |       x           x
+# 2 |    x                 x
+# 1 | x                       x 10 11 12 13 14 15 16 17 18 19
+#   x---------------------------x-----------------------------------
+# -1| 1  2  3  4  5  6  7  8  9    x                       x
+# -2|                                 x                 x
+# -3|                                    x           x
+# -4|                                       x     x
+# -5|                                          x
