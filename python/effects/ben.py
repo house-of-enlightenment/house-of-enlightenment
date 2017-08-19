@@ -11,7 +11,7 @@ from hoe import color_utils
 from hoe.state import STATE
 from hoe.utils import fader_interpolate
 
-from random import randint, uniform
+import random as rand
 
 class SeizureMode(Effect):
     def __init__(self, station = None, duration = None):
@@ -19,7 +19,9 @@ class SeizureMode(Effect):
         if station is None:
             self.slice = ( slice(0,STATE.layout.rows), slice(0, STATE.layout.columns))
         else:
-            self.slice = STATE.layout.STATIONS[station]
+            self.slice = (
+                    slice(0,STATE.layout.rows),
+                    slice(STATE.layout.STATIONS[station].left, STATE.layout.STATIONS[station].right))
 
         self.on = True
         self.delta_t = 0.05
@@ -60,6 +62,60 @@ class SeizureMode(Effect):
         fader = osc_data.stations[self.station].faders[0]
         self.delta_t = fader_interpolate(fader, 0.0005, 0.2)
 
+
+class UpBlock(Effect):
+    def __init__(self, station = 0, speed=20, height = 5, width = 1, color = (0xFF,0,0)):
+        self.station = station
+        self.height = height
+        self.width = width
+        self.color = color
+        self.speed = speed
+        self.offset = int(self.station*11 + 11/2 - self.width/2)
+        self.start_time = None
+
+    def scene_starting(self, now, osc_data ):
+        self.start_time = now
+
+    def next_frame(self, pixels, now, collaboration_state, osc_data):
+        if self.start_time is None:
+            self.start_time = now
+
+        height = self._height(now)
+        height_slice = slice(height, height + self.height)
+        width_slice = slice(self.offset, self.offset+self.width)
+        pixels[height_slice, width_slice] = self.color
+
+    def _height(self, now):
+        if self.start_time is None:
+            self.start_time = now
+
+        return int( (now - self.start_time)*self.speed + self.height);
+
+    def is_completed(self, now, osc_data):
+        return self._height(now) >= STATE.layout.rows
+
+
+class LaunchUpBlock(MultiEffect):
+    def __init__(self, except_station = None):
+        MultiEffect.__init__(self)
+        self.except_station = except_station
+        self.positive_force = True
+
+    def _color(self):
+        if self.positive_force:
+            return (0xFF,0,0)
+        else:
+            return (0,0xFF,0)
+
+    def before_rendering(self, pixels, now, collaboration_state, osc_data):
+        MultiEffect.before_rendering(self, pixels, now, collaboration_state, osc_data)
+        for sid, station in enumerate(osc_data.stations):
+            if station.button_presses:
+                if sid != self.except_station:
+                    self.add_effect( UpBlock(station=sid, speed=rand.randint(10,50), color=self._color() ) )
+                    self.positive_force = bool(rand.getrandbits(1))
+
+
 class LaunchSeizure(MultiEffect):
 
     def __init__(self, station = None, button = 0 ):
@@ -79,13 +135,22 @@ class LaunchSeizure(MultiEffect):
 
 ##
 # This runs an explicit 2d wave equation.
-# Slider => Damping: Higher value, more damping
-# Up/Down (3/2): => Input force from strong negitive to strong positive, force is applied based on all white pixels
-# Left/Right (1/0): => Slower / Faster wave propagation.
-# Center (4): Reset => Zeros out waves
+#
+# OSC Button / Fader Input:
+#   Slider => Damping: Higher value, more damping
+#   Up/Down (3/2): => Input force from strong negitive to strong positive, force is applied based on all white pixels
+#   Left/Right (1/0): => Slower / Faster wave propagation.
+#   Center (4): Reset => Zeros out waves
+#
+# Forcing Function:
+#   Is positive if a pixel is compleatly red (0xFF, 0, 0)
+#   Is negitive is a pixel is compleatly green (0, 0xFF, 0)
 #
 class FiniteDifference(Effect):
-    def __init__(self, station = None, master_station=None):
+    NEUMANN = "neumann"
+    CONTINUOUS = "continuous"
+
+    def __init__(self, station = None, master_station=None, auto_damp = True, base_hue = 0xFF >> 1, boundary = CONTINUOUS):
         self.pixels = []
         self.time = []
         self.fader_value = None
@@ -93,12 +158,15 @@ class FiniteDifference(Effect):
         self.X_MAX = STATE.layout.rows
         self.Y_MAX = STATE.layout.columns
         self.master_station = master_station
+        self.auto_damp = auto_damp
+        self.base_hue = base_hue
+        self.boundary = boundary
 
     def _reset(self, now):
         # Reset Constants
-        self.force_constant = randint(300,700)
-        self.velocity_constant = randint(10000,30000) # Lower Value == Faster Speed
-        self.diffusion_constant = uniform(0.0000001,0.0001) # Bigger Value == More Damping
+        self.force_constant = rand.randint(300,700)
+        self.velocity_constant = rand.randint(10000,30000) # Lower Value == Faster Speed
+        self.diffusion_constant = rand.uniform(0.0000001,0.0001) # Bigger Value == More Damping
 
         print("force: " + str(self.force_constant))
         print("1/velocity: " + str(self.velocity_constant))
@@ -106,10 +174,14 @@ class FiniteDifference(Effect):
 
         # Reset Pixels
         self.pixels = []
-        self.pixels.append(np.zeros([self.X_MAX, self.Y_MAX], dtype=float))
-        self.pixels.append(np.zeros([self.X_MAX, self.Y_MAX], dtype=float))
+        self._append_base_pixels()
+        self._append_base_pixels()
 
         self.time = [(now-0.3)*1000, (now-0.6)*1000]
+
+    def _append_base_pixels(self):
+        # pylint: disable=no-member
+        self.pixels.append(np.full((self.X_MAX, self.Y_MAX), self.base_hue, dtype=float))
 
     def next_frame(self, pixels, now, collaboration_state, osc_data):
         if len(self.pixels) == 0 or self._should_zero(osc_data):
@@ -120,8 +192,7 @@ class FiniteDifference(Effect):
         self.time[1] = self.time[0]
         self.time[0] = now*1000
 
-        # pylint: disable=no-member
-        self.pixels.append(np.zeros([self.X_MAX, self.Y_MAX], dtype=np.uint16))
+        self._append_base_pixels()
 
         self._set_damping(osc_data)
         self._set_velocity(osc_data)
@@ -129,6 +200,7 @@ class FiniteDifference(Effect):
 
         self.wave(pixels, delta_t, delta_t2)
         self.set_pixels(pixels)
+
 
     def _should_zero(self, osc_data):
         if self.master_station is None:
@@ -207,20 +279,32 @@ class FiniteDifference(Effect):
         # pylint: disable=no-member
         pix = np.array(pixels[:,:][:], dtype=np.uint32)
         color = (pix[:,:,0] << 16) | (pix[:,:,1] << 8) | (pix[:,:,2])
-        f = np.where(color >= 0xFFFFFF, self.force_constant, 0)[:self.X_MAX,:self.Y_MAX]
+        f = np.where(color == 0xFF0000, self.force_constant, np.where(color == 0xFF00, 0-self.force_constant, 0))[:self.X_MAX,:self.Y_MAX]
 
         c = self.velocity_constant
         beta = self.diffusion_constant
         h1 = self.pixels[0]
-        h = np.zeros([self.X_MAX,self.Y_MAX], dtype=float)
 
         h0 = self.pixels[1]
         h, idx = self.hCalc()
         h = (h - h0*idx)/c
+        self._auto_damp(h, delta_t, delta_t2)
         h = (h - beta*(h0-h1)/delta_t)*delta_t2 + 2*h0 - h1 + f
 
         h = np.clip(h, 0, 0xFFFF)
         self.pixels[2] = h
+
+    def _auto_damp(self, h_diff, delta_t, delta_t2):
+        if not self.auto_damp:
+            return
+
+        chaos = np.sum(np.fabs(h_diff))/delta_t2
+        if chaos > 2.5 and self.diffusion_constant < 0.001:
+            self.diffusion_constant = self.diffusion_constant * 1.1
+
+        if chaos < 0.35 and self.diffusion_constant > 0.00000001:
+            self.diffusion_constant = self.diffusion_constant * 0.9
+
 
     def diffuse(self, delta_t):
         self.pixels.append(np.empty([self.X_MAX, self.Y_MAX], dtype=float))
@@ -248,12 +332,20 @@ class FiniteDifference(Effect):
 
         if (self.influence & 0b0001) > 0:
             h[1:,:] = h[1:,:] + h0[:self.X_MAX-1,:]
-            h[0,:] = h[0,:] + h0[1,:]
+            if self.boundary == self.NEUMANN:
+                h[0,:] = h[0,:] + h0[1,:]
+            elif self.boundary == self.CONTINUOUS:
+                h[0,:] = h[0,:] + h0[self.X_MAX-1,:]
+
             idx = idx+1
 
         if (self.influence & 0b0010) > 0:
             h[:self.X_MAX-1,:] = h[:self.X_MAX-1,:] + h0[1:,:]
-            h[self.X_MAX-1:,:] = h[self.X_MAX-1,:] + h0[0,:]
+            if self.boundary == self.NEUMANN:
+                h[self.X_MAX-1:,:] = h[self.X_MAX-1,:] + h0[self.X_MAX-2,:]
+            elif self.boundary == self.CONTINUOUS:
+                h[self.X_MAX-1:,:] = h[self.X_MAX-1,:] + h0[0,:]
+
             idx = idx+1
 
         if (self.influence & 0b0100) > 0:
@@ -391,7 +483,6 @@ class Diffusion(Effect):
 
         h = h*delta_t/v + h0
 
-
         if h < 0 :
             h = 0
         elif h > 0xFFFF:
@@ -420,9 +511,18 @@ SCENES = [
         tags=[Scene.TAG_BACKGROUND],
         collaboration_manager=NoOpCollaborationManager(),
         effects=[
-            SolidBackground(color=(255,255,255), start_col=0, end_col=2, start_row=30, end_row=35),
+            SolidBackground(color=(0xFF,0,0), start_col=0, end_col=2, start_row=30, end_row=34),
+            #SolidBackground(color=(0,0xFF,0), start_col=0, end_col=2, start_row=120, end_row=124),
             FrameRotator(rate = 0.5),
-            FiniteDifference(master_station=0)
+            FiniteDifference(master_station=0, boundary = FiniteDifference.NEUMANN)
+            ]
+        ),
+    Scene("up_bloc",
+        collaboration_manager=NoOpCollaborationManager(),
+        effects=[
+            LaunchUpBlock(except_station=0),
+            #FrameRotator(rate = 0.5),
+            FiniteDifference(master_station=0, boundary = FiniteDifference.NEUMANN)
             ]
         )
 ]
