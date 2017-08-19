@@ -10,7 +10,7 @@ ledArray = ""
 
 while (1):
     clientsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    clientsocket.connect(("10.0.0.56", 9000))
+    clientsocket.connect(("10.0.0.59", 9000))
     # clientsocket.connect(("10.0.0.55", 9000))
 
     clientsocket.send("00001")
