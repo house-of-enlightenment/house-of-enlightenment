@@ -16,6 +16,7 @@ class Stations(object):
         return self._stations[key]
 
     def send_button_updates(self, force=False):
+        # TODO: Asych
         for station in self._stations:
             station.buttons.send_button_light_update(station.client, force)
 
@@ -26,6 +27,19 @@ class Stations(object):
             except:
                 print "Error shutting down client", client
 
+    def change_client_status(self, enabled=True, station_id=None, client_type="*"):
+        stations = [self._stations[station_id]] if station_id is not None else self._stations
+        for station in stations:
+            if isinstance(station.client, MultiReceiverStationClient):
+                if client_type is None or client_type == "*":
+                    station.client.change_client_status(arduino_enabled=enabled, simulator_enabled=enabled)
+                elif client_type is "arduino":
+                    station.client.change_client_status(arduino_enabled=enabled)
+                elif client_type is "simulator":
+                    station.client.change_client_status(arduino_enabled=enabled)
+            else:
+                print "Enable/disabling client", station.client
+                station.client.enabled = enabled
 
 class Station(object):
     def __init__(self, client, buttons=None):
@@ -76,6 +90,7 @@ class StationClient(object):
         self.port = port
         self.timeout = timeout
         self._socket = None
+        self.enabled = True
 
     def _ensure_connected(self):
         """Set up a connection if one doesn't already exist.
@@ -112,6 +127,10 @@ class StationClient(object):
             print msg.format(*args)
 
     def send(self, buttons):
+        if not self.enabled:
+            self._debug('Client currently disabled. Not sending')
+            return
+
         is_connected = self._ensure_connected()
         if not is_connected:
             self._debug('send: not connected.  ignoring these pixels.')
@@ -128,27 +147,10 @@ class StationClient(object):
 
         return True
 
-        # TODO handle connection/disconnect
-
-
-class OscStationClient(object):
-    def __init__(self, station_id, client):
-        self.station_id = station_id
-        self.client = client
-
-    def send(self, buttons):
-        update_buttons(self.client, self.station_id, buttons)
-
-    def disconnect(self):
-        # No-Op? This class is temporary anyway
-        pass
-
-
 class MultiReceiverStationClient(object):
     def __init__(self, simulator_client, arduino_client):
         self.simulator_client = simulator_client
         self.arduino_client = arduino_client
-        # TODO disable/enable clients
 
     def send(self, buttons):
         self.arduino_client.send(buttons)
@@ -158,6 +160,11 @@ class MultiReceiverStationClient(object):
         self.arduino_client.disconnect()
         self.simulator_client.disconnect()
 
+    def change_client_status(self, arduino_enabled=None, simulator_enabled=None):
+        if arduino_enabled is not None:
+            self.arduino_client.enabled = arduino_enabled
+        if simulator_enabled is not None:
+            self.simulator_client.enabled = simulator_enabled
 
 def _init_station_clients():
     assert ("remote" in STATE.servers) and ("station_controls" in STATE.servers["remote"]), \
