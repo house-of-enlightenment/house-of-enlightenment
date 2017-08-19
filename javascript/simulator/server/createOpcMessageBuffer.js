@@ -1,4 +1,4 @@
-
+const assert = require('assert');
 /**
  * The OPC message from python are a buffer of number in OPC format
  * The first 3rd and 4th byte tell the length of the data, so one message
@@ -15,9 +15,42 @@ module.exports = function createOpcMessageBuffer({ onCompleteMessage }) {
   let messageParts;
   let entireMessageSize;
 
+  function parseNewChunk(dataChunk) {
+    channel = dataChunk[0];
+    command = dataChunk[1];
+    lengthHigh = dataChunk[2];
+    lengthLow = dataChunk[3];
+    const dataSize = lengthHigh * 256 + lengthLow;
+    if (dataSize + 4 == dataChunk.length) {
+      // we have a full message.  just pass it along
+      onCompleteMessage(dataChunk);
+    } else {
+      entireMessageSize = dataSize + 4; // (channel, command, lengthHigh, lengthLow) + opcData
+      parseExistingChunk(dataChunk);
+    }
+  }
+
+  function parseExistingChunk(dataChunk) {
+    remaining = entireMessageSize - messageParts.length;
+    assert(
+      remaining > 0,
+      remaining + ' remaining: ' + entireMessageSize + ' - ' + messageParts.length);
+    if (dataChunk.length < remaining) {
+      messageParts = Buffer.concat([messageParts, dataChunk]);
+    } else if (dataChunk.length == remaining) {
+      completeMessage = Buffer.concat([messageParts, dataChunk]);
+      onCompleteMessage(completeMessage);
+      reset();
+    } else {
+      completeMessage = Buffer.concat([messageParts, dataChunk.slice(0, remaining)])
+      onCompleteMessage(completeMessage);
+      reset();
+      parseNewChunk(dataChunk.slice(remaining));
+    }
+  }
 
   function reset() {
-    messageParts = [];
+    messageParts = Buffer.alloc(0);
     entireMessageSize = 0;
   }
 
@@ -25,41 +58,17 @@ module.exports = function createOpcMessageBuffer({ onCompleteMessage }) {
 
   // complete or parital chunk
   return (dataChunk) => {
-
-    const json = dataChunk.toJSON();
-
+    start = Date.now();
     /* 1. add the dataChunk to the messageParts */
 
     // this is the start of a message
-    if (messageParts.length === 0){
-
-      // http://openpixelcontrol.org/
-      const [ channel, command, lengthHigh, lengthLow ] = json.data;
-      const dataSize = lengthHigh * 256 + lengthLow;
-      entireMessageSize = dataSize + 4; // opcData + channel, command, lengthHigh, lengthLow
-
-      messageParts = json.data;
+    if (messageParts.length == 0) {
+      parseNewChunk(dataChunk);
     }
-    // we already have some of the message, add this part to the
+    // we already have some of the message, add the remainder / what we can
     else {
-      messageParts = messageParts.concat(json.data);
+      parseExistingChunk(dataChunk);
     }
-
-    /* 2. check to see if we have a full message */
-
-    // if this chunk is all of the data, send it along
-    if (entireMessageSize === messageParts.length){
-      // console.log("full message, w00t!", messageParts.length);
-      onCompleteMessage(messageParts);
-      reset();
-    }
-    else if (messageParts.length > entireMessageSize){
-      // console.log("something is fucked, resetting");
-      reset();
-    } else {
-      // console.log("we have a partial message!", data.length);
-    }
-
   };
 
 
