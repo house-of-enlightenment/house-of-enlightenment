@@ -13,6 +13,8 @@ DOWN = translations.DOWN
 LEFT = translations.LEFT
 RIGHT = translations.RIGHT
 
+N_ROWS = 2
+N_STATIONS = 6
 
 # Currently, moves a single "block" to whoever last pressed a button
 class ArrangeBlocks(af.Effect):
@@ -84,7 +86,7 @@ class Selector(object):
 
 
 class Block(object):
-    def __init__(self, color, location, grid):
+    def __init__(self, color, location):
         self.color = color
         # the second item is 0 for bottom, 1 for top
         # first item in location is an in 0-6, representing the station
