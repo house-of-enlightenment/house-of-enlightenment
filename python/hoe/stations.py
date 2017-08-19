@@ -160,11 +160,12 @@ class MultiReceiverStationClient(object):
 
 
 def _init_station_clients():
-    assert "remote" in STATE.servers and "station_controls" in STATE.servers["remote"], "remote/station_controls not specified"
+    assert ("remote" in STATE.servers) and ("station_controls" in STATE.servers["remote"]), \
+        "remote/station_controls not specified"
     servers = STATE.servers["remote"]["station_controls"]
 
-    assert "protocol" not in servers or servers["protocol"] == "tcp", "Unknown protocol %s" % servers[
-        "protocol"]
+    assert ("protocol" not in servers) or (servers["protocol"] == "tcp"), \
+        "Unknown protocol %s" % servers["protocol"]
     print "Establishing TCP socket connection to stations"
     simulator_clients, arduino_clients = None, None
     if "simulator" in servers:

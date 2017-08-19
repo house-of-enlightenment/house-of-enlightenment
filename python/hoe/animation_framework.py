@@ -307,12 +307,6 @@ class StoredOSCData(object):
         self.lidar_objects[object_id] = data
 
 
-class CollaborationManager(object):
-    def compute_state(self, t, collaboration_state, osc_data):
-        raise NotImplementedError("All feedback effects must implement compute_state")
-        # TODO: use abc
-
-
 class Effect(object):
     def __init__(self):
         pass
