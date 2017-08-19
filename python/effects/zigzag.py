@@ -6,30 +6,34 @@ from generic_effects import SolidBackground
 from generic_effects import Rainbow
 from random import randrange
 from random import randint
-import math
-
 from hoe.state import STATE
 
 
 class ZigZag(Effect):
-    def __init__(self, color=(0, 255, 0), start_row=2, start_col=16, height=214, end_row=2, end_col=26):
+    def __init__(self, color=(255, 255, 0), start_row=2, start_col=16, height=50, end_row=2, end_col=26):
         self.color = color
         self.start_row = start_row
         self.start_col = start_col
-        self.cur_height = 0
+        self.height = height
+        self.cur_top = 0
+        self.cur_bottom = self.start_row
         self.end_row = end_row
         self.end_col = end_col
         self.milliseconds = 0
 
-    # def scene_starting(self, osc_data):
-    #     self.curr_row = self.start_row
-
 
     def next_frame(self, pixels, now, collaboration_state, osc_data):
-        self.cur_height = self.cur_height + 4
-        for y in range(self.start_row, self.cur_height):
+        self.cur_top = self.cur_top + 4
+        self.cur_bottom = self.cur_top - self.height
+
+        # min/max to make sure we don't render out of bounds
+        bottom = max(self.cur_bottom, self.start_row)
+        top = min(self.cur_top, STATE.layout.rows-1)
+
+        for y in range(bottom, top):
             # zig zag is 11 wide
             # there is probably a better way to do this...
+            # 0-20 repeated
             mod = (y % (10*2))
             if mod <= 5:
                 x = mod
@@ -38,13 +42,14 @@ class ZigZag(Effect):
             else: # >= 16
                 x = mod - 20
 
-            # pixels[y, self.start_col] = (255, 0, 0)
+            # draw it 3 pixels wide
             pixels[y, self.start_col + x] = self.color
             pixels[y, self.start_col + x-1] = self.color
             pixels[y, self.start_col + x+1] = self.color
 
+
     def is_completed(self, t, osc_data):
-        return self.cur_height >= STATE.layout.rows-1
+        return self.cur_bottom >= STATE.layout.rows-1
 
 
 SCENES = [
