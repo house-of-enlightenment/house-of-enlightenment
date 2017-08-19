@@ -77,16 +77,44 @@ class SVTransition(Transition):
         return np.array([sat, val])
 
 
-class HueTransition(Transition):
+class Fn(object):
+    def __init__(self, fn, *args, **kwargs):
+        self.fn = fn
+        self.args = args
+        self.kwargs = kwargs
+
+    def __call__(self):
+        return self.fn(*args, **kwargs)
+
+
+class RangeTransition(Transition):
+    """Transition from one range (start, end) to another.
+
+    This class provides 'raw' values. If you want things clipped or wrapped
+    around, you'll need to provide a layer ontop of this.
+
+    For example, if you want a range of hues, this class could output
+    250 - 270 and you would need to map that to be from 250 - 14.
+
+    Args:
+        start: callable that returns a value for the start of the range
+        length: callable that returns how long the range should be
+    """
+    def __init__(self, start, length):
+        self.start = start
+        self.length = length
+
     def rnd_pt(self):
-        # pick a hue to start with
-        start = np.random.randint(0, 256)
-        # pick how much of the color wheel we're going to take
-        # a longer slice will have more colors
-        length = np.random.randint(48, 80)  # 64 - 16, 64 + 16
+        start = self.start()
+        length = self.length()
         end = start + length
-        return np.array([-10, 54])
         return np.array([start, end])
+
+
+class HueTransition(RangeTransition):
+    def __init__(self, start=None, length=None):
+        self.start = start or functools.partial(np.random.randint, 0, 256)
+        self.length = length or functools.partial(np.random.randint, 48, 80)
 
     def update(self, now):
         # for hues, there are two ways that the transition can go, clockwise
@@ -95,6 +123,13 @@ class HueTransition(Transition):
         #
         # TODO: on reset, pick a direction
         return super(HueTransition, self).update(now)
+
+    @classmethod
+    def all(cls):
+        start = functools.partial(np.random.randint, 0, 256)
+        # 32 is already a pretty small contrast.  This basically returns one color
+        length = functools.partial(np.random.randint, 32, 256)
+        return cls(start, length)
 
 
 class CoordinatedTransition(Transition):
@@ -191,6 +226,15 @@ class CoordinatedTransition(Transition):
 
 
 class _SingleCoordinatedTransition(object):
+    """Helper class for Coordinated Transition.
+
+    Each transition in coordinated transition need to follow the transition
+    interface, so this provides that.
+
+    Args:
+        trans: the parent coordinated transition
+        getter: callable that extracts the individual results from the grouped results
+    """
     def __init__(self, trans, getter):
         self.trans = trans
         self.getter = getter
