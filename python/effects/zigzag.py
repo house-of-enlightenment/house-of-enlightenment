@@ -27,7 +27,7 @@ class Arc(Effect):
 
     def next_frame(self, pixels, now, collaboration_state, osc_data):
         for y in range(self.start_row, STATE.layout.rows):
-            x = self.start_col + round(math.sin(y+6))
+            x = int(self.start_col + round(math.sin(y+6)))
             pixels[y, x] = self.color
             pixels[y, self.start_col] = (255, 0, 0)
 
@@ -47,7 +47,7 @@ class LaunchRows(MultiEffect):
                         end_col=11 * (sid + 1) + randint(0, 11)))
 
 
-__all__ = [
+SCENES = [
     Scene(
         "arc",
         tags=[Scene.TAG_EXAMPLE],
