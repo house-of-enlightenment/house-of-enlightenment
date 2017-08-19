@@ -363,50 +363,50 @@ class FiniteDifference(Effect):
 
         return h, idx
 
-    def wave_old(self, x, y, is_on, delta_t2):
-        if delta_t2 < 10:
-            return
+    # def wave_old(self, x, y, is_on, delta_t2):
+    #     if delta_t2 < 10:
+    #         return
 
-        u = [0, 0, 0, 0]
-        idx = 0
+    #     u = [0, 0, 0, 0]
+    #     idx = 0
 
-        boundary = 0 if self.is_fixed_boundary else self.pixels[1][x, y]
+    #     boundary = 0 if self.is_fixed_boundary else self.pixels[1][x, y]
 
-        if (self.influence & 0b0001) > 0:
-            value = boundary if x == 0 else self.pixels[1][x - 1, y]
-            u[idx] = value
-            idx = idx + 1
-        if (self.influence & 0b0010) > 0:
-            value = boundary if x == self.X_MAX - 1 else self.pixels[1][x + 1, y]
-            u[idx] = value
-            idx = idx + 1
-        if (self.influence & 0b0100) > 0:
-            value = self.pixels[1][x, self.Y_MAX - 1] if y == 0 else self.pixels[1][x, y - 1]
-            u[idx] = value
-            idx = idx + 1
-        if (self.influence & 0b0100) > 0:
-            value = self.pixels[1][x, 0] if y == self.Y_MAX - 1 else self.pixels[1][x, y + 1]
-            u[idx] = value
-            idx = idx + 1
+    #     if (self.influence & 0b0001) > 0:
+    #         value = boundary if x == 0 else self.pixels[1][x - 1, y]
+    #         u[idx] = value
+    #         idx = idx + 1
+    #     if (self.influence & 0b0010) > 0:
+    #         value = boundary if x == self.X_MAX - 1 else self.pixels[1][x + 1, y]
+    #         u[idx] = value
+    #         idx = idx + 1
+    #     if (self.influence & 0b0100) > 0:
+    #         value = self.pixels[1][x, self.Y_MAX - 1] if y == 0 else self.pixels[1][x, y - 1]
+    #         u[idx] = value
+    #         idx = idx + 1
+    #     if (self.influence & 0b0100) > 0:
+    #         value = self.pixels[1][x, 0] if y == self.Y_MAX - 1 else self.pixels[1][x, y + 1]
+    #         u[idx] = value
+    #         idx = idx + 1
 
-        c = self.velocity_constant
-        h0 = self.pixels[1][x, y]
-        h1 = self.pixels[0][x, y]
-        h = 0.0
+    #     c = self.velocity_constant
+    #     h0 = self.pixels[1][x, y]
+    #     h1 = self.pixels[0][x, y]
+    #     h = 0.0
 
-        for i in range(idx):
-            h = h + u[i] - h0
+    #     for i in range(idx):
+    #         h = h + u[i] - h0
 
-        f = self.force_constant if is_on else 0
+    #     f = self.force_constant if is_on else 0
 
-        h = 2 * h0 - h1 + h * delta_t2 / c + f
+    #     h = 2 * h0 - h1 + h * delta_t2 / c + f
 
-        if h < 0:
-            h = 0
-        elif h > 0xFFFF:
-            h = 0xFFFF
+    #     if h < 0:
+    #         h = 0
+    #     elif h > 0xFFFF:
+    #         h = 0xFFFF
 
-        self.pixels[2][x, y] = h
+    #     self.pixels[2][x, y] = h
 
 
 class Diffusion(Effect):
