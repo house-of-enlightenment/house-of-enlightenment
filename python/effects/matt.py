@@ -29,7 +29,8 @@ class ButtonChaseController(Effect, CollaborationManager):
             draw_bottom_layer=True,  # Turn the bottom layer on or off
             flash_rate=10,  # Flash on (or off) every X frames
             backwards_progress=False,  # If true, missing a button actually removes a target
-            selection_time=5  # Time to hit before picking a new one (if backwards_progress, also lose progress)
+            # Time to hit before picking a new one (if backwards_progress, also lose progress)
+            selection_time=5
     ):
 
         # TODO Is this super initialization needed? Probably not, but future-proofs it
@@ -476,6 +477,7 @@ class Noise(Effect):
 
 SCENES = [
     Scene("smash",
+          tags=[],
           NoOpCollaborationManager(),
           Noise()),
     # Scene("bam",
