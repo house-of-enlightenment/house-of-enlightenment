@@ -30,8 +30,7 @@ class ButtonChaseController(Effect, CollaborationManager):
             flash_rate=10,  # Flash on (or off) every X frames
             backwards_progress=False,  # If true, missing a button actually removes a target
             # Time to hit before picking a new one (if backwards_progress, also lose progress)
-            selection_time=5
-    ):
+            selection_time=5):
 
         # TODO Is this super initialization needed? Probably not, but future-proofs it
         Effect.__init__(self)
@@ -431,6 +430,7 @@ class TideLauncher(MultiEffect):
             start_color=start_color)
         self.effects.append(e)
 
+
 class Noise(Effect):
     """Always return a singular color. Can be bound top/bottom and left-right (wrap-around not supported yet)"""
 
@@ -446,7 +446,8 @@ class Noise(Effect):
     def next_frame(self, pixels, t, collaboration_state, osc_data):
         # print pixels
         for i, pixel in enumerate(pixels):
-            pixels[i] =  (randint(self.min, self.range),randint(self.min, self.range),randint(self.min, self.range))
+            pixels[i] = (randint(self.min, self.range), randint(self.min, self.range), randint(
+                self.min, self.range))
         self.i += 1
         if self.i % 2 == 0:
             self.min += 1
@@ -454,6 +455,7 @@ class Noise(Effect):
         # pixels[0] = (randint(0, 255),randint(0, 255),randint(0, 255))
         # pixels[self.slice] =(randint(0, 255),randint(0, 255),randint(0, 255))
 
+
 class Noise(Effect):
     """Always return a singular color. Can be bound top/bottom and left-right (wrap-around not supported yet)"""
 
@@ -469,45 +471,44 @@ class Noise(Effect):
     def next_frame(self, pixels, t, collaboration_state, osc_data):
         # print pixels
         for i, pixel in enumerate(pixels):
-            pixels[i] =  (randint(self.min, self.range),randint(self.min, self.range),randint(self.min, self.range))
+            pixels[i] = (randint(self.min, self.range), randint(self.min, self.range), randint(
+                self.min, self.range))
         self.i += 1
         if self.i % 2 == 0:
             self.min += 1
             self.range += 10
 
+
 SCENES = [
-    Scene("smash",
-          tags=[],
-          NoOpCollaborationManager(),
-          Noise()),
+    Scene("smash", tags=[], NoOpCollaborationManager(), Noise()),
     # Scene("bam",
     #   NoOpCollaborationManager(),
     #   Robble()),
-#     Scene(
-#         "buttonchaser",
-#         ButtonChaseController(draw_bottom_layer=True),
-#         SolidBackground(),
-#         ButtonRainbow(max_value=255 - 30),
-#         Pulser()),
-#     Scene("buttonloser",
-#           ButtonChaseController(draw_bottom_layer=True, backwards_progress=True),
-#           SolidBackground(), ButtonRainbow(), Pulser()),
-#     Scene("wedges",
-#           NoOpCollaborationManager(),
-#           RotatingWedge(), GenericStatelessLauncher(wedge_factory, width=3, additive=False)),
-#     Scene("sinedots",
-#           NoOpCollaborationManager(),
-#           SolidBackground((100, 100, 100)),
-#           examples.SampleEffectLauncher(),
-#           FunctionFrameRotator(
-#               func=FunctionFrameRotator.no_op,
-#               start_offsets=5 * np.sin(np.linspace(0, 8 * np.pi, STATE.layout.rows)))),
-#     Scene(
-#         "lidartest",
-#         NoOpCollaborationManager(),
-#         #          Rainbow(hue_start=0, hue_end=255),
-#         SolidBackground(color=(30, 30, 30)),
-#         LidarDisplay()),
-#     Scene("risingtide",
-#           NoOpCollaborationManager(), SolidBackground(), TideLauncher(), FrameRotator())
+    #     Scene(
+    #         "buttonchaser",
+    #         ButtonChaseController(draw_bottom_layer=True),
+    #         SolidBackground(),
+    #         ButtonRainbow(max_value=255 - 30),
+    #         Pulser()),
+    #     Scene("buttonloser",
+    #           ButtonChaseController(draw_bottom_layer=True, backwards_progress=True),
+    #           SolidBackground(), ButtonRainbow(), Pulser()),
+    #     Scene("wedges",
+    #           NoOpCollaborationManager(),
+    #           RotatingWedge(), GenericStatelessLauncher(wedge_factory, width=3, additive=False)),
+    #     Scene("sinedots",
+    #           NoOpCollaborationManager(),
+    #           SolidBackground((100, 100, 100)),
+    #           examples.SampleEffectLauncher(),
+    #           FunctionFrameRotator(
+    #               func=FunctionFrameRotator.no_op,
+    #               start_offsets=5 * np.sin(np.linspace(0, 8 * np.pi, STATE.layout.rows)))),
+    #     Scene(
+    #         "lidartest",
+    #         NoOpCollaborationManager(),
+    #         #          Rainbow(hue_start=0, hue_end=255),
+    #         SolidBackground(color=(30, 30, 30)),
+    #         LidarDisplay()),
+    #     Scene("risingtide",
+    #           NoOpCollaborationManager(), SolidBackground(), TideLauncher(), FrameRotator())
 ]

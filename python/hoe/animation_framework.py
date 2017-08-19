@@ -16,7 +16,6 @@ from hoe.opc import Client
 from hoe.osc_utils import update_buttons
 
 
-
 class AnimationFramework(object):
     def __init__(self, osc_server, opc_client, scenes=None, first_scene=None, tags=[]):
         # type: (OSCServer, Client, List(OSCClient), {str, Scene}) -> None
@@ -191,7 +190,6 @@ class AnimationFramework(object):
         else:
             time.sleep(sleep_amount)
 
-
     def shutdown(self):
         self.serve = False
 
@@ -219,9 +217,8 @@ def load_scenes_from_file(pkg_name, scenes, tags):
     try:
         effect_dict = importlib.import_module(pkg_name)
         if hasattr(effect_dict, '__all__'):
-            print (
-                'WARNING. Usage of __all__ to define scenes is deprecated. '
-                'Use the SCENES variable instead')
+            print('WARNING. Usage of __all__ to define scenes is deprecated. '
+                  'Use the SCENES variable instead')
             return
         if not hasattr(effect_dict, 'SCENES'):
             print 'Skipping {}. No SCENES are defined'.format(pkg_name)

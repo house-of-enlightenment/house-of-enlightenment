@@ -162,6 +162,7 @@ class Rotate(object):
 def rotate(arr, idx):
     return np.roll(arr, idx, axis=0)
 
+
 # constants to make moving easier to specify
 # Can do like: 2*UP + 3*LEFT
 UP = np.array((1, 0))
