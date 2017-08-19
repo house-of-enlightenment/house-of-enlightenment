@@ -1,3 +1,4 @@
+from hoe.stations import StationButtons
 from hoe.state import STATE
 
 
@@ -18,6 +19,7 @@ class ButtonToggleResponderManager(CollaborationManager):
         # type: (float, {}, StoredOSCData) -> None
         for s, station in enumerate(osc_data.stations):
             for b_id, val in station.button_presses.items():
+                # pylint: disable=unsubscriptable-object
                 STATE.stations[s].buttons[b_id] = StationButtons.BUTTON_TOGGLE
 
 

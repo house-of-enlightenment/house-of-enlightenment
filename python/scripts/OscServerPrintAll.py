@@ -27,5 +27,5 @@ s.addMsgHandler('/count', countHandler)
 s.addMsgHandler("default", default_handler)
 s.serve_forever()
 
-while true:
+while True:
     time.sleep(1)
