@@ -161,3 +161,25 @@ class Rotate(object):
 # idx can be negative
 def rotate(arr, idx):
     return np.roll(arr, idx, axis=0)
+
+# constants to make moving easier to specify
+# Can do like: 2*UP + 3*LEFT
+UP = np.array((1, 0))
+DOWN = np.array((-1, 0))
+LEFT = np.array((0, -1))
+RIGHT = np.array((0, 1))
+
+
+def move(position, movement, shape, clip_or_wrap):
+    """Apply `movement` to `position` and then clip/wrap as necessary
+
+    Args:
+        position: numpy array
+        movement: numpy array
+        shape: max values allowed for each dimension
+    """
+    new_position = np.array(position) + np.array(movement)
+    print new_position
+    clip = np.clip(new_position, 0, shape)
+    wrap = new_position % shape
+    return np.where(clip_or_wrap, clip, wrap)

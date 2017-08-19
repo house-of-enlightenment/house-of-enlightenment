@@ -41,7 +41,7 @@ class LaunchRows(MultiEffect):
                         end_col=11 * (sid + 1) + randint(0, 11)))
 
 
-__all__ = [
+SCENES = [
     Scene(
         "groupdemo",
         tags=[Scene.TAG_EXAMPLE],

@@ -9,10 +9,12 @@ from threading import Thread
 
 from OSC import OSCServer
 
+from hoe.collaboration import CollaborationManager
 from hoe.pixels import Pixels
 from hoe.state import STATE
 from hoe.opc import Client
 from hoe.osc_utils import update_buttons
+
 
 
 class AnimationFramework(object):
@@ -211,20 +213,35 @@ def load_scenes_from_file(pkg_name, scenes, tags):
     # type: (str, {str, Scene}) -> None
     try:
         effect_dict = importlib.import_module(pkg_name)
-        for scene in effect_dict.__all__:
-            if not isinstance(scene, Scene):
-                print "Got scene %s not of type Scene" % scene
-                continue
-            if scene.name in scenes:
-                print "Cannot register scene %s. Scene with name already exists" % scene.name
-                continue
-            if not tags or any(tag in tags for tag in scene.tags):
-                print "Registering %s" % scene
-                scenes[scene.name] = scene
-            else:
-                print "Skipped %s. Tags %s not in %s" % (scene, scene.tags, tags)
-    except ImportError:
+        if hasattr(effect_dict, '__all__'):
+            print (
+                'WARNING. Usage of __all__ to define scenes is deprecated. '
+                'Use the SCENES variable instead')
+            return
+        if not hasattr(effect_dict, 'SCENES'):
+            print 'Skipping {}. No SCENES are defined'.format(pkg_name)
+            return
+        save_scenes(effect_dict.SCENES, scenes, tags)
+    except (ImportError, SyntaxError) as e:
+        import traceback
         print "WARNING: could not load effect %s" % pkg_name
+        traceback.print_exc()
+        print
+
+
+def save_scenes(input_scenes, output_scenes, tags):
+    for scene in input_scenes:
+        if not isinstance(scene, Scene):
+            print "Got scene %s not of type Scene" % scene
+            continue
+        if scene.name in output_scenes:
+            print "Cannot register scene %s. Scene with name already exists" % scene.name
+            continue
+        if not tags or any(tag in tags for tag in scene.tags):
+            print "Registering %s" % scene
+            output_scenes[scene.name] = scene
+        else:
+            print "Skipped %s. Tags %s not in %s" % (scene, scene.tags, tags)
 
 
 def get_first_non_empty(pixels):
@@ -305,12 +322,6 @@ class StoredOSCData(object):
     def add_lidar_data(self, object_id, data):
         # type: (int, LidarData) -> None
         self.lidar_objects[object_id] = data
-
-
-class CollaborationManager(object):
-    def compute_state(self, t, collaboration_state, osc_data):
-        raise NotImplementedError("All feedback effects must implement compute_state")
-        # TODO: use abc
 
 
 class Effect(object):

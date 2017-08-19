@@ -123,7 +123,7 @@ class Shape(Effect):
         return self.curr_row >= STATE.layout.rows
 
 
-__all__ = [
+SCENES = [
     Scene(
         "sinediamond",
         tags=[Scene.TAG_WIP],
