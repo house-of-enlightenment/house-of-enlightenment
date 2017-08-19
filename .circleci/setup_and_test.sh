@@ -21,3 +21,6 @@ pip install .
 pep8 hoe scripts effects
 pylint -E --extension-pkg-whitelist=numpy hoe scripts/*.py effects
 pytest tests
+
+cd tests
+python run_all_scenes_with_reader.py
