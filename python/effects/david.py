@@ -379,6 +379,7 @@ class OpaqueLidar(DavesAbstractLidarClass):
     def render_lidar_input(self, pixels, obj_id, row_bottom, row_top, col_left, col_right):
         color = np.asarray((0, 0, 0), np.uint8)
         color[obj_id % 3] = (255 - 30) / 2
+        # FIXME - Where did the slice go?
         pixels.update_slices(additive=True, color=color, slices=[])
 
 
@@ -499,6 +500,7 @@ __all__ = [
         collaboration_manager=ButtonChaseController(
             draw_bottom_layer=True, backwards_progress=True, selection_time=1),
         effects=[ButtonRainbow(), Pulser()]),
+    # FIXME - Flicker on vertical wedges!!!!
     Scene(
         "wedges",
         tags=[Scene.TAG_EXAMPLE],

@@ -476,8 +476,8 @@ class Noise(Effect):
 
 __all__ = [
     Scene("smash",
-          NoOpCollaborationManager(),
-          Noise()),
+          collaboration_manager=NoOpCollaborationManager(),
+          effects=[Noise()]),
     # Scene("bam",
     #   NoOpCollaborationManager(),
     #   Robble()),
