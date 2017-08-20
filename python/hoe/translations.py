@@ -2,17 +2,22 @@
 
 Each effect has a source and then a shift.
 """
+import logging
 import time
 
 import numpy as np
 
+from hoe import animation_framework as af
 from hoe import color_utils
 from hoe.distance import *
 from hoe import pixels
 from hoe import transitions
 
 
-class UpAndRotateEffect(object):
+logger = logging.getLogger(__name__)
+
+
+class UpAndRotateEffect(af.Effect):
     """Copy rows up with a rotation
 
     Args:
@@ -20,14 +25,14 @@ class UpAndRotateEffect(object):
         row: the source for the new rows at the bottom
     """
 
-    def __init__(self, layout, row, up_speed=None, rotate_speed=None):
+    def __init__(self, layout, row, up_speed, rotate_speed):
         self.layout = layout
-        self.up_speed = up_speed or consistent_speed_to_pixels(50)  # rows / second
+        self.up_speed = up_speed or consistent_speed_to_pixels(30)  # rows / second
         # is this redundant with the bottom row also rotating?
         self.rotate_speed = rotate_speed or consistent_speed_to_pixels(30)  # columns / second
         self.row = row
 
-    def start(self, now):
+    def scene_starting(self, now, osc_data):
         self.last_time = now
         self.row.start(now)
         self.up_speed.start(now)
@@ -35,16 +40,10 @@ class UpAndRotateEffect(object):
         # need my own copy of pixels
         self.pixels = pixels.Pixels(self.layout)
 
-    def next_frame(self, now, pixels):
-        pixels_up = self.up_speed(now)
-        pixels_rotate = int(self.rotate_speed(now))
-        #print 'Rotating Structure', pixels_rotate
-        # if now - self.last_time > 3:
-        #     self.rotate_speed.pixels_per_frame = (
-        #         self.rotate_speed.pixels_per_frame + np.random.randint(-5, 5)) % 66
-        #     print self.rotate_speed.pixels_per_frame
-        #     self.last_time = now
-        print 'rotation:', pixels_rotate
+    def next_frame(self, pixels, now, collaboration_state, osc_data):
+        pixels_up = self.up_speed.update(now)
+        pixels_rotate = int(self.rotate_speed.update(now))
+        logger.debug('Rotation: %s', pixels_rotate)
         rainbow = self.row(now)
         # copy existing pixels up and rotate
         self.up_and_rotate(pixels_up, pixels_rotate)
@@ -134,12 +133,13 @@ class Rotate(object):
     Args:
         n: number of items in the array
         rotation_speed: a transition instance that returns how fast we're rotating
+            units = pixels / second
     """
 
-    def __init__(self, n, rotation_speed=None):
+    def __init__(self, n, rotation_speed):
         self.rotation = 0
         self.n = n
-        self.rotation_speed = rotation_speed or transitions.SpeedTransition(5, 55)
+        self.rotation_speed = rotation_speed
 
     def start(self, now):
         self.last_time = now
@@ -148,7 +148,7 @@ class Rotate(object):
     def __call__(self, arr, now):
         # vary the rotation speed
         speed = self.rotation_speed.update(now)
-        print '--', speed
+        logger.debug('Rotation Speed: %s', speed)
         delta = (now - self.last_time) * speed
         self.last_time = now
         self.rotation = (self.rotation + delta) % self.n
@@ -180,7 +180,6 @@ def move(position, movement, shape, clip_or_wrap):
         shape: max values allowed for each dimension
     """
     new_position = np.array(position) + np.array(movement)
-    print new_position
     clip = np.clip(new_position, 0, shape)
     wrap = new_position % shape
     return np.where(clip_or_wrap, clip, wrap)

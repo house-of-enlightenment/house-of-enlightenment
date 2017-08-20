@@ -18,6 +18,7 @@ hasn't been implemented.
 The accurate method can cause a flicker.
 
 """
+from __future__ import division
 
 from hoe.state import STATE
 
@@ -47,7 +48,7 @@ class FramesPerPixel(object):
     def start(self, now):
         pass
 
-    def __call__(self, now):
+    def update(self, now):
         self.count += 1
         if self.count >= self.frames_per_pixel:
             self.count = 0
@@ -56,6 +57,7 @@ class FramesPerPixel(object):
             return 0
 
 
+# TODO: refactor this, it is essentially a constant transition
 class PixelsPerFrame(object):
     def __init__(self, pixels_per_frame):
         self.pixels_per_frame = pixels_per_frame
@@ -63,7 +65,7 @@ class PixelsPerFrame(object):
     def start(self, now):
         pass
 
-    def __call__(self, now):
+    def update(self, now):
         return self.pixels_per_frame
 
 
@@ -78,9 +80,39 @@ class AccurateSpeedToPixels(object):
     def start(self, now):
         self.last_time = now
 
-    def __call__(self, now):
+    def update(self, now):
         elapsed = now - self.last_time
         self.last_time = now
         distance = self.speed * elapsed + self.residual
         px, self.residual = divmod(distance, 1)
         return int(px)
+
+
+class VaryingPixelsPerFrame(object):
+    """Calculate the number of pixels needed to move each frame for a speed
+
+    Unlike AccurateSpeedToPixels, this ignores time and depends on an
+    accurate frames / second.
+
+    Args:
+        speed: transition object, returns a value that is pixels / sec
+    """
+    def __init__(self, speed):
+        self.speed = speed
+        self.idx = 0
+
+    def start(self, now):
+        self.speed.start(now)
+
+    def update(self, now):
+        speed = self.speed.update(now)
+        n_pixels = pixels_per_frame(speed, self.idx, STATE.fps)
+        self.idx = (self.idx + 1) % STATE.fps
+        return n_pixels
+
+
+def pixels_per_frame(speed, i, fps):
+    rate = speed / fps
+    now = int(rate * (i + 1))
+    before = int(rate * i)
+    return now - before

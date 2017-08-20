@@ -1,21 +1,26 @@
 #!/usr/bin/env python
 
 from __future__ import division
-import json
 import argparse
-import sys
-import os
-from threading import Thread
+import json
+import logging
 from multiprocessing import Process
+import os
+import sys
+from threading import Thread
 from time import sleep
 
 from hoe import animation_framework as AF
+from hoe.layout import Layout
 from hoe import opc
 from hoe import osc_utils
-from hoe.layout import Layout
-from hoe.state import STATE
 from hoe.play_lidar import play_lidar
+from hoe.state import STATE
 from hoe.stations import Stations
+from hoe import utils
+
+
+logger = logging.getLogger(__name__)
 
 
 # -------------------------------------------------------------------------------
@@ -54,6 +59,9 @@ def parse_command_line():
     parser.add_argument('-v', '--verbose', dest='verbose', default=False, action='store_true')
 
     options = parser.parse_args()
+
+    log_level = 'DEBUG' if options.verbose else 'INFO'
+    utils.configure_logging(level=log_level)
 
     if not options.layout_file:
         parser.print_help()

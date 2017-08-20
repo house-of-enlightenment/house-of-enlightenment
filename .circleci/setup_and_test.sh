@@ -27,4 +27,4 @@ python run_all_scenes_with_reader.py
 cd -
 
 pylint -E --extension-pkg-whitelist=numpy hoe scripts/*.py effects/*.py
-pep8 hoe scripts effects
+# pep8 hoe scripts effects

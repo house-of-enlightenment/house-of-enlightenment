@@ -97,14 +97,18 @@ class RainbowRow(_Row):
     The speed of the transitions and rotations vary randomly.
     """
 
-    def __init__(self, layout, rotate=None):
+    # TODO: the roation seems like it could be a layer ontop of this
+    #       and not coupled with the row
+    def __init__(self, layout, rotate=None, sv=None, hue=None):
         self.layout = layout
         self.rotate = rotate or translations.Rotate(self.layout.columns)
+        self.sv = sv or transitions.SVTransition()
+        self.hue = hue or transitions.HueTransition()
 
     def start(self, now):
         self.rotate.start(now)
-        self.sv = transitions.SVTransition().start(now)
-        self.hue = transitions.HueTransition().start(now)
+        self.sv.start(now)
+        self.hue.start(now)
 
     def __call__(self, now, **kwargs):
         rainbow = self.get_rainbow(now)
@@ -115,9 +119,40 @@ class RainbowRow(_Row):
         sat, val = self.sv.update(now)
         # mirror the hues so that we don't get any sharp edges
         return color_utils.bi_rainbow(self.layout.columns, hue[0], hue[1], sat, val)
-        # np.concatenate(
-        # (color_utils.rainbow(self.layout.columns / 2, hue[0], hue[1], sat, val),
-        #  color_utils.rainbow(self.layout.columns / 2, hue[1], hue[0], sat, val)))
+
+
+class ComplimentaryRow(_Row):
+    # Returns a row where we have the target color
+    # and a transition to its compliment (hue + 128)
+    def __init__(self, size, hue, frac, min_gray=128):
+        self.size = size
+        self.hue = hue
+        self.frac = frac
+        self.min_gray = min_gray
+
+    def start(self, now):
+        self.hue.start(now)
+
+    def __call__(self, now, **kwargs):
+        hue = self.hue.update(now)
+
+        primary = int(self.size / 2 * self.frac)
+        compliment = self.size / 2- primary
+        pixels = np.zeros((self.size / 2, 3), np.uint8)
+
+        pixels[:primary, 0] = hue
+        steps = color_utils.color_correct(
+            np.linspace(255, self.min_gray, primary, dtype=np.uint8))
+        pixels[:primary, 1] = steps
+        pixels[:primary, 2] = steps
+
+        pixels[primary:, 0] = hue + 128
+        steps = color_utils.color_correct(
+            np.linspace(self.min_gray, 255, compliment, dtype=np.uint8))
+        pixels[primary:, 1] = steps
+        pixels[primary:, 2] = steps
+        pixels = color_utils.hsv2rgb(pixels)
+        return np.concatenate((pixels, pixels[::-1]))
 
 
 class ConstantRow(_Row):
