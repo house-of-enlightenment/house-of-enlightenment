@@ -15,6 +15,7 @@ from hoe.utils import fader_interpolate
 
 import random as rand
 
+
 class SeizureMode(Effect):
     def __init__(self, station=None, duration=None):
         self.foo = 1
@@ -112,20 +113,23 @@ class WaveLauncher(MultiEffect):
         for sid, station in enumerate(osc_data.stations):
             if station.button_presses:
                 if sid != self.except_station:
-                    self.add_effect( self.launch_effect(sid) )
+                    self.add_effect(self.launch_effect(sid))
 
     def launch_effect(self, station_id):
         raise NotImplementedError
 
+
 class LaunchUpBlock(WaveLauncher):
 
     def launch_effect(self, sid):
-        return UpBlock(station=sid, speed=rand.randint(10,50), color=self._color() )
+        return UpBlock(station=sid, speed=rand.randint(10, 50), color=self._color())
+
 
 class LaunchZigZag(WaveLauncher):
 
     def launch_effect(self, sid):
-        return ZigZag(color = self._color(), start_col=sid*11)
+        return ZigZag(color=self._color(), start_col=sid * 11)
+
 
 class LaunchSeizure(MultiEffect):
     def __init__(self, button=4):
@@ -142,6 +146,7 @@ class LaunchSeizure(MultiEffect):
             buttons = station.button_presses
             if buttons and self.button in buttons and not self._is_effect_on_in(sid):
                 self.add_effect(SeizureMode(station=sid, duration=3))
+
 
 ##
 # This runs an explicit 2d wave equation.
@@ -341,12 +346,13 @@ class FiniteDifference(Effect):
         h0 = self.pixels[1]
         h, idx = self.hCalc()
         hDiff = (h - h0 * idx)
-        h = hDiff * delta_t*v + h0
+        h = hDiff * delta_t * v + h0
 
+        # pylint: disable=no-member
         pix = np.array(pixels[:, :][:], dtype=np.int64)
         color = (pix[:, :, 0] << 16) | (pix[:, :, 1] << 8) | (pix[:, :, 2])
         f = np.where(color == 0xFF0000, 0xFFFF,
-                     np.where(color == 0xFF00, 0-0xFFFF,
+                     np.where(color == 0xFF00, 0 - 0xFFFF,
                               0))[:self.X_MAX, :self.Y_MAX]
         h = h + f
         h = np.clip(h, 0, 0xFFFF)
@@ -428,7 +434,7 @@ SCENES = [
         "zig_wave",
         collaboration_manager=NoOpCollaborationManager(),
         effects=[
-            SolidBackground(color=(0,0,0xFF)),
+            SolidBackground(color=(0, 0, 0xFF)),
             LaunchZigZag(except_station=0),
             #FrameRotator(rate = 0.5),
             FiniteDifference(master_station=0, boundary=FiniteDifference.NEUMANN)
@@ -437,10 +443,11 @@ SCENES = [
         "zig_fusion",
         collaboration_manager=NoOpCollaborationManager(),
         effects=[
-            SolidBackground(color=(0,0,0xFF)),
+            SolidBackground(color=(0, 0, 0xFF)),
             LaunchZigZag(except_station=0),
             #FrameRotator(rate = 0.5),
-            FiniteDifference(master_station=0,
+            FiniteDifference(
+                master_station=0,
                 boundary=FiniteDifference.NEUMANN,
                 pde=FiniteDifference.DIFFUSION)
         ])
