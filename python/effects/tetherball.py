@@ -54,6 +54,7 @@ class TetherBall(CollaborationManager, Effect):
         #     if osc_data.stations[s].button_presses:
         #         print osc_data.stations[s].button_presses
         # self.launch_effect(t, s)
+
     def scene_starting(self, now, osc_data):
         self.reset_state(osc_data=osc_data)
 

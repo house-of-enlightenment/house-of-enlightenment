@@ -30,8 +30,8 @@ class ButtonChaseController(Effect, CollaborationManager):
             draw_bottom_layer=True,  # Turn the bottom layer on or off
             flash_rate=10,  # Flash on (or off) every X frames
             backwards_progress=False,  # If true, missing a button actually removes a target
-            selection_time=5  # Time to hit before picking a new one (if backwards_progress, also lose progress)
-    ):
+            # Time to hit before picking a new one (if backwards_progress, also lose progress)
+            selection_time=5):
 
         # TODO Is this super initialization needed? Probably not, but future-proofs it
         Effect.__init__(self)
@@ -229,10 +229,14 @@ class DiskPulsers(Effect):
         self.top_row = top_row if top_row else STATE.layout.rows
         self.after_fill = after_fill
         self.frame = 0
-        self.row_indices = [range(STATE.layout.BOTTOM_DISC.center-r, self.bottom_row-1, -self.pulse_length) +\
-                             range(STATE.layout.BOTTOM_DISC.center+r,STATE.layout.DISC_MIDPOINT+1,self.pulse_length) + \
-                             range(STATE.layout.TOP_DISC.center - r, STATE.layout.DISC_MIDPOINT, -self.pulse_length) + \
-                             range(STATE.layout.TOP_DISC.center + r, self.top_row, self.pulse_length) for r in range(self.pulse_length)]
+        self.row_indices = [
+            range(STATE.layout.BOTTOM_DISC.center - r, self.bottom_row - 1, -self.pulse_length) +
+            range(STATE.layout.BOTTOM_DISC.center + r, STATE.layout.DISC_MIDPOINT + 1,
+                  self.pulse_length) + range(STATE.layout.TOP_DISC.center - r,
+                                             STATE.layout.DISC_MIDPOINT, -self.pulse_length) +
+            range(STATE.layout.TOP_DISC.center + r, self.top_row, self.pulse_length)
+            for r in range(self.pulse_length)
+        ]
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
         self.frame += 1

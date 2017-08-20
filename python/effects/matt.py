@@ -88,11 +88,8 @@ class RotatingWedge(Effect):
         self.color = np.asarray(color, np.uint8)
         self.width = width
         self.direction = direction
-        self.angle = (
-            angle * 1.0 * STATE.layout.columns / STATE.layout.rows
-            if scale_ratio
-            else angle
-        )
+        self.angle = (angle * 1.0 * STATE.layout.columns / STATE.layout.rows
+                      if scale_ratio else angle)
         self.start_col = 0
         self.end_col = start_col + width
         self.additive = additive
@@ -305,10 +302,5 @@ class Noise(Effect):
 
 
 SCENES = [
-    Scene(
-        "smash",
-        tags=[],
-        collaboration_manager=NoOpCollaborationManager(),
-        effects=[Noise()]
-    ),
+    Scene("smash", tags=[], collaboration_manager=NoOpCollaborationManager(), effects=[Noise()]),
 ]

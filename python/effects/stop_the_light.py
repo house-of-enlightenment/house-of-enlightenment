@@ -83,8 +83,8 @@ class StopTheLight(CollaborationManager, Effect):
         # Since this will be a foreground layer, we can't fall back to other pix in the bottoms rows
         for idx in self.bottom_rows:
             pixels[idx] = self.sprite_color if idx in sprite_idx else \
-                    RED if idx in self.target_idx else \
-                        BLACK
+                RED if idx in self.target_idx else \
+                BLACK
 
 
 class CollaborationCountBasedBackground(Effect):
