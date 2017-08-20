@@ -1,3 +1,4 @@
+# pylint: disable=all
 """Creates an effect that feels like a rainbow
 flowing and twisting up the House of Enlightenment
 """
