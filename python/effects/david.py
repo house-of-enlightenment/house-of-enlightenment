@@ -132,7 +132,7 @@ class ButtonChaseController(Effect, CollaborationManager):
         if not missed and not self.off:
             # TODO: Terminate the animation
             print "Finished!"
-            self.reset_state()
+            self.reset_state(osc_data=osc_data)
             return True
 
         last_button = self.next_button
@@ -358,8 +358,7 @@ class DavesAbstractLidarClass(Effect):
                 self.render_lidar_input(
                     pixels=pixels,
                     obj_id=obj_id,
-                    row_bottom=bottom_row,
-                    row_top=top_row,
+                    row_slice=slice(bottom_row, top_row),
                     col_left=col_left,
                     col_right=col_right)
 
