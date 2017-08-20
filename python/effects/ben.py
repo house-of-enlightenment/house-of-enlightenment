@@ -1,19 +1,18 @@
-import numpy as np
-from hoe import color_utils
-import colorsys
 import sys
+import colorsys
+import random as rand
+import numpy as np
+
+from hoe import color_utils
 from hoe.animation_framework import Scene, Effect, MultiEffect
-from generic_effects import NoOpCollaborationManager
-from shared import SolidBackground
-from generic_effects import FrameRotator
-
-from zigzag import ZigZag
-
 from hoe import color_utils
 from hoe.state import STATE
 from hoe.utils import fader_interpolate
 
-import random as rand
+from generic_effects import NoOpCollaborationManager, FrameRotator
+from shared import SolidBackground
+
+from zigzag import ZigZag
 
 
 class SeizureMode(Effect):
@@ -98,9 +97,14 @@ class UpBlock(Effect):
 
 
 class WaveLauncher(MultiEffect):
-    def __init__(self, except_station=None):
+    def __init__(
+            self,
+            except_station=None,
+            time_out=15):
         MultiEffect.__init__(self)
         self.except_station = except_station
+        self.last_launch = None
+        self.time_out = time_out
 
     def _color(self):
         if bool(rand.getrandbits(1)):
@@ -110,10 +114,24 @@ class WaveLauncher(MultiEffect):
 
     def before_rendering(self, pixels, now, collaboration_state, osc_data):
         MultiEffect.before_rendering(self, pixels, now, collaboration_state, osc_data)
+
+        if self._did_time_out(now):
+            self._launch_effect(now)
+            return
+
         for sid, station in enumerate(osc_data.stations):
             if station.button_presses:
                 if sid != self.except_station:
-                    self.add_effect(self.launch_effect(sid))
+                    self._launch_effect(now, sid)
+
+    def _did_time_out(self, now):
+        return self.last_launch is None or now - self.last_launch > self.time_out
+
+    def _launch_effect(self, now, station_id=None):
+        self.last_launch = now
+        if station_id is None:
+            station_id = rand.randint(0, 5)
+        self.add_effect(self.launch_effect(station_id))
 
     def launch_effect(self, station_id):
         raise NotImplementedError
@@ -402,11 +420,13 @@ class FiniteDifference(Effect):
 
 SCENES = [
     Scene(
-        "seizure_mode",
+        "full_seizuree",
+        tags=[Scene.TAG_BACKGROUND],
         collaboration_manager=NoOpCollaborationManager(),
         effects=[SolidBackground(), SeizureMode()]),
     Scene(
-        "seizure",
+        "seizure_mode",
+        tags=[Scene.TAG_BACKGROUND],
         collaboration_manager=NoOpCollaborationManager(),
         effects=[LaunchSeizure()]),
     Scene(
@@ -424,28 +444,28 @@ SCENES = [
         ]),
     Scene(
         "up_bloc",
+        tags=[Scene.TAG_BACKGROUND],
         collaboration_manager=NoOpCollaborationManager(),
         effects=[
             LaunchUpBlock(except_station=0),
-            #FrameRotator(rate = 0.5),
             FiniteDifference(master_station=0, boundary=FiniteDifference.NEUMANN)
         ]),
     Scene(
         "zig_wave",
+        tags=[Scene.TAG_BACKGROUND],
         collaboration_manager=NoOpCollaborationManager(),
         effects=[
             SolidBackground(color=(0, 0, 0xFF)),
             LaunchZigZag(except_station=0),
-            #FrameRotator(rate = 0.5),
             FiniteDifference(master_station=0, boundary=FiniteDifference.NEUMANN)
         ]),
     Scene(
         "zig_fusion",
+        tags=[Scene.TAG_BACKGROUND],
         collaboration_manager=NoOpCollaborationManager(),
         effects=[
             SolidBackground(color=(0, 0, 0xFF)),
             LaunchZigZag(except_station=0),
-            #FrameRotator(rate = 0.5),
             FiniteDifference(
                 master_station=0,
                 boundary=FiniteDifference.NEUMANN,
