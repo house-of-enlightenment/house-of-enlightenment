@@ -455,7 +455,6 @@ SCENES = [
         tags=[Scene.TAG_BACKGROUND],
         collaboration_manager=NoOpCollaborationManager(),
         effects=[
-            SolidBackground(color=(0, 0, 0xFF)),
             LaunchZigZag(except_station=0),
             FiniteDifference(master_station=0, boundary=FiniteDifference.NEUMANN)
         ]),
@@ -464,7 +463,6 @@ SCENES = [
         tags=[Scene.TAG_BACKGROUND],
         collaboration_manager=NoOpCollaborationManager(),
         effects=[
-            SolidBackground(color=(0, 0, 0xFF)),
             LaunchZigZag(except_station=0),
             FiniteDifference(
                 master_station=0,
