@@ -43,7 +43,7 @@ class StopTheLight(CollaborationManager, Effect):
         self.max_slice = max(STATE.layout.slice)
 
     def compute_state(self, t, collaboration_state, osc_data):
-        if not "count" in collaboration_state.keys():
+        if "count" not in collaboration_state.keys():
             collaboration_state["count"] = 1
         # A button was pressed!
         # For now just use b0
@@ -69,7 +69,8 @@ class StopTheLight(CollaborationManager, Effect):
             # Already hit, waiting to start moving again
             self.hit_countdown -= 1
         else:
-            # No button pressed, so move and set the color back to blue (in case this is first frame back)
+            # No button pressed, so move and set the color back to
+            # blue (in case this is first frame back)
             self.sprite_location = (self.sprite_location + self.direction) % self.max_slice
             self.sprite_color = BLUE
 

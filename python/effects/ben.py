@@ -138,7 +138,10 @@ class LaunchSeizure(MultiEffect):
 #
 # OSC Button / Fader Input:
 #   Slider => Damping: Higher value, more damping
-#   Up/Down (3/2): => Input force from strong negitive to strong positive, force is applied based on all white pixels
+#
+#   Up/Down (3/2): => Input force from strong negitive to strong
+#   positive, force is applied based on all white pixels
+#
 #   Left/Right (1/0): => Slower / Faster wave propagation.
 #   Center (4): Reset => Zeros out waves
 #

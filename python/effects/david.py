@@ -84,7 +84,10 @@ class ButtonChaseController(Effect, CollaborationManager):
                 collaboration_state.clear()
         else:
             collaboration_state.pop("last_hit_button", None)
-            if "last_hit_time" in collaboration_state and collaboration_state["last_hit_time"] + self.selection_time < t:
+            late = (
+                "last_hit_time" in collaboration_state and
+                collaboration_state["last_hit_time"] + self.selection_time < t)
+            if late:
                 # Too late!
                 self.pick_next(osc_data=osc_data, missed=True)
                 # Tick forward
@@ -261,7 +264,8 @@ class RotatingWedge(Effect):
         self.color = np.asarray(color, np.uint8)
         self.width = width
         self.direction = direction
-        self.angle = angle * 1.0 * STATE.layout.columns / STATE.layout.rows if scale_ratio else angle
+        self.angle = (
+            angle * 1.0 * STATE.layout.columns / STATE.layout.rows if scale_ratio else angle)
         self.start_col = 0
         self.end_col = start_col + width
         self.additive = additive
@@ -536,16 +540,6 @@ SCENES = [
         collaboration_manager=NoOpCollaborationManager(),
         effects=[SolidBackground(), TideLauncher(),
                  FrameRotator()]),
-    # TODO This is currently just an eyesore
-    # Scene("columnfunction",
-    #       NoOpCollaborationManager(),
-    #       Columns(color=(128, 0, 0), column_picker=partial(pick_mod_n, mod=4)),
-    #       Columns(color=(0,128,0), column_picker=partial(pick_mod_n, mod=4, value=2)),
-    #       FrameRotator(rate=.5),
-    #       Columns(color=(100,0,100), column_picker=partial(pick_mod_n, mod=4, value=1), additive=True),
-    #       Columns(color=(0,100,100), column_picker=partial(pick_mod_n, mod=4, value=3), additive=True),
-    #       FrameRotator(rate=-.25),
-    #       ),
     Scene(
         "rainbowblackoutcolumns",
         tags=[Scene.TAG_EXAMPLE],

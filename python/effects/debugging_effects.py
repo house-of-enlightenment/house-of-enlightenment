@@ -1,7 +1,10 @@
 from hoe import color_utils
 from hoe.animation_framework import Scene
 from hoe.animation_framework import Effect
+from hoe.collaboration import NoOpCollaborationManager
 from hoe.state import STATE
+
+from shared import SolidBackground
 
 
 class PrintOSC(Effect):
@@ -40,9 +43,6 @@ class FailureEffect(Effect):
             raise Exception("Nobody expects me!")
 
 
-# FIXME : A little hacky - trying to avoid circular dependencies with generic_effects
-from generic_effects import NoOpCollaborationManager
-from generic_effects import SolidBackground
 SCENES = [
     Scene(
         "osc printer",

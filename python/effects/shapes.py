@@ -19,8 +19,10 @@ def move_up(shape, **kwargs):
 
 
 def move_along_horizontal_sine_wave(shape, period=2, amplitude=5, **kwargs):
-    """ Move along a sine wave around the structure P times with amplitude A
-    Note that when used with shape this will never terminate unless your start row is near the top (which is not ideal)
+    """Move along a sine wave around the structure P times with amplitude A
+
+    Note that when used with shape this will never terminate unless
+    your start row is near the top (which is not ideal)
     """
     shape.curr_col += 1
     shape.curr_row = int(

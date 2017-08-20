@@ -11,18 +11,7 @@ from hoe.osc_utils import update_buttons
 from hoe.state import STATE
 from hoe.stations import StationButtons
 
-
-class SolidBackground(Effect):
-    """Always return a singular color. Can be bound top/bottom and left-right (wrap-around not supported yet)"""
-
-    def __init__(self, color=(255, 0, 0), start_col=0, end_col=None, start_row=0, end_row=None):
-        Effect.__init__(self)
-        self.color = color
-        self.slice = (slice(start_row, end_row), slice(start_col, end_col))
-        print "Created with color", self.color
-
-    def next_frame(self, pixels, t, collaboration_state, osc_data):
-        pixels[self.slice] = self.color
+import debugging_effects
 
 
 class Rainbow(Effect):
@@ -32,8 +21,11 @@ class Rainbow(Effect):
 
        Use HSV for the color range. See color_utils.bi_rainbow for more details.
 
-       Note: No individual value in a color tuple will be greater than max_value, so this can be used to limit a range
-        to preempt an additive operation later from rolling over the uint8 limit of 255
+       Note: No individual value in a color tuple will be greater than
+        max_value, so this can be used to limit a range to preempt an
+        additive operation later from rolling over the uint8 limit of
+        255
+
     """
 
     def __init__(self,
@@ -78,11 +70,12 @@ class FunctionFrameRotator(Effect):
     """Rotate the entire frame each frame based on a function and initial offsets
 
         To use, you'll want to specify two main arguments:
-        - An array of offsets the length of bottom_row to top_row. Each values represents a rightward shift in the
+        - An array of offsets the length of bottom_row to
+         top_row. Each values represents a rightward shift in the
          corresponding row, from bottom up.
-        - A function that modifies the offsets array IN-PLACE before each frame. It MUST accept named arguments:
-           offsets, t, start_t, frame
-
+        - A function that modifies the offsets array IN-PLACE before
+           each frame. It MUST accept named arguments: offsets, t,
+           start_t, frame
     """
 
     def __init__(self, func, bottom_row=0, top_row=None, start_offsets=None):
@@ -112,7 +105,7 @@ class FunctionFrameRotator(Effect):
             pixels[r, :] = np.concatenate(
                 (pixels[r, int(offset):], pixels[r, :int(offset)]), axis=0)
 
-    ### Below are static sample methods for rotation ###
+    # Below are static sample methods for rotation
     @staticmethod
     def no_op(offsets, t, start_t, frame):
         pass
@@ -130,8 +123,6 @@ class FunctionFrameRotator(Effect):
         offsets[:] = np.roll(offsets, 1)
 
 
-# FIXME : A little hacky - trying to avoid circular dependencies on debugging_effects
-import debugging_effects
 rainbow = Rainbow(hue_start=0, hue_end=255)
 SCENES = [
     Scene(
@@ -156,7 +147,8 @@ SCENES = [
                 func=FunctionFrameRotator.sample_rotating_offset,
                 start_offsets=range(STATE.layout.rows))
         ]),
-    # A rainbow that follows a sine wave up (due to the offsets) and moves upwards due to a rolling offset function
+    # A rainbow that follows a sine wave up (due to the offsets) and
+    # moves upwards due to a rolling offset function
     Scene(
         "sinerainbow",
         tags=[Scene.TAG_BACKGROUND],

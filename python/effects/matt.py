@@ -277,7 +277,8 @@ class TideLauncher(MultiEffect):
 
 
 class Noise(Effect):
-    """Always return a singular color. Can be bound top/bottom and left-right (wrap-around not supported yet)"""
+    """Always return a singular color. Can be bound top/bottom and
+    left-right (wrap-around not supported yet)"""
 
     def __init__(self, color=(255, 0, 255), start_col=0, end_col=None, start_row=0, end_row=None):
         Effect.__init__(self)
