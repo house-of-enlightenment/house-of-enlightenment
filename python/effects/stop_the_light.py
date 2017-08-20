@@ -30,7 +30,8 @@ class StopTheLight(CollaborationManager, Effect):
         self.hit_countdown = 0
         self.sprite_color = BLUE
 
-        # Framework currently does not support args to vary effects, but when it does, this will come in handy
+        # Framework currently does not support args to vary effects,
+        # but when it does, this will come in handy
         self.strip_bottom = strip_bottom
         self.strip_top = strip_top
 
