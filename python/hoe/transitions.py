@@ -125,11 +125,8 @@ class SvTransition(Transition):
     def rnd_pt(self):
         # pick a saturation between 128-256 (128 is very pastel, 256 is full saturation)
         # drastically favoring full saturation
-        sat = np.random.choice(
-            [135, 143, 151, 159] * 1 +
-            [167, 175, 183, 191] * 2 +
-            [199, 207, 215, 223] * 3 +
-            [231, 239, 247, 255] * 4)
+        sat = np.random.choice([135, 143, 151, 159] * 1 + [167, 175, 183, 191] * 2 +
+                               [199, 207, 215, 223] * 3 + [231, 239, 247, 255] * 4)
         # pick a value between 192-256 (probably a very minor effect)
         val = np.random.randint(196, 256)
         return np.array([sat, val])

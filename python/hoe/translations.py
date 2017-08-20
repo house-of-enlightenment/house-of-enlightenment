@@ -177,6 +177,8 @@ def move(position, movement, shape, clip_or_wrap):
         position: numpy array
         movement: numpy array
         shape: max values allowed for each dimension
+        clip_or_wrap: T to clip the dimension, F to wrap it. Generally, you'll
+            want to use (True, False) to clip the rows and wrap the columns
     """
     new_position = np.array(position) + np.array(movement)
     clip = np.clip(new_position, 0, shape)

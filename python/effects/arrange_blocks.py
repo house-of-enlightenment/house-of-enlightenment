@@ -14,7 +14,6 @@ LEFT = translations.LEFT
 RIGHT = translations.RIGHT
 
 
-
 # Currently, moves a single "block" to whoever last pressed a button
 class ArrangeBlocks(af.Effect):
     def __init__(self, grid):
@@ -102,7 +101,7 @@ class Block(object):
         return self.location[1]
 
     def move(self, motion):
-        location = translations.move(self.location, motion, (N_ROWS, N_STATIONS))
+        location = translations.move(self.location, motion, (N_ROWS, N_STATIONS), (True, False))
         if self.grid.has_instance(location[0], location[1], Selector):
             return
         self.grid.remove(self.row, self.station, self)
@@ -112,7 +111,6 @@ class Block(object):
     def next_frame(self, pixels, now):
         station = STATE.layout.STATIONS[self.station]
         pixels[self.row, station.left:station.right] = self.color
-
 
 
 SCENES = [

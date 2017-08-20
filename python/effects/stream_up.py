@@ -10,11 +10,11 @@ from hoe.state import STATE
 from hoe import translations
 from hoe import transitions
 
-
 # there should be at least three variations of this
 # - gentle
 # - Stroboscopic
 # - Something maybe more chaotic, but with wipe up
+
 
 #
 # The stroboscopic effect comes from the varying rotation speeds which
