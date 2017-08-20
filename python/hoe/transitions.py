@@ -14,7 +14,6 @@ import numpy as np
 
 from hoe import utils
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -158,6 +157,7 @@ class RangeTransition(Transition):
         start: callable that returns a value for the start of the range
         length: callable that returns how long the range should be
     """
+
     def __init__(self, start, length):
         # be careful, start is also the function called when a scene starts
         self._start = start
@@ -298,6 +298,7 @@ class _SingleCoordinatedTransition(object):
         trans: the parent coordinated transition
         getter: callable that extracts the individual results from the grouped results
     """
+
     def __init__(self, trans, getter):
         self.trans = trans
         self.getter = getter

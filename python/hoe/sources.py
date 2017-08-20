@@ -137,12 +137,11 @@ class ComplimentaryRow(_Row):
         hue = self.hue.update(now)
 
         primary = int(self.size / 2 * self.frac)
-        compliment = self.size / 2- primary
+        compliment = self.size / 2 - primary
         pixels = np.zeros((self.size / 2, 3), np.uint8)
 
         pixels[:primary, 0] = hue
-        steps = color_utils.color_correct(
-            np.linspace(255, self.min_gray, primary, dtype=np.uint8))
+        steps = color_utils.color_correct(np.linspace(255, self.min_gray, primary, dtype=np.uint8))
         pixels[:primary, 1] = steps
         pixels[:primary, 2] = steps
 

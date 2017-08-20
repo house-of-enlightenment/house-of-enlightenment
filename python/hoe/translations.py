@@ -13,7 +13,6 @@ from hoe.distance import *
 from hoe import pixels
 from hoe import transitions
 
-
 logger = logging.getLogger(__name__)
 
 

@@ -19,7 +19,6 @@ from hoe.state import STATE
 from hoe.stations import Stations
 from hoe import utils
 
-
 logger = logging.getLogger(__name__)
 
 

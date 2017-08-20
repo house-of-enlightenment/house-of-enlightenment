@@ -97,6 +97,7 @@ class VaryingPixelsPerFrame(object):
     Args:
         speed: transition object, returns a value that is pixels / sec
     """
+
     def __init__(self, speed):
         self.speed = speed
         self.idx = 0

@@ -26,19 +26,18 @@ from hoe import transitions
 # out the right relationship and managed to find this one by accident.
 #
 def make_stroboscopic_effect_analogous():
-    rotation = translations.Rotate(
-        STATE.layout.columns, transitions.ConstantTransition(16))
+    rotation = translations.Rotate(STATE.layout.columns, transitions.ConstantTransition(16))
 
     hue = transitions.HueTransition(
         start=functools.partial(np.random.randint, 0, 256),
-        length=functools.partial(np.random.randint, 20, 80)
-    )
+        length=functools.partial(np.random.randint, 20, 80))
     # I wish this had more red in it
     row = sources.RainbowRow(
         STATE.layout, rotation, sv=transitions.ConstantTransition((255, 255)), hue=hue)
 
     effect = translations.UpAndRotateEffect(
-        STATE.layout, row,
+        STATE.layout,
+        row,
         up_speed=distance.PixelsPerFrame(1),
         rotate_speed=transitions.CycleTransition((18, 8)))
     return effect
@@ -46,14 +45,14 @@ def make_stroboscopic_effect_analogous():
 
 def make_stroboscopic_effect_complement():
     hue = transitions.WalkTransition(
-        start=np.random.randint(0, 256),
-        step=functools.partial(np.random.randint, 20, 40))
+        start=np.random.randint(0, 256), step=functools.partial(np.random.randint, 20, 40))
 
     # TODO: apply rotation
     row = sources.ComplimentaryRow(STATE.layout.columns, hue, .3)
 
     effect = translations.UpAndRotateEffect(
-        STATE.layout, row,
+        STATE.layout,
+        row,
         up_speed=distance.PixelsPerFrame(1),
         rotate_speed=transitions.CycleTransition((18, 8)))
     return effect
@@ -61,26 +60,22 @@ def make_stroboscopic_effect_complement():
 
 def make_stream_up():
     # speed here is pixels / second
-    rotation = translations.Rotate(
-        STATE.layout.columns, transitions.UniformRandTransition(5, 55))
+    rotation = translations.Rotate(STATE.layout.columns, transitions.UniformRandTransition(5, 55))
 
     hue = transitions.HueTransition(
         start=functools.partial(np.random.randint, 0, 256),
         length=functools.partial(
-            np.random.choice,
-            [32, 32, 32, 64, 64, 64, 96, 96, 96, 128, 128, 160, 160, 192, 224])
-    )
+            np.random.choice, [32, 32, 32, 64, 64, 64, 96, 96, 96, 128, 128, 160, 160, 192, 224]))
     # I wish this had more red in it
-    row = sources.RainbowRow(
-        STATE.layout, rotation, sv=transitions.SvTransition(), hue=hue)
+    row = sources.RainbowRow(STATE.layout, rotation, sv=transitions.SvTransition(), hue=hue)
 
     # the rotation units here are pixels / frame
     # mostly prefer to be slow, but the occasional spike up is interesting
-    structure_rotation = transitions.Choice(
-        np.array([0, 0, 1, 1, 1, 2, 2, 3, 4]) * STATE.fps)
+    structure_rotation = transitions.Choice(np.array([0, 0, 1, 1, 1, 2, 2, 3, 4]) * STATE.fps)
 
     effect = translations.UpAndRotateEffect(
-        STATE.layout, row,
+        STATE.layout,
+        row,
         up_speed=distance.PixelsPerFrame(1),
         rotate_speed=distance.VaryingPixelsPerFrame(structure_rotation))
     return effect
@@ -91,18 +86,15 @@ SCENES = [
         'stroboscopic-complement',
         tags=[],
         collaboration_manager=collaboration.NoOpCollaborationManager(),
-        effects=[make_stroboscopic_effect_complement()]
-    ),
+        effects=[make_stroboscopic_effect_complement()]),
     af.Scene(
         'stroboscopic-analogous',
         tags=[],
         collaboration_manager=collaboration.NoOpCollaborationManager(),
-        effects=[make_stroboscopic_effect_analogous()]
-    ),
+        effects=[make_stroboscopic_effect_analogous()]),
     af.Scene(
         'stream-up',
         tags=[],
         collaboration_manager=collaboration.NoOpCollaborationManager(),
-        effects=[make_stream_up()]
-    )
+        effects=[make_stream_up()])
 ]
