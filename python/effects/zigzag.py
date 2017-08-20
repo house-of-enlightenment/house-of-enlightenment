@@ -2,7 +2,7 @@ from hoe.animation_framework import Scene
 from hoe.animation_framework import Effect
 from hoe.animation_framework import MultiEffect
 from generic_effects import NoOpCollaborationManager
-from generic_effects import SolidBackground
+from shared import SolidBackground
 from generic_effects import Rainbow
 from random import randrange
 from random import randint

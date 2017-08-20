@@ -10,7 +10,7 @@ from random import randint
 from random import getrandbits
 from itertools import product
 from math import ceil
-from generic_effects import SolidBackground
+from shared import SolidBackground
 from generic_effects import Rainbow
 from generic_effects import NoOpCollaborationManager
 from generic_effects import FrameRotator

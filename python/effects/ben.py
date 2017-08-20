@@ -4,7 +4,7 @@ import colorsys
 import sys
 from hoe.animation_framework import Scene, Effect, MultiEffect
 from generic_effects import NoOpCollaborationManager
-from generic_effects import SolidBackground
+from shared import SolidBackground
 from generic_effects import FrameRotator
 
 from hoe import color_utils

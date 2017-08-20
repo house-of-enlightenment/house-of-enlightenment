@@ -3,7 +3,7 @@ from hoe.animation_framework import Scene
 from hoe.state import STATE
 from hoe.pixels import cleanup_pairwise_indicies
 from generic_effects import NoOpCollaborationManager
-from generic_effects import SolidBackground
+from shared import SolidBackground
 import numpy as np
 import math
 

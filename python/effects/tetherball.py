@@ -10,7 +10,7 @@ from hoe.animation_framework import Effect
 from hoe.animation_framework import CollaborationManager
 from hoe.state import STATE
 
-from generic_effects import SolidBackground
+from shared import SolidBackground
 
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
