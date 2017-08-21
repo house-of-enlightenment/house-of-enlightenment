@@ -168,6 +168,7 @@ UP = np.array((1, 0))
 DOWN = np.array((-1, 0))
 LEFT = np.array((0, -1))
 RIGHT = np.array((0, 1))
+STAY = np.array((0, 0))
 
 
 def move(position, movement, shape, clip_or_wrap=(True, False)):
