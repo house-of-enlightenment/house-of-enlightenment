@@ -42,23 +42,37 @@ class TetherBall(CollaborationManager, Effect):
         STARTING_PLAYER = 4
         STATION_WINDOW_SIZE = 3
         self.BALL_SIZE = 5
-
+        self.station_window_size = STATION_WINDOW_SIZE
 
         print self._get_ball_starting_position(STARTING_PLAYER)
         # x_start is the starting point for the top anchor point
         self.x_start = self._get_ball_starting_position(STARTING_PLAYER)
         # x is the current position of the bottom of the ball
         self.x = self.x_start
-        self.station_window_size = STATION_WINDOW_SIZE
+        print ">>>>>>>>>>>>>>>"
+        print "INITIAL X"
+        print self.x
+        print "STATION RANGE"
+        print self._get_station_pixel_range(STARTING_PLAYER)
+        print "WINDOW"
+        print self._get_station_window(STARTING_PLAYER)
+        print "BALL POSITION"
+        print self._get_x_offset(self.x)
+        print (self._get_x_offset(self.x) + self.BALL_SIZE)
+        print ">>>>>>>>>>>>>>>"
+
 
         self.i = 0
         self.data = None
         self.direction = None
 
+
+        self.last_x = None
+
     def _get_ball_starting_position(self, station_id):
         start = self._get_middle_pixel(station_id)
         # print start
-        return int(start - (self.BALL_SIZE/2))
+        return int(start - (self.BALL_SIZE/2)) + 1
 
     def _get_middle_pixel(self, station_id):
         start, end = self._get_station_pixel_range(station_id)
@@ -71,9 +85,14 @@ class TetherBall(CollaborationManager, Effect):
         columns_per_station = (COLUMNS/STATIONS)
         if station_id == 0:
             return 0, columns_per_station
+        # print columns_per_station
+
         return int(columns_per_station * station_id), int((columns_per_station * station_id) + columns_per_station)
 
 
+# 44 45 46 47 48 49 50 51 52 53 54
+#             X  X  X
+#          X  X  X  X  X  X
 
     def reset_state(self, osc_data):
         # type: (StoredOSCData) -> None
@@ -113,8 +132,8 @@ class TetherBall(CollaborationManager, Effect):
 
     def _get_station_window(self, station_id):
         half_window = int(self.station_window_size/2)
-        print "HALF"
-        print half_window
+        # print "HALF"
+        # print half_window
         # start, end = self._get_station_pixel_range(station_id)
         middle = self._get_middle_pixel(station_id)
         window_start = middle - half_window
@@ -122,7 +141,7 @@ class TetherBall(CollaborationManager, Effect):
 
         # window_start = start + half_window
         # window_end = end - half_window
-        return int(window_start), int(window_end)
+        return int(window_start), int(window_end) + 1
 
     def _station_is_active(self, station_id):
         # 11 12 13 14 15 16 17 18 19 20 21
@@ -141,7 +160,7 @@ class TetherBall(CollaborationManager, Effect):
         # if x_offset + self.BALL_SIZE > start and x_offset < end:
         #     print start
         #     print end
-        return x_offset + self.BALL_SIZE > start and x_offset < end
+        return x_offset + self.BALL_SIZE >= start and x_offset <= end
 
 
     def _set_active_buttons(self):
@@ -170,12 +189,27 @@ class TetherBall(CollaborationManager, Effect):
         return pixels
 
     def _set_bottom_ring_pixels(self, pixels):
+
+
+
+        if self.last_x != self.x:
+            print ">>>>>>>>"
+            print "     BALL: %s, %s" % (self._get_x_offset(self.x), (self._get_x_offset(self.x) + self.BALL_SIZE))
         for station_id in xrange(6):
             # print ">>>>>>"
+
             start, end = self._get_station_window(station_id)
-            print start
-            print end
+            # print start
+            # print end
+            if self.last_x != self.x:
+                print "STATION %s: %s, %s, %s" % (station_id, start, end, self._station_is_active(station_id))
+
+
+            end = end
             pixels[0:2, start:end] = PURPLE
+
+        if self.last_x != self.x:
+            self.last_x = self.x
         # pixels[0:2, 2:4] = PURPLE
         return pixels
 
@@ -187,7 +221,7 @@ class TetherBall(CollaborationManager, Effect):
         for y in xrange(216):
             # pixels[216 - y - 1:216 - y, int(x):int(x +2)] = GREEN
             offset_x = self._get_x_offset(x)
-            pixels[y - 1:y, int(offset_x):int(offset_x + self.BALL_SIZE)] = BLUE
+            pixels[y - 1:y, int(offset_x):int((offset_x + self.BALL_SIZE))] = BLUE
 
             x = x + slope
 
@@ -216,8 +250,10 @@ class TetherBall(CollaborationManager, Effect):
     def next_frame(self, pixels, t, collaboration_state, osc_data):
         self._set_active_buttons()
         self._set_background_pixels(pixels)
-        self._set_bottom_ring_pixels(pixels)
         self._set_tetherball_pixels(pixels)
+        self._set_bottom_ring_pixels(pixels)
+
+
 
         # MultiEffect.before_rendering(self, pixels, t, collaboration_state, osc_data)
         for s in range(STATE.layout.sections):
