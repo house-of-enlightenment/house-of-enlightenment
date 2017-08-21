@@ -22,6 +22,7 @@ BLUE = ()
 # ORANGE = (255, 127, 0)
 ORANGE = (255, 127, 99)
 BLUE = (0, 127, 255)
+PURPLE = (255, 2, 255)
 
 ROWS = 216
 COLUMNS = 66
@@ -29,21 +30,24 @@ STATIONS = 6
 
 FRAME_RATE = 30 / 5
 
-
+ROTATION_DIRECTION_FORWARDS = True
 #
 # - Corkscrew effect will get more "tight" as its wound
 class TetherBall(CollaborationManager, Effect):
     def __init__(self):
         Effect.__init__(self)
         CollaborationManager.__init__(self)
-        STARTING_PLAYER = 1
+        STARTING_PLAYER = 4
+        STATION_WINDOW_SIZE = 3
         self.BALL_SIZE = 5
+
 
         print self._get_ball_starting_position(STARTING_PLAYER)
         # x_start is the starting point for the top anchor point
         self.x_start = self._get_ball_starting_position(STARTING_PLAYER)
         # x is the current position of the bottom of the ball
         self.x = self.x_start
+        self.station_window_size = STATION_WINDOW_SIZE
 
         self.i = 0
         self.data = None
@@ -51,14 +55,14 @@ class TetherBall(CollaborationManager, Effect):
 
     def _get_ball_starting_position(self, station_id):
         start = self._get_middle_pixel(station_id)
-        print start
+        # print start
         return int(start - (self.BALL_SIZE/2))
 
     def _get_middle_pixel(self, station_id):
         start, end = self._get_station_pixel_range(station_id)
-        print "get middle range"
-        print start
-        print end
+        # print "get middle range"
+        # print start
+        # print end
         return int((end-start)/2 + start)
 
     def _get_station_pixel_range(self, station_id):
@@ -90,6 +94,7 @@ class TetherBall(CollaborationManager, Effect):
         # self.launch_effect(t, s)
 
     def scene_starting(self, now, osc_data):
+
         self.reset_state(osc_data=osc_data)
 
     def _button_press_is_valid(self, station_id):
@@ -99,12 +104,82 @@ class TetherBall(CollaborationManager, Effect):
 
     @property
     def speed(self):
-        return 1
+        return .5
 
     def _should_paint_frame(self):
         pass
 
+    def _get_station_window(self, station_id):
+        half_window = int(self.station_window_size/2)
+        # start, end = self._get_station_pixel_range(station_id)
+        middle = self._get_middle_pixel(station_id)
+        window_start = middle - half_window
+        window_end = middle + half_window
+
+        # window_start = start + half_window
+        # window_end = end - half_window
+        return int(window_start), int(window_end)
+
+    def _station_is_active(self, station_id):
+        # 11 12 13 14 15 16 17 18 19 20 21
+        #       |                  |
+        #                         X  X  X  X  X
+
+        # 11 12 13 14 15 16 17 18 19 20 21
+        #       |                  |
+        #     X  X
+
+
+        start, end = self._get_station_window(station_id)
+
+
+        x_offset = self._get_x_offset(self.x)
+        # if x_offset + self.BALL_SIZE > start and x_offset < end:
+        #     print start
+        #     print end
+        return x_offset + self.BALL_SIZE > start and x_offset < end
+
+
+    def _set_active_buttons(self):
+
+        for station_id, station in enumerate(STATE.stations):
+            station.buttons.set_all(on=False)
+            # print "station: %d %s" % (station_id, self._station_is_active(station_id))
+            if self._station_is_active(station_id):
+                station.buttons[1] = 1
+                station.buttons[3] = 1
+
+
+
+    def _get_x_offset(self, x):
+        offset_x = x #+ 33
+        if x > 66:
+            offset_x = x % 66
+
+        if x < -66:
+            offset_x = x % 66
+        return offset_x
+
+
+    def _set_background_pixels(self, pixels):
+        pixels[:, :] = ORANGE
+        return pixels
+
+    # def _set_bottom_ring_pixels(self, pixels):
+    #     for station_id in xrange(5):
+    #         # print ">>>>>>"
+    #         start, end = self._get_station_window(station_id)
+    #         # print start
+    #         # print end
+    #         # pixels[0:2, start:end] = PURPLE
+    #     # pixels[0:2, 2:4]
+    #     return pixels
+
     def next_frame(self, pixels, t, collaboration_state, osc_data):
+        self._set_active_buttons()
+        self._set_background_pixels(pixels)
+        # self._set_bottom_ring_pixels(pixels)
+
         # MultiEffect.before_rendering(self, pixels, t, collaboration_state, osc_data)
         for s in range(STATE.layout.sections):
             if osc_data.stations[s].button_presses:
@@ -113,7 +188,7 @@ class TetherBall(CollaborationManager, Effect):
                 if 1 in osc_data.stations[s].button_presses and self._button_press_is_valid(s):
                     self.direction = "left"
 
-        pixels[:, :] = ORANGE
+
         # slope = (0 - self.x)/216
         # slope = .02
         # print slope
@@ -131,14 +206,7 @@ class TetherBall(CollaborationManager, Effect):
 
         for y in xrange(216):
             # pixels[216 - y - 1:216 - y, int(x):int(x +2)] = GREEN
-            offset_x = x
-            if x > 66:
-                offset_x = x % 66
-
-            if x < -66:
-                offset_x = x % 66
-
-            # print x
+            offset_x = self._get_x_offset(x)
             pixels[y - 1:y, int(offset_x):int(offset_x + self.BALL_SIZE)] = BLUE
 
             x = x + slope
@@ -154,10 +222,15 @@ class TetherBall(CollaborationManager, Effect):
         speed = int(self.speed if self.speed >= 1 else 1 if (self.i) % 10 == 0 else 0)
 
         if self.direction == "right":
-            self.x -= speed
+            if ROTATION_DIRECTION_FORWARDS:
+                self.x += speed
+            else:
+                self.x -= speed
         if self.direction == "left":
-            self.x += speed
-
+            if ROTATION_DIRECTION_FORWARDS:
+                self.x -= speed
+            else:
+                self.x += speed
         self.i += 1
 
         # start, end = self._get_station_pixel_range(2)
@@ -167,29 +240,29 @@ class TetherBall(CollaborationManager, Effect):
         pass
 
 
-class CollaborationCountBasedBackground(Effect):
-    def __init__(self, color=(0, 255, 0), max_count=6, bottom_row=3, max_row=216):
-        Effect.__init__(self)
-        self.color = color
-        self.bottom_row = bottom_row
-        self.top_row_dict = {
-            i: int(bottom_row + i * (max_row - bottom_row) / max_count)
-            for i in range(1, max_count + 1)
-        }
-        self.current_level = int(bottom_row + (max_row - bottom_row) / max_count)
-        self.target_row = self.current_level
+# class CollaborationCountBasedBackground(Effect):
+#     def __init__(self, color=(0, 255, 0), max_count=6, bottom_row=3, max_row=216):
+#         Effect.__init__(self)
+#         self.color = color
+#         self.bottom_row = bottom_row
+#         self.top_row_dict = {
+#             i: int(bottom_row + i * (max_row - bottom_row) / max_count)
+#             for i in range(1, max_count + 1)
+#         }
+#         self.current_level = int(bottom_row + (max_row - bottom_row) / max_count)
+#         self.target_row = self.current_level
 
-    def next_frame(self, pixels, t, collaboration_state, osc_data):
-        self.target_row = self.top_row_dict[collaboration_state["count"]]
-        if self.target_row > self.current_level:
-            self.current_level += 1
-        elif self.target_row < self.current_level:
-            self.current_level -= 1
+#     def next_frame(self, pixels, t, collaboration_state, osc_data):
+#         self.target_row = self.top_row_dict[collaboration_state["count"]]
+#         if self.target_row > self.current_level:
+#             self.current_level += 1
+#         elif self.target_row < self.current_level:
+#             self.current_level -= 1
 
-        for ii in set(
-                reduce(lambda a, b: a + b,
-                       [STATE.layout.row[i] for i in range(self.bottom_row, self.current_level)])):
-            pixels[ii] = self.color
+#         for ii in set(
+#                 reduce(lambda a, b: a + b,
+#                        [STATE.layout.row[i] for i in range(self.bottom_row, self.current_level)])):
+#             pixels[ii] = self.color
 
 
 SCENES = [
