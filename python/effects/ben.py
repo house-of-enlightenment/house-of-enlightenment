@@ -432,7 +432,6 @@ class RedGreenSquares(DavesAbstractLidarClass):
         if col_left <= col_right:
             pixels[row_bottom:row_top, col_left:col_right] = self._color(obj_id)
         else:
-            print("left" + str(col_left) + "right: " + str(col_right))
             pixels[row_bottom:row_top, col_left:STATE.layout.columns - 1] = self._color(obj_id)
             pixels[row_bottom:row_top, 0:col_right] = self._color(obj_id)
 
