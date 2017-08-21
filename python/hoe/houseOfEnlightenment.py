@@ -103,7 +103,7 @@ def parse_json_file(filename):
 
 
 def create_opc_client(server, verbose=False):
-    client = opc.Client(server_ip_port=server, verbose=verbose)
+    client = opc.Client(server_ip_port=server, verbose=False)
     if client.can_connect():
         print '    connected to %s' % server
     else:

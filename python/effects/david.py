@@ -84,9 +84,8 @@ class ButtonChaseController(Effect, CollaborationManager):
                 collaboration_state.clear()
         else:
             collaboration_state.pop("last_hit_button", None)
-            late = (
-                "last_hit_time" in collaboration_state and
-                collaboration_state["last_hit_time"] + self.selection_time < t)
+            late = ("last_hit_time" in collaboration_state
+                    and collaboration_state["last_hit_time"] + self.selection_time < t)
             if late:
                 # Too late!
                 self.pick_next(osc_data=osc_data, missed=True)
@@ -264,8 +263,8 @@ class RotatingWedge(Effect):
         self.color = np.asarray(color, np.uint8)
         self.width = width
         self.direction = direction
-        self.angle = (
-            angle * 1.0 * STATE.layout.columns / STATE.layout.rows if scale_ratio else angle)
+        self.angle = (angle * 1.0 * STATE.layout.columns / STATE.layout.rows
+                      if scale_ratio else angle)
         self.start_col = 0
         self.end_col = start_col + width
         self.additive = additive
@@ -366,7 +365,8 @@ class DavesAbstractLidarClass(Effect):
                 self.render_lidar_input(
                     pixels=pixels,
                     obj_id=obj_id,
-                    row_slice=slice(bottom_row, top_row),
+                    row_bottom=bottom_row,
+                    row_top=top_row,
                     col_left=col_left,
                     col_right=col_right)
 
@@ -377,7 +377,7 @@ class DavesAbstractLidarClass(Effect):
             # print "No wrap"
             return [slice(col_left, col_right)]
 
-    def render_lidar_input(self, pixels, obj_id, row_slice, col_left, col_right):
+    def render_lidar_input(self, pixels, obj_id, row_bottom, row_top, col_left, col_right):
         # TODO: Should this just be a passed in function instead of needing to subclass?
         raise NotImplementedError
 

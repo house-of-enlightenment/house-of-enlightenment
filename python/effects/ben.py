@@ -13,6 +13,7 @@ from generic_effects import NoOpCollaborationManager, FrameRotator
 from shared import SolidBackground
 
 from zigzag import ZigZag
+from david import DavesAbstractLidarClass
 
 
 class SeizureMode(Effect):
@@ -97,10 +98,7 @@ class UpBlock(Effect):
 
 
 class WaveLauncher(MultiEffect):
-    def __init__(
-            self,
-            except_station=None,
-            time_out=15):
+    def __init__(self, except_station=None, time_out=15):
         MultiEffect.__init__(self)
         self.except_station = except_station
         self.last_launch = None
@@ -138,13 +136,11 @@ class WaveLauncher(MultiEffect):
 
 
 class LaunchUpBlock(WaveLauncher):
-
     def launch_effect(self, sid):
         return UpBlock(station=sid, speed=rand.randint(10, 50), color=self._color())
 
 
 class LaunchZigZag(WaveLauncher):
-
     def launch_effect(self, sid):
         return ZigZag(color=self._color(), start_col=sid * 11)
 
@@ -195,7 +191,8 @@ class FiniteDifference(Effect):
                  auto_damp=True,
                  base_hue=0xFFFF >> 1,
                  boundary=CONTINUOUS,
-                 pde=WAVE):
+                 pde=WAVE,
+                 darken_mids=False):
         self.pixels = []
         self.time = []
         self.fader_value = None
@@ -207,6 +204,7 @@ class FiniteDifference(Effect):
         self.base_hue = base_hue
         self.boundary = boundary
         self.pde = pde
+        self.darken_mids = darken_mids
 
     def _reset(self, now):
         # Reset Constants
@@ -306,7 +304,10 @@ class FiniteDifference(Effect):
         hsv = np.zeros((self.X_MAX, self.Y_MAX, 3), np.uint8)
         hsv[:, :, 0] = self.pixels[2] / 0xFFFF * 0xFF
         hsv[:, :, 1] = 0xFF
-        hsv[:, :, 2] = 0xFF
+        if self.darken_mids:
+            hsv[:, :, 2] = np.abs(self.pixels[2] - (0xFFFF >> 1)) / 0xFFFF * 0xFF
+        else:
+            hsv[:, :, 2] = 0xFF
 
         rgb = color_utils.hsv2rgb(hsv)
         pixels[:self.X_MAX, :self.Y_MAX] = rgb
@@ -369,9 +370,8 @@ class FiniteDifference(Effect):
         # pylint: disable=no-member
         pix = np.array(pixels[:, :][:], dtype=np.int64)
         color = (pix[:, :, 0] << 16) | (pix[:, :, 1] << 8) | (pix[:, :, 2])
-        f = np.where(color == 0xFF0000, 0xFFFF,
-                     np.where(color == 0xFF00, 0 - 0xFFFF,
-                              0))[:self.X_MAX, :self.Y_MAX]
+        f = np.where(color == 0xFF0000, 0xFFFF, np.where(color == 0xFF00, 0 - 0xFFFF,
+                                                         0))[:self.X_MAX, :self.Y_MAX]
         h = h + f
         h = np.clip(h, 0, 0xFFFF)
         self.pixels[2] = np.clip(h, 0, 0xFFFF)
@@ -416,6 +416,26 @@ class FiniteDifference(Effect):
 
         return h, idx
 
+
+#========================================================================
+# LIDAR
+
+
+class RedGreenSquares(DavesAbstractLidarClass):
+    def _color(self, obj_id):
+        if obj_id % 2 == 0:
+            return (0xFF, 0, 0)
+        else:
+            return (0, 0xFF, 0)
+
+    def render_lidar_input(self, pixels, obj_id, row_bottom, row_top, col_left, col_right):
+        if col_left <= col_right:
+            pixels[row_bottom:row_top, col_left:col_right] = self._color(obj_id)
+        else:
+            pixels[row_bottom:row_top, col_left:STATE.layout.columns - 1] = self._color(obj_id)
+            pixels[row_bottom:row_top, 0:col_right] = self._color(obj_id)
+
+
 #========================================================================
 
 SCENES = [
@@ -437,10 +457,7 @@ SCENES = [
             SolidBackground(color=(0xFF, 0, 0), start_col=0, end_col=2, start_row=30, end_row=34),
             #SolidBackground(color=(0,0xFF,0), start_col=0, end_col=2, start_row=120, end_row=124),
             FrameRotator(rate=0.5),
-            FiniteDifference(
-                master_station=0,
-                boundary=FiniteDifference.NEUMANN,
-                base_hue=0)
+            FiniteDifference(master_station=0, boundary=FiniteDifference.NEUMANN, base_hue=0)
         ]),
     Scene(
         "up_bloc",
@@ -468,5 +485,27 @@ SCENES = [
                 master_station=0,
                 boundary=FiniteDifference.NEUMANN,
                 pde=FiniteDifference.DIFFUSION)
+                #darken_mids=bool(rand.getrandbits(1)))
+        ]),
+    Scene(
+        "lidar_fusion",
+        tags=[Scene.TAG_BACKGROUND],
+        collaboration_manager=NoOpCollaborationManager(),
+        effects=[
+            RedGreenSquares(),
+            FiniteDifference(
+                master_station=0,
+                boundary=FiniteDifference.CONTINUOUS,
+                pde=FiniteDifference.DIFFUSION,
+                darken_mids=True)
+        ]),
+    Scene(
+        "lidar_wave",
+        tags=[Scene.TAG_BACKGROUND],
+        collaboration_manager=NoOpCollaborationManager(),
+        effects=[
+            RedGreenSquares(),
+            FiniteDifference(
+                master_station=0, boundary=FiniteDifference.CONTINUOUS, pde=FiniteDifference.WAVE)
         ])
 ]
