@@ -41,30 +41,33 @@ class TetherBall(CollaborationManager, Effect):
         CollaborationManager.__init__(self)
         STARTING_PLAYER = 4
         STATION_WINDOW_SIZE = 3
+        self.MAX_ROTATIONS = 6
         self.BALL_SIZE = 5
         self.station_window_size = STATION_WINDOW_SIZE
 
-        print self._get_ball_starting_position(STARTING_PLAYER)
+        # print self._get_ball_starting_position(STARTING_PLAYER)
         # x_start is the starting point for the top anchor point
         self.x_start = self._get_ball_starting_position(STARTING_PLAYER)
         # x is the current position of the bottom of the ball
         self.x = self.x_start
-        print ">>>>>>>>>>>>>>>"
-        print "INITIAL X"
-        print self.x
-        print "STATION RANGE"
-        print self._get_station_pixel_range(STARTING_PLAYER)
-        print "WINDOW"
-        print self._get_station_window(STARTING_PLAYER)
-        print "BALL POSITION"
-        print self._get_x_offset(self.x)
-        print (self._get_x_offset(self.x) + self.BALL_SIZE)
-        print ">>>>>>>>>>>>>>>"
+        # print ">>>>>>>>>>>>>>>"
+        # print "INITIAL X"
+        # print self.x
+        # print "STATION RANGE"
+        # print self._get_station_pixel_range(STARTING_PLAYER)
+        # print "WINDOW"
+        # print self._get_station_window(STARTING_PLAYER)
+        # print "BALL POSITION"
+        # print self._get_x_offset(self.x)
+        # print (self._get_x_offset(self.x) + self.BALL_SIZE)
+        # print ">>>>>>>>>>>>>>>"
 
 
         self.i = 0
         self.data = None
         self.direction = None
+        self.speed = 0
+        self.velocity = 0
 
 
         self.last_x = None
@@ -122,10 +125,6 @@ class TetherBall(CollaborationManager, Effect):
         # self.x
         return True
 
-
-    @property
-    def speed(self):
-        return .5
 
     def _should_paint_frame(self):
         pass
@@ -192,17 +191,17 @@ class TetherBall(CollaborationManager, Effect):
 
 
 
-        if self.last_x != self.x:
-            print ">>>>>>>>"
-            print "     BALL: %s, %s" % (self._get_x_offset(self.x), (self._get_x_offset(self.x) + self.BALL_SIZE))
+        # if self.last_x != self.x:
+            # print ">>>>>>>>"
+            # print "     BALL: %s, %s" % (self._get_x_offset(self.x), (self._get_x_offset(self.x) + self.BALL_SIZE))
         for station_id in xrange(6):
             # print ">>>>>>"
 
             start, end = self._get_station_window(station_id)
             # print start
             # print end
-            if self.last_x != self.x:
-                print "STATION %s: %s, %s, %s" % (station_id, start, end, self._station_is_active(station_id))
+            # if self.last_x != self.x:
+                # print "STATION %s: %s, %s, %s" % (station_id, start, end, self._station_is_active(station_id))
 
 
             end = end
@@ -216,7 +215,7 @@ class TetherBall(CollaborationManager, Effect):
 
     def _set_tetherball_pixels(self, pixels):
         slope = (self.x_start - self.x) / 216
-        x = self.x
+        x = int(self.x)
 
         for y in xrange(216):
             # pixels[216 - y - 1:216 - y, int(x):int(x +2)] = GREEN
@@ -233,21 +232,39 @@ class TetherBall(CollaborationManager, Effect):
             # UNCOMMENT TO REVERSE SPIN DIRECTIONS
 
         #TODO: Write a better method for handling speeds slower than 1
-        speed = int(self.speed if self.speed >= 1 else 1 if (self.i) % 10 == 0 else 0)
+        # speed = int(self.speed if self.speed >= 1 else 1 if (self.i) % 10 == 0 else 0)
+        velocity = self.velocity
 
         if self.direction == "right":
             if ROTATION_DIRECTION_FORWARDS:
-                self.x += speed
+                self.x += velocity
             else:
-                self.x -= speed
+                self.x -= velocity
         if self.direction == "left":
             if ROTATION_DIRECTION_FORWARDS:
-                self.x -= speed
+                self.x -= velocity
             else:
-                self.x += speed
+                self.x += velocity
+
+    def _calculate_velocity(self):
+
+
+        # - The ball has an initial burst, then should naturally slow down in most cases
+        # - The ball should slow down even more if its getting close to the max # of rotation
+        # - Once the ball reaches the max # of rotations, it should reverse directions
+        # - If a player hits the ball while it is "unraveling", the ball should be even faster
+
+        # resistance = (float(self.x)/float(self.MAX_ROTATIONS * COLUMNS))
+
+
+        self.velocity = self.velocity* .98
+        if self.velocity < 0:
+            self.velocity = 0
 
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
+        print "BALL X: %s  VELOCITY: %s" % (self.x, self.velocity)
+        self._calculate_velocity()
         self._set_active_buttons()
         self._set_background_pixels(pixels)
         self._set_tetherball_pixels(pixels)
@@ -258,10 +275,12 @@ class TetherBall(CollaborationManager, Effect):
         # MultiEffect.before_rendering(self, pixels, t, collaboration_state, osc_data)
         for s in range(STATE.layout.sections):
             if osc_data.stations[s].button_presses:
-                if 3 in osc_data.stations[s].button_presses and self._button_press_is_valid(s):
-                    self.direction = "right"
-                if 1 in osc_data.stations[s].button_presses and self._button_press_is_valid(s):
-                    self.direction = "left"
+                if self._button_press_is_valid(s):
+                    if 3 in osc_data.stations[s].button_presses:
+                        self.direction = "right"
+                    if 1 in osc_data.stations[s].button_presses:
+                        self.direction = "left"
+                    self.velocity += 1.5
 
 
         # slope = (0 - self.x)/216
