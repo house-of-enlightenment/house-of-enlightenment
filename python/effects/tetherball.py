@@ -23,6 +23,10 @@ BLUE = ()
 ORANGE = (255, 127, 99)
 BLUE = (0, 127, 255)
 
+ROWS = 216
+COLUMNS = 66
+STATIONS = 6
+
 
 #
 # - Corkscrew effect will get more "tight" as its wound
@@ -30,10 +34,37 @@ class TetherBall(CollaborationManager, Effect):
     def __init__(self):
         Effect.__init__(self)
         CollaborationManager.__init__(self)
-        self.x = 0
+        STARTING_PLAYER = 3
+        self.BALL_SIZE = 5
+
+        print self._get_ball_starting_position(STARTING_PLAYER)
+        # x_start is the starting point for the top anchor point
+        self.x_start = self._get_ball_starting_position(STARTING_PLAYER)
+        # x is the current position of the bottom of the ball
+        self.x = self.x_start
         self.i = 0
         self.data = None
         self.direction = None
+
+    def _get_ball_starting_position(self, station_id):
+        start = self._get_middle_pixel(station_id)
+        print start
+        return int(start - (self.BALL_SIZE/2))
+
+    def _get_middle_pixel(self, station_id):
+        start, end = self._get_station_pixel_range(station_id)
+        print "get middle range"
+        print start
+        print end
+        return int((end-start)/2 + start)
+
+    def _get_station_pixel_range(self, station_id):
+        columns_per_station = (COLUMNS/STATIONS)
+        if station_id == 0:
+            return 0, columns_per_station
+        return int(columns_per_station * station_id), int((columns_per_station * station_id) + columns_per_station)
+
+
 
     def reset_state(self, osc_data):
         # type: (StoredOSCData) -> None
@@ -76,9 +107,14 @@ class TetherBall(CollaborationManager, Effect):
         # slope = .02
         # print slope
         # pixels[215:216,0:2] = GREEN
-        slope = (0 - self.x) / 216
+
         # print slope
-        x = self.x
+        slope = (self.x_start - self.x) / 216
+        x = self.x_start
+
+
+        #slope = (0 - self.x) / 216
+        #x = self.x
 
         for y in xrange(216):
             # pixels[216 - y - 1:216 - y, int(x):int(x +2)] = GREEN
@@ -90,7 +126,7 @@ class TetherBall(CollaborationManager, Effect):
                 offset_x = x % 66
 
             # print x
-            pixels[y - 1:y, int(offset_x):int(offset_x + 5)] = BLUE
+            pixels[y - 1:y, int(offset_x):int(offset_x + self.BALL_SIZE)] = BLUE
 
             x = x + slope
 
@@ -101,6 +137,9 @@ class TetherBall(CollaborationManager, Effect):
             self.x += 1
 
         self.i += 1
+
+        # start, end = self._get_station_pixel_range(2)
+        # pixels[:, start:end] = GREEN
 
     def compute_state(self, t, collaboration_state, osc_data):
         pass
