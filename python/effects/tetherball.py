@@ -31,6 +31,8 @@ STATIONS = 6
 FRAME_RATE = 30 / 5
 
 ROTATION_DIRECTION_FORWARDS = True
+
+BOTTOM_RING_HEIGHT = 2
 #
 # - Corkscrew effect will get more "tight" as its wound
 class TetherBall(CollaborationManager, Effect):
@@ -111,6 +113,8 @@ class TetherBall(CollaborationManager, Effect):
 
     def _get_station_window(self, station_id):
         half_window = int(self.station_window_size/2)
+        print "HALF"
+        print half_window
         # start, end = self._get_station_pixel_range(station_id)
         middle = self._get_middle_pixel(station_id)
         window_start = middle - half_window
@@ -162,47 +166,23 @@ class TetherBall(CollaborationManager, Effect):
 
 
     def _set_background_pixels(self, pixels):
-        pixels[:, :] = ORANGE
+        pixels[:, :] = WHITE #ORANGE
         return pixels
 
-    # def _set_bottom_ring_pixels(self, pixels):
-    #     for station_id in xrange(5):
-    #         # print ">>>>>>"
-    #         start, end = self._get_station_window(station_id)
-    #         # print start
-    #         # print end
-    #         # pixels[0:2, start:end] = PURPLE
-    #     # pixels[0:2, 2:4]
-    #     return pixels
-
-    def next_frame(self, pixels, t, collaboration_state, osc_data):
-        self._set_active_buttons()
-        self._set_background_pixels(pixels)
-        # self._set_bottom_ring_pixels(pixels)
-
-        # MultiEffect.before_rendering(self, pixels, t, collaboration_state, osc_data)
-        for s in range(STATE.layout.sections):
-            if osc_data.stations[s].button_presses:
-                if 3 in osc_data.stations[s].button_presses and self._button_press_is_valid(s):
-                    self.direction = "right"
-                if 1 in osc_data.stations[s].button_presses and self._button_press_is_valid(s):
-                    self.direction = "left"
+    def _set_bottom_ring_pixels(self, pixels):
+        for station_id in xrange(6):
+            # print ">>>>>>"
+            start, end = self._get_station_window(station_id)
+            print start
+            print end
+            pixels[0:2, start:end] = PURPLE
+        # pixels[0:2, 2:4] = PURPLE
+        return pixels
 
 
-        # slope = (0 - self.x)/216
-        # slope = .02
-        # print slope
-        # pixels[215:216,0:2] = GREEN
-
-        # print slope
-        # slope = (0 - self.x)/216
-        # x = self.x
+    def _set_tetherball_pixels(self, pixels):
         slope = (self.x_start - self.x) / 216
         x = self.x
-
-
-        #slope = (0 - self.x) / 216
-        #x = self.x
 
         for y in xrange(216):
             # pixels[216 - y - 1:216 - y, int(x):int(x +2)] = GREEN
@@ -231,6 +211,65 @@ class TetherBall(CollaborationManager, Effect):
                 self.x -= speed
             else:
                 self.x += speed
+
+
+    def next_frame(self, pixels, t, collaboration_state, osc_data):
+        self._set_active_buttons()
+        self._set_background_pixels(pixels)
+        self._set_bottom_ring_pixels(pixels)
+        self._set_tetherball_pixels(pixels)
+
+        # MultiEffect.before_rendering(self, pixels, t, collaboration_state, osc_data)
+        for s in range(STATE.layout.sections):
+            if osc_data.stations[s].button_presses:
+                if 3 in osc_data.stations[s].button_presses and self._button_press_is_valid(s):
+                    self.direction = "right"
+                if 1 in osc_data.stations[s].button_presses and self._button_press_is_valid(s):
+                    self.direction = "left"
+
+
+        # slope = (0 - self.x)/216
+        # slope = .02
+        # print slope
+        # pixels[215:216,0:2] = GREEN
+
+        # print slope
+        # slope = (0 - self.x)/216
+        # x = self.x
+        # slope = (self.x_start - self.x) / 216
+        # x = self.x
+
+
+        #slope = (0 - self.x) / 216
+        #x = self.x
+
+        # for y in xrange(216):
+        #     # pixels[216 - y - 1:216 - y, int(x):int(x +2)] = GREEN
+        #     offset_x = self._get_x_offset(x)
+        #     pixels[y - 1:y, int(offset_x):int(offset_x + self.BALL_SIZE)] = BLUE
+
+        #     x = x + slope
+
+
+        #     # if self.direction == "right":
+        #     #     self.x += 1
+        #     # if self.direction == "left":
+        #     #     self.x -= 1
+        #     # UNCOMMENT TO REVERSE SPIN DIRECTIONS
+
+        # #TODO: Write a better method for handling speeds slower than 1
+        # speed = int(self.speed if self.speed >= 1 else 1 if (self.i) % 10 == 0 else 0)
+
+        # if self.direction == "right":
+        #     if ROTATION_DIRECTION_FORWARDS:
+        #         self.x += speed
+        #     else:
+        #         self.x -= speed
+        # if self.direction == "left":
+        #     if ROTATION_DIRECTION_FORWARDS:
+        #         self.x -= speed
+        #     else:
+        #         self.x += speed
         self.i += 1
 
         # start, end = self._get_station_pixel_range(2)
