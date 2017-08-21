@@ -74,7 +74,7 @@ class StopTheLight(CollaborationManager, Effect):
             self.sprite_location = (self.sprite_location + self.direction) % self.max_slice
             self.sprite_color = BLUE
 
-        sprite_idx = (self.bottom_rows & set.union(*[
+        sprite_idx = (self.bottom_rows & set.union(* [
             set(STATE.layout.slice[i % (self.max_slice + 1)])
             for i in (self.sprite_location - 1, self.sprite_location, self.sprite_location + 1)
         ]))
