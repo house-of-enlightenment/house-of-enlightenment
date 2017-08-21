@@ -21,6 +21,8 @@ The middle button doesn't do anything.
 # do a fast blink when a block moves into a target.
 #
 import logging
+import itertools
+import random
 
 import numpy as np
 
@@ -51,7 +53,16 @@ N_ROWS = 2
 N_STATIONS = 6
 
 
+EASY = 6
+MEDIUM = 8
+HARD = 10
+
 def get_color(i, n=6):
+    # at the hard level, there are two greens that look nearly identical
+    # but I wasn't able to find alternative color choices that are any better
+    # I tried the 10 color qualitative colormap from
+    # http://colorbrewer2.org/#type=qualitative&scheme=Paired&n=10
+    # but the light colors all looked the same on the simulator
     i = i % n
     return color_utils.hsv2rgb((i * 255 / n, 255, 255))
 
@@ -59,23 +70,59 @@ def get_color(i, n=6):
 class ArrangeBlocks(af.Effect):
     def __init__(self, grid):
         # share a common blink so that they all blink at the same time
+        self.grid = grid
         blink = Blink(0.5)
         fast_blink = Blink(0.125)
-        n_blocks = N_STATIONS
+        n_blocks = HARD
         # the + 1 just makes sure the blocks are offset
         # Ideally I'd like to have them start in the same place as the targets
         # and then go thru a shuffle and then start the game
         self.blocks = [
-            Block(blink, Block.ON, get_color(i + 1, n_blocks), (0, i), grid)
-            for i in range(n_blocks)]
+            Block(
+                blink, Block.ON if i // N_STATIONS == 0 else Block.OFF,
+                get_color(i, n_blocks),
+                (i // N_STATIONS, i % N_STATIONS),
+                grid
+            )
+            for i in range(n_blocks)
+        ]
+        for block in self.blocks:
+            print block.color
         self.station_handlers = [StationHandler(i, grid) for i in range(N_STATIONS)]
         self.targets = [
-            Target(fast_blink, get_color(i, n_blocks), (0, i), grid) for i in range(n_blocks)]
+            Target(
+                fast_blink,
+                get_color(i, n_blocks),
+                (i // N_STATIONS, i % N_STATIONS),
+                grid
+            )
+            for i in range(n_blocks)
+        ]
+        self.needs_shuffle = True
+
+    def shuffle(self, pixels, now):
+        self.needs_shuffle = False
+        # this is a gross shuffle, but whatever
+        for block in self.blocks:
+            self.grid.remove(block.row, block.station, block)
+            block.mode = Block.OFF
+        open_cells = list(itertools.product(range(N_ROWS), range(N_STATIONS)))
+        random.shuffle(open_cells)
+        for cell, block in zip(open_cells, self.blocks):
+            self.grid.add(cell[0], cell[1], block)
+            block.location = cell
+        for station in range(N_STATIONS):
+            blocks = self.grid.get_blocks(station)
+            block = next((b for b in blocks if b), None)
+            if block:
+                block.mode = Block.ON
 
     def scene_starting(self, now, osc_data):
         pass
 
     def next_frame(self, pixels, now, collab, osc):
+        if self.needs_shuffle:
+            self.shuffle(pixels, now)
         pixels[:] = 10
         # each station has one, and only one, handler
         # if we get a key press we pass it along to the handler
@@ -376,10 +423,36 @@ def other_row(row):
     return (row + 1) % 2
 
 
+class TestKeyboardInputs(af.Effect):
+    def __init__(self, effect, pause=0.5):
+        self.effect = effect
+        self.pause = pause
+        self.next_input = None
+
+    def scene_starting(self, now, osc_data):
+        self.next_input = now
+        return self.effect.scene_starting(now, osc_data)
+
+    def next_frame(self, pixels, now, collab, _):
+        osc_data = af.StoredOSCData()
+        if now >= self.next_input:
+            self.next_input = now + self.pause
+            buttons = list(itertools.product(range(6), range(5)))
+            pushed_buttons = random.sample(buttons, random.randrange(1, 5))
+            for station, button in pushed_buttons:
+                osc_data.button_pressed(station, button)
+        self.effect.next_frame(pixels, now, collab, osc_data)
+
 SCENES = [
     af.Scene(
         'arrange-blocks',
         tags=[af.Scene.TAG_GAME],
         collaboration_manager=collaboration.NoOpCollaborationManager(),
-        effects=[ArrangeBlocks(Grid.make())])
+        effects=[ArrangeBlocks(Grid.make())]),
+    af.Scene(
+        'arrange-blocks-debug',
+        tags=[af.Scene.TAG_GAME],
+        collaboration_manager=collaboration.NoOpCollaborationManager(),
+        effects=[TestKeyboardInputs(ArrangeBlocks(Grid.make()))])
+
 ]
