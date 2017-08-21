@@ -48,9 +48,9 @@ N_ROWS = 2
 N_STATIONS = 6
 
 
-def get_color(i):
-    i = i % 6
-    return color_utils.hsv2rgb((i * 255 / 6, 255, 255))
+def get_color(i, n=6):
+    i = i % n
+    return color_utils.hsv2rgb((i * 255 / n, 255, 255))
 
 
 class ArrangeBlocks(af.Effect):
@@ -58,32 +58,31 @@ class ArrangeBlocks(af.Effect):
         # share a common blink so that they all blink at the same time
         blink = Blink(0.5)
         fast_blink = Blink(0.125)
+        n_blocks = N_STATIONS
         # the + 1 just makes sure the blocks are offset
         # Ideally I'd like to have them start in the same place as the targets
         # and then go thru a shuffle and then start the game
         self.blocks = [
-            Block(blink, Block.ON, get_color(i + 1), (0, i), grid)
-            for i in range(N_STATIONS)]
-        self.selectors = [Selector((0, i), grid) for i in range(N_STATIONS)]
+            Block(blink, Block.ON, get_color(i + 1, n_blocks), (0, i), grid)
+            for i in range(n_blocks)]
+        self.station_handlers = [StationHandler(i, grid) for i in range(N_STATIONS)]
         self.targets = [
-            Target(fast_blink, get_color(i), (0, i), grid) for i in range(N_STATIONS)]
+            Target(fast_blink, get_color(i, n_blocks), (0, i), grid) for i in range(n_blocks)]
 
     def scene_starting(self, now, osc_data):
         pass
 
     def next_frame(self, pixels, now, collab, osc):
         pixels[:] = 10
-        # each station has one, and only one, selector
-        # if we get a key press we pass it along to the selector
+        # each station has one, and only one, handler
+        # if we get a key press we pass it along to the handler
         # and it will deal with moving blocks
         for i, station in enumerate(osc.stations):
             if station.contains_change:
-                station_selector = self.selectors[i]
-                station_selector.handle_button_presses(station.button_presses)
+                station_handler = self.station_handlers[i]
+                station_handler.handle_button_presses(station.button_presses)
         for block in self.blocks:
             block.next_frame(pixels, now)
-        for selector in self.selectors:
-            selector.next_frame(pixels, now)
         for target in self.targets:
             target.next_frame(pixels, now)
 
@@ -137,7 +136,7 @@ class Grid(object):
 
 class GridItem(object):
     """A base class for items in the grid"""
-    def __init__(self, color, location, grid):
+    def __init__(self, location, grid):
         # the second item is 0 for bottom, 1 for top
         # first item in location is an in 0-6, representing the station
         # convert to a list because it needs to be mutable
@@ -219,62 +218,54 @@ def are_same_color(a, b):
     return (a.color == b.color).all()
 
 
-class Selector(GridItem):
-    def __init__(self, location, grid):
-        GridItem.__init__(self, location, grid)
-
-    def move(self, motion):
-        row, col = motion
-        if col != 0:
-            return
-
-        old_row = self.row
-        self.row = np.clip(self.row + row, 0, N_ROWS - 1)
-        if self.row != old_row:
-            logger.debug('Station %s moving to row', self.row)
-            self.grid.remove(old_row, self.station, self)
-            self.grid.add(self.row, self.station, self)
-
-    def get_block(self):
-        return self.grid.get_block(self.row, self.station)
+class StationHandler(object):
+    def __init__(self, station, grid):
+        self.station = station
+        self.grid = grid
 
     def handle_button_presses(self, button_presses):
         # if you mash keys, we're just taking the first one
         button_press = list(button_presses.keys())[0]
         logger.debug('For station %s, button %s was pressed', self.station, button_press)
-        if button_press == 2:
+        label = LABEL[button_press]
+        if label == 'MIDDLE':
             return
         motion = MOVEMENTS[button_press]
-        label = LABEL[button_press]
         blocks = self.grid.get_blocks(self.station)
         if not blocks[0] and not blocks[1]:
             logger.debug('No blocks in station %s', self.station)
             return
         if blocks[0] and blocks[1]:
-            logger.debug('There are two blocks in %s', self.station)
-            assert not (blocks[0].mode == Block.ON and blocks[1].mode == Block.ON)
-            if label == 'LEFT' or label == 'RIGHT':
-                if blocks[0].mode == Block.ON:
-                    if blocks[0].move(motion):
-                        blocks[1].mode = Block.ON
-                elif blocks[1].mode == Block.ON:
-                    if blocks[1].move(motion):
-                        blocks[0].mode = Block.ON
-                else:
-                    raise Exception('At least one block needs to be turned on')
-            else:
-                if label == 'UP':
-                    blocks[1].mode = Block.ON
-                    blocks[0].mode = Block.OFF
-                elif label == 'DOWN':
-                    blocks[1].mode = Block.OFF
-                    blocks[0].mode = Block.ON
+            self._handle_two_blocks(blocks, label, motion)
         else:
             block = next(b for b in blocks if b)
             block.move(motion)
 
-    def next_frame(self, pixels, now):
-        return
+    def _handle_two_blocks(self, blocks, label, motion):
+        logger.debug('There are two blocks in %s', self.station)
+        assert not (blocks[0].mode == Block.ON and blocks[1].mode == Block.ON)
+        if label == 'LEFT' or label == 'RIGHT':
+            self._move_the_on_block(blocks, motion)
+        else:
+            self._change_the_on_block(blocks, label)
+
+    def _move_the_on_block(self, blocks, motion):
+        if blocks[0].mode == Block.ON:
+            if blocks[0].move(motion):
+                blocks[1].mode = Block.ON
+        elif blocks[1].mode == Block.ON:
+            if blocks[1].move(motion):
+                blocks[0].mode = Block.ON
+        else:
+            raise Exception('At least one block needs to be turned on')
+
+    def _change_the_on_block(self, blocks, label):
+        if label == 'UP':
+            blocks[1].mode = Block.ON
+            blocks[0].mode = Block.OFF
+        elif label == 'DOWN':
+            blocks[1].mode = Block.OFF
+            blocks[0].mode = Block.ON
 
 
 class Blink(object):
@@ -319,8 +310,8 @@ class Block(GridItem):
     ON = 0
     OFF = 1
 
-    def __init__(self, blink, mode, color, *args, **kwargs):
-        GridItem.__init__(self, *args, **kwargs)
+    def __init__(self, blink, mode, color, location, grid):
+        GridItem.__init__(self, location, grid)
         self.blink = blink
         self.mode = mode
         self.color = color
