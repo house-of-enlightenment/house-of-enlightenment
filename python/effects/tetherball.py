@@ -27,6 +27,8 @@ ROWS = 216
 COLUMNS = 66
 STATIONS = 6
 
+FRAME_RATE = 30 / 5
+
 
 #
 # - Corkscrew effect will get more "tight" as its wound
@@ -34,7 +36,7 @@ class TetherBall(CollaborationManager, Effect):
     def __init__(self):
         Effect.__init__(self)
         CollaborationManager.__init__(self)
-        STARTING_PLAYER = 3
+        STARTING_PLAYER = 1
         self.BALL_SIZE = 5
 
         print self._get_ball_starting_position(STARTING_PLAYER)
@@ -42,6 +44,7 @@ class TetherBall(CollaborationManager, Effect):
         self.x_start = self._get_ball_starting_position(STARTING_PLAYER)
         # x is the current position of the bottom of the ball
         self.x = self.x_start
+
         self.i = 0
         self.data = None
         self.direction = None
@@ -93,6 +96,14 @@ class TetherBall(CollaborationManager, Effect):
         # self.x
         return True
 
+
+    @property
+    def speed(self):
+        return 1
+
+    def _should_paint_frame(self):
+        pass
+
     def next_frame(self, pixels, t, collaboration_state, osc_data):
         # MultiEffect.before_rendering(self, pixels, t, collaboration_state, osc_data)
         for s in range(STATE.layout.sections):
@@ -109,8 +120,10 @@ class TetherBall(CollaborationManager, Effect):
         # pixels[215:216,0:2] = GREEN
 
         # print slope
+        # slope = (0 - self.x)/216
+        # x = self.x
         slope = (self.x_start - self.x) / 216
-        x = self.x_start
+        x = self.x
 
 
         #slope = (0 - self.x) / 216
@@ -130,11 +143,20 @@ class TetherBall(CollaborationManager, Effect):
 
             x = x + slope
 
-        # if self.i % 1 == 1:
+
+            # if self.direction == "right":
+            #     self.x += 1
+            # if self.direction == "left":
+            #     self.x -= 1
+            # UNCOMMENT TO REVERSE SPIN DIRECTIONS
+
+        #TODO: Write a better method for handling speeds slower than 1
+        speed = int(self.speed if self.speed >= 1 else 1 if (self.i) % 10 == 0 else 0)
+
         if self.direction == "right":
-            self.x -= 1
+            self.x -= speed
         if self.direction == "left":
-            self.x += 1
+            self.x += speed
 
         self.i += 1
 
