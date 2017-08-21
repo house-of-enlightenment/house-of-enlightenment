@@ -15,7 +15,10 @@ The middle button doesn't do anything.
 """
 #
 # In no way is this code meant to be emulated. This was a first
-# pass to get something, anything working that resembled a game.
+# pass to get something, anything, working that resembled a game.
+#
+# Particularly gross is the mechanism by which the block and target
+# do a fast blink when a block moves into a target.
 #
 import logging
 
@@ -85,14 +88,15 @@ class ArrangeBlocks(af.Effect):
             block.next_frame(pixels, now)
         for target in self.targets:
             target.next_frame(pixels, now)
+        # TODO: DID WE WIN?
 
 
 class Grid(object):
     """Keeps track of where items are.
 
-    Its probably a poor abstraction, but items are responsible for letting
-    the grid know where they are.
+    Items are responsible for letting the grid know where they are.
     """
+
     def __init__(self, grid):
         self.grid = grid
 
@@ -158,19 +162,19 @@ class GridItem(object):
     def _set_station(self, val):
         self.location[1] = val
 
+    station = property(_get_station, _set_station)
+
     def get_block(self):
         return self.grid.get_block(self.row, self.station)
-
-    station = property(_get_station, _set_station)
 
 
 class Target(GridItem):
     """Indicates where a block is supposed to end up.
 
-    Each target colors the two outside pixels of each block.
+    Each target colors the two outside pixels of each cell.
 
     Each time a block moves, it checks the target in that cell and if
-    its a hit, the target and block blink quickly for a bit.
+    it is a hit, the target and block blink quickly for a bit.
     """
 
     def __init__(self, blink, color, location, grid):
@@ -211,7 +215,6 @@ class Target(GridItem):
             pixels[self.row, [station.left, station.right - 1]] = self.color
         else:
             pixels[self.row, [station.left, station.right - 1]] = 0
-
 
 
 def are_same_color(a, b):
