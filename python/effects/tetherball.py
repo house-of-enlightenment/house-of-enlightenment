@@ -258,8 +258,6 @@ class TetherBall(CollaborationManager, Effect):
 
 
         self.velocity = self.velocity* .98
-        if self.velocity < 0:
-            self.velocity = 0
 
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
