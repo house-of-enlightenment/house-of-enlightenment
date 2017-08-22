@@ -20,8 +20,9 @@ The middle button doesn't do anything.
 # Particularly gross is the mechanism by which the block and target
 # do a fast blink when a block moves into a target.
 #
-import logging
+import collections
 import itertools
+import logging
 import random
 
 import numpy as np
@@ -31,6 +32,7 @@ from hoe import collaboration
 from hoe import color_utils
 from hoe.state import STATE
 from hoe import translations
+from hoe import transitions
 
 
 logger = logging.getLogger(__name__)
@@ -49,13 +51,24 @@ STAY = translations.STAY
 MOVEMENTS = [UP, LEFT, STAY, RIGHT, DOWN]
 LABEL = ['UP', 'LEFT', 'MIDDLE', 'RIGHT', 'DOWN']
 
-N_ROWS = 2
-N_STATIONS = 6
-
-
 EASY = 6
 MEDIUM = 8
 HARD = 10
+
+
+def shuffle_locations(mode='all'):
+    if mode == 'all':
+        l = list(itertools.product(range(N_ROWS), range(N_STATIONS)))
+        random.shuffle(l)
+        return l
+    elif mode == 'by_row':
+        result = []
+        for row in range(N_ROWS):
+            l = list(itertools.product([row], range(N_STATIONS)))
+            random.shuffle(l)
+            result.extend(l)
+        return result
+
 
 def get_color(i, n=6):
     # at the hard level, there are two greens that look nearly identical
@@ -73,49 +86,43 @@ class ArrangeBlocks(af.Effect):
         self.grid = grid
         blink = Blink(0.5)
         fast_blink = Blink(0.125)
-        n_blocks = HARD
-        # the + 1 just makes sure the blocks are offset
-        # Ideally I'd like to have them start in the same place as the targets
-        # and then go thru a shuffle and then start the game
-        self.blocks = [
-            Block(
-                blink, Block.ON if i // N_STATIONS == 0 else Block.OFF,
-                get_color(i, n_blocks),
-                (i // N_STATIONS, i % N_STATIONS),
-                grid
-            )
-            for i in range(n_blocks)
-        ]
-        for block in self.blocks:
-            print block.color
-        self.station_handlers = [StationHandler(i, grid) for i in range(N_STATIONS)]
+        # TODO: how to make this change?
+        #       Maybe ask the user to push one of top, middle, bottom
+        n_blocks = EASY
+        colors = [get_color(i, n_blocks) for i in range(n_blocks)]
+        locations = shuffle_locations('by_row')
         self.targets = [
-            Target(
-                fast_blink,
-                get_color(i, n_blocks),
-                (i // N_STATIONS, i % N_STATIONS),
-                grid
-            )
-            for i in range(n_blocks)
+            Target(fast_blink, c, l, grid)
+            for c, l in zip(colors, locations)
         ]
+        self.blocks = [
+            Block(blink, Block.OFF, t.color, t, t.location, grid)
+            for t in self.targets
+        ]
+        self.station_handlers = [StationHandler(i, grid) for i in range(N_STATIONS)]
         self.needs_shuffle = True
+        self.we_won = False
 
     def shuffle(self, pixels, now):
         self.needs_shuffle = False
-        # this is a gross shuffle, but whatever
+        # a nicer shuffle would show the players the target blocks
+        # and then move them (quickly) to the shuffle starting positions
         for block in self.blocks:
-            self.grid.remove(block.row, block.station, block)
+            self.grid.remove(block.row, block.station_id, block)
             block.mode = Block.OFF
-        open_cells = list(itertools.product(range(N_ROWS), range(N_STATIONS)))
-        random.shuffle(open_cells)
+        open_cells = shuffle_locations()
         for cell, block in zip(open_cells, self.blocks):
             self.grid.add(cell[0], cell[1], block)
             block.location = cell
-        for station in range(N_STATIONS):
-            blocks = self.grid.get_blocks(station)
-            block = next((b for b in blocks if b), None)
-            if block:
-                block.mode = Block.ON
+        if self.did_we_win():
+            # crap, that was a terrible shuffle
+            self.shuffle(pixels, now)
+        else:
+            for station_id in range(N_STATIONS):
+                blocks = self.grid.get_blocks(station_id)
+                block = next((b for b in blocks if b), None)
+                if block:
+                    block.mode = Block.ON
 
     def scene_starting(self, now, osc_data):
         pass
@@ -123,7 +130,14 @@ class ArrangeBlocks(af.Effect):
     def next_frame(self, pixels, now, collab, osc):
         if self.needs_shuffle:
             self.shuffle(pixels, now)
-        pixels[:] = 10
+        if self.we_won:
+            self.draw(pixels, now)
+            pixels[:2, :] = self.rotate(pixels[:2, :], now)
+            # TODO: how do I tell the framework that I'm done?
+        else:
+            self._continue_playing(pixels, now, collab, osc)
+
+    def _continue_playing(self, pixels, now, collab, osc):
         # each station has one, and only one, handler
         # if we get a key press we pass it along to the handler
         # and it will deal with moving blocks
@@ -131,11 +145,46 @@ class ArrangeBlocks(af.Effect):
             if station.contains_change:
                 station_handler = self.station_handlers[i]
                 station_handler.handle_button_presses(station.button_presses)
+        self.update_state(collab)
+        if self.did_we_win():
+            self.on_winning(now)
+        self.draw(pixels, now)
+
+    def draw(self, pixels, now):
         for block in self.blocks:
             block.next_frame(pixels, now)
         for target in self.targets:
             target.next_frame(pixels, now)
-        # TODO: DID WE WIN?
+
+    def on_winning(self, now):
+        for block in self.blocks:
+            block.led_override = On()
+        for target in self.targets:
+            target.led_override = On()
+        self.we_won = True
+        self.rotate = translations.Rotate(
+            STATE.layout.columns,
+            transitions.ConstantTransition(STATE.layout.columns / 2)).start(now)
+
+    def update_state(self, collab):
+        state = collections.defaultdict(list)
+        total = 0
+        for b in self.blocks:
+            at_target = 100 if b.at_target() else 0
+            state[b.station_id].append(at_target)
+            total += at_target
+        for i, targets in state.items():
+            collab[i] = np.mean(targets)
+        collab['total'] = int(total / len(self.blocks))
+
+    def did_we_win(self):
+        return all(b.at_target() for b in self.blocks)
+
+
+class On(object):
+    """led_override to keep an item on"""
+    def update(self, now):
+        return 1
 
 
 class Grid(object):
@@ -191,9 +240,9 @@ class GridItem(object):
         # the second item is 0 for bottom, 1 for top
         # first item in location is an in 0-6, representing the station
         # convert to a list because it needs to be mutable
-        self.location = list(location)
+        self.location = np.array(location)
         self.grid = grid
-        self.grid.add(self.row, self.station, self)
+        self.grid.add(self.row, self.station_id, self)
 
     def _get_row(self):
         return self.location[0]
@@ -203,19 +252,55 @@ class GridItem(object):
 
     row = property(_get_row, _set_row)
 
-    def _get_station(self):
+    def _get_station_id(self):
         return self.location[1]
 
-    def _set_station(self, val):
+    def _set_station_id(self, val):
         self.location[1] = val
 
-    station = property(_get_station, _set_station)
+    station_id = property(_get_station_id, _set_station_id)
 
     def get_block(self):
-        return self.grid.get_block(self.row, self.station)
+        return self.grid.get_block(self.row, self.station_id)
 
 
-class Target(GridItem):
+class OnOffOverride(object):
+    def __init__(self):
+        self.led_override = None
+
+    def next_frame(self, pixels, now):
+        if self._handle_led_override(pixels, now):
+            return
+        self._next_frame(pixels, now)
+
+    def _handle_led_override(self, pixels, now):
+        if not self.led_override:
+            return False
+        blink_value = self.led_override.update(now)
+        if blink_value is None:
+            self.led_override = None
+            return False
+        else:
+            self._handle_blink(blink_value, pixels)
+            return True
+
+    def _handle_blink(self, is_on, pixels):
+        if is_on:
+            self._leds_on(pixels)
+        else:
+            self._leds_off(pixels)
+
+    def _next_frame(self, pixels, now):
+        pass
+
+    def _leds_on(self, pixels):
+        pass
+
+    def _leds_off(self, pixels):
+        pass
+
+
+class Target(GridItem, OnOffOverride):
     """Indicates where a block is supposed to end up.
 
     Each target colors the two outside pixels of each cell.
@@ -226,42 +311,29 @@ class Target(GridItem):
 
     def __init__(self, blink, color, location, grid):
         GridItem.__init__(self, location, grid)
+        OnOffOverride.__init__(self)
         self.color = color
         self.blink = blink
-        self.target_blink = None
 
     def on_hit(self, block):
-        if are_same_color(self, block):
-            logger.debug('Block succesfully moved into the target')
-            self.target_blink = BlinkCount(self.blink, 6)
-            return self.target_blink
-        else:
-            return None
+        assert are_same_color(self, block)
+        logger.debug('Block succesfully moved into the target')
+        self.led_override = BlinkCount(self.blink, 6)
+        block.led_override = self.led_override
 
-    def next_frame(self, pixels, now):
-        if self._handle_target_blink(pixels, now):
-            return
-        station = STATE.layout.STATIONS[self.station]
+    def _next_frame(self, pixels, now):
+        self._leds_on(pixels)
+
+    def get_station(self):
+        return STATE.layout.STATIONS[self.station_id]
+
+    def _leds_on(self, pixels):
+        station = self.get_station()
         pixels[self.row, [station.left, station.right - 1]] = self.color
 
-    def _handle_target_blink(self, pixels, now):
-        if self.target_blink:
-            blink_value = self.target_blink.update(now)
-            if blink_value is None:
-                self.target_blink = None
-                return False
-            else:
-                self._handle_blink(blink_value, pixels)
-                return True
-        else:
-            return False
-
-    def _handle_blink(self, value, pixels):
-        station = STATE.layout.STATIONS[self.station]
-        if value:
-            pixels[self.row, [station.left, station.right - 1]] = self.color
-        else:
-            pixels[self.row, [station.left, station.right - 1]] = 0
+    def _leds_off(self, pixels):
+        station = self.get_station()
+        pixels[self.row, [station.left, station.right - 1]] = 0
 
 
 def are_same_color(a, b):
@@ -269,21 +341,21 @@ def are_same_color(a, b):
 
 
 class StationHandler(object):
-    def __init__(self, station, grid):
-        self.station = station
+    def __init__(self, station_id, grid):
+        self.station_id = station_id
         self.grid = grid
 
     def handle_button_presses(self, button_presses):
         # if you mash keys, we're just taking the first one
         button_press = list(button_presses.keys())[0]
-        logger.debug('For station %s, button %s was pressed', self.station, button_press)
+        logger.debug('For station %s, button %s was pressed', self.station_id, button_press)
         label = LABEL[button_press]
         if label == 'MIDDLE':
             return
         motion = MOVEMENTS[button_press]
-        blocks = self.grid.get_blocks(self.station)
+        blocks = self.grid.get_blocks(self.station_id)
         if not blocks[0] and not blocks[1]:
-            logger.debug('No blocks in station %s', self.station)
+            logger.debug('No blocks in station %s', self.station_id)
             return
         if blocks[0] and blocks[1]:
             self._handle_two_blocks(blocks, label, motion)
@@ -292,7 +364,7 @@ class StationHandler(object):
             block.move(motion)
 
     def _handle_two_blocks(self, blocks, label, motion):
-        logger.debug('There are two blocks in %s', self.station)
+        logger.debug('There are two blocks in %s', self.station_id)
         assert not (blocks[0].mode == Block.ON and blocks[1].mode == Block.ON)
         if label == 'LEFT' or label == 'RIGHT':
             self._move_the_on_block(blocks, motion)
@@ -356,20 +428,24 @@ class BlinkCount(object):
             return blink
 
 
-class Block(GridItem):
+class Block(GridItem, OnOffOverride):
     ON = 0
     OFF = 1
 
-    def __init__(self, blink, mode, color, location, grid):
+    def __init__(self, blink, mode, color, target, location, grid):
         GridItem.__init__(self, location, grid)
+        OnOffOverride.__init__(self)
         self.blink = blink
         self.mode = mode
         self.color = color
-        # set when this block is at the target
-        self.target_blink = None
+        self.target = target
+
+    def at_target(self):
+        return (self.target.location == self.location).all()
 
     def move(self, motion):
         assert self.mode == Block.ON
+        was_at_target = self.at_target()
         location = translations.move(
             self.location, motion, (N_ROWS - 1, N_STATIONS), (True, False))
         if (location == self.location).all():
@@ -378,45 +454,43 @@ class Block(GridItem):
         if self.grid.get_block(location[0], location[1]):
             logger.debug('Move failed; there is already a block at the new location')
             return False
-        self.grid.remove(self.row, self.station, self)
+        self.grid.remove(self.row, self.station_id, self)
         self.location = location
-        self.grid.add(self.row, self.station, self)
-        other_block = self.grid.get_block(other_row(self.row), self.station)
-        if other_block and other_block.mode == Block.ON:
-            self.mode = Block.OFF
+        self.grid.add(self.row, self.station_id, self)
+        self._check_if_mode_should_be_turned_off()
+        self._check_target_status(was_at_target)
         # see if we moved into the target
-        target = self.grid.get_target(location[0], location[1])
-        if target:
-            self.target_blink = target.on_hit(self)
         return True
 
-    def next_frame(self, pixels, now):
-        if self._handle_target_blink(pixels, now):
-            return
+    def _check_if_mode_should_be_turned_off(self):
+        other_block = self.grid.get_block(other_row(self.row), self.station_id)
+        if other_block and other_block.mode == Block.ON:
+            self.mode = Block.OFF
+
+    def _check_target_status(self, was_at_target):
+        if self.at_target():
+            self.target.on_hit(self)
+        elif was_at_target:
+            logger.warning('We left the target, what should happen?')
+            # TODO, somebody else should probably turn this off
+            self.led_override = None
+
+    def _next_frame(self, pixels, now):
         if self.mode == Block.OFF:
-            station = STATE.layout.STATIONS[self.station]
-            pixels[self.row, station.left + 1:station.right - 1] = self.color
+            self._leds_on(pixels)
         else:
             self._handle_blink(self.blink.update(now), pixels)
 
-    def _handle_target_blink(self, pixels, now):
-        if self.target_blink:
-            blink_value = self.target_blink.update(now)
-            if blink_value is None:
-                self.target_blink = None
-                return False
-            else:
-                self._handle_blink(blink_value, pixels)
-                return True
-        else:
-            return False
+    def get_station(self):
+        return STATE.layout.STATIONS[self.station_id]
 
-    def _handle_blink(self, value, pixels):
-        station = STATE.layout.STATIONS[self.station]
-        if value:
-            pixels[self.row, station.left + 1:station.right - 1] = self.color
-        else:
-            pixels[self.row, station.left + 1:station.right - 1] = 0
+    def _leds_on(self, pixels):
+        station = self.get_station()
+        pixels[self.row, station.left + 1:station.right - 1] = self.color
+
+    def _leds_off(self, pixels):
+        station = self.get_station()
+        pixels[self.row, station.left + 1:station.right - 1] = 0
 
 
 def other_row(row):
@@ -443,16 +517,17 @@ class TestKeyboardInputs(af.Effect):
                 osc_data.button_pressed(station, button)
         self.effect.next_frame(pixels, now, collab, osc_data)
 
+
 SCENES = [
     af.Scene(
         'arrange-blocks',
         tags=[af.Scene.TAG_GAME],
-        collaboration_manager=collaboration.NoOpCollaborationManager(),
+        collaboration_manager=collaboration.PassThru(),
         effects=[ArrangeBlocks(Grid.make())]),
     af.Scene(
         'arrange-blocks-debug',
-        tags=[af.Scene.TAG_GAME],
-        collaboration_manager=collaboration.NoOpCollaborationManager(),
+        tags=[af.Scene.TAG_TEST],
+        collaboration_manager=collaboration.PassThru(),
         effects=[TestKeyboardInputs(ArrangeBlocks(Grid.make()))])
 
 ]
