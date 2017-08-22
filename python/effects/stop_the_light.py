@@ -34,18 +34,14 @@ LIGHT_BLUE = (135, 206, 250)
 # (12 hits)
 PTS = (17, 14, 12, 11, 10, 9, 8, 7, 6, 4, 2, 1)
 
-# start slow and fat
-WidthSpeed = collections.namedtuple('WidthSpeed', 'width speed')
-
-EASY = [5, 4, 3]
-MEDIUM = [4, 3, 2]
-HARD = [3, 3, 1]
-
-
 ACTIVE = 'active'
 HIT = 'hit'
 MISS = 'miss'
 
+# widths of the sprite at different levels
+EASY = [5, 4, 3, 2, 1]
+MEDIUM = [4, 3, 2, 1]
+HARD = [3, 3, 1]
 
 class Level(object):
     def __init__(self, widths):
