@@ -143,6 +143,7 @@ class Rotate(object):
     def start(self, now):
         self.last_time = now
         self.rotation_speed.start(now)
+        return self
 
     def __call__(self, arr, now):
         # vary the rotation speed
@@ -151,15 +152,12 @@ class Rotate(object):
         delta = (now - self.last_time) * speed
         self.last_time = now
         self.rotation = (self.rotation + delta) % self.n
-        # using negative rotation here seems to be less impressive
-        # I think its because it matches with the rotation of
-        # the entire structure.
         return rotate(arr, int(self.rotation))
 
 
 # idx can be negative
 def rotate(arr, idx):
-    return np.roll(arr, idx, axis=0)
+    return np.roll(arr, idx, axis=1)
 
 
 # constants to make moving easier to specify
