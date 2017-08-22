@@ -1,120 +1,195 @@
-"""Recreate the classic arcade game where a light rotates around and
-the player has to hit the button to stop the light at a target.
-"""
-# sorry for the spaghetti like nature of this code.
+import collections
+import itertools
+import logging
+import random
 
-from __future__ import division
+import numpy as np
 
-from hoe.animation_framework import Scene
-from hoe.animation_framework import Effect
-from hoe.animation_framework import CollaborationManager
+from hoe import animation_framework as af
+from hoe import collaboration
+from hoe import color_utils
 from hoe.state import STATE
+from hoe import translations
+from hoe import transitions
 
-from generic_effects import SolidBackground
 
+logger = logging.getLogger(__name__)
+
+N_ROWS = 2
+
+BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 GREEN = (0, 255, 0)
 YELLOW = (255, 255, 0)
-BLACK = (0, 0, 0)
 
+class StopTheLight(af.Effect):
+    def __init__(self, layout):
+        self.state = State.ACTIVE
+        self.successful_sections = [0] * layout.sections
+        self.fps = STATE.fps
+        rotation_speed = .5  # rotation / second
+        location = 0
+        self.sprite = Sprite(layout, location, rotation_speed)
+        self.layout = layout
 
-class StopTheLight(CollaborationManager, Effect):
-    def __init__(self, strip_bottom=5, strip_top=20):
-        Effect.__init__(self)
-        self.target_location = 15  # Moved to not deal with wrap-around case at 2am
-        # self.rotation_speed = .5 # rotation / second
-        self.sprite_location = 20
-        self.direction = 1
-        self.hit_countdown = 0
-        self.sprite_color = BLUE
+    def set_target_idx(self):
+        self.target_idx = self.layout.grid[self.bottom, self.section_centers]
 
-        # Framework currently does not support args to vary effects, but when it does, this will come in handy
-        self.strip_bottom = strip_bottom
-        self.strip_top = strip_top
+    def scene_starting(self, now, osc):
+        self.bottom = slice(None, N_ROWS, None)
+        self.top = slice(N_ROWS, None, None)
+        self.section_centers = [(s.left + s.right) / 2 for s in self.layout.STATIONS]
+        self.set_target_idx()
+        self.now = now
+        self.ignore_buttons_until = self.now + random.random() * 2 + .5
+        self.sprite.start(self.now)
 
-        self.bottom_rows = set(
-            reduce(lambda a, b: a + b,
-                   [STATE.layout.row[i] for i in range(self.strip_bottom, self.strip_top)]))
-        self.target_idx = self.bottom_rows & set(STATE.layout.slice[self.target_location])
+    def init_pixels(self):
+        self.pixels[self.bottom, :] = 32
 
-        self.max_slice = max(STATE.layout.slice)
-
-    def compute_state(self, t, collaboration_state, osc_data):
-        if not "count" in collaboration_state.keys():
-            collaboration_state["count"] = 1
-        # A button was pressed!
-        # For now just use b0
-        if osc_data.stations[0].button_presses:
-            # Did it hit? TODO: Deal with wrap-around
-            if self.target_location in (self.sprite_location - 1, self.sprite_location,
-                                        self.sprite_location + 1):
-                # On a hit, set green and change directions. Wait 2 seconds
-                self.hit_countdown = 30 * 2  # TODO: make fps available or use time again
-                self.direction *= -1
-                self.sprite_color = GREEN
-                collaboration_state["count"] = min(6, collaboration_state["count"] + 1)
-            else:
-                # On a miss, still pause, but for less, and change to the "bad" color
-                self.hit_countdown = 15
-                self.sprite_color = YELLOW
-                collaboration_state["count"] = max(1, collaboration_state["count"] - 1)
-
-        return collaboration_state
-
-    def next_frame(self, pixels, t, collaboration_state, osc_data):
-        if self.hit_countdown:
-            # Already hit, waiting to start moving again
-            self.hit_countdown -= 1
+    def next_frame(self, pixels, now, collaboration_state, osc_data):
+        self.now = now
+        self.pixels = pixels
+        self.init_pixels()
+        if self.state == State.ACTIVE:
+            self._handle_active(pixels, now, collaboration_state, osc_data)
+        elif self.state == State.HIT:
+            self._handle_hit(pixels, now, collaboration_state, osc_data)
+        elif self.state == State.MISS:
+            self._handle_miss(pixels, now, collaboration_state, osc_data)
         else:
-            # No button pressed, so move and set the color back to blue (in case this is first frame back)
-            self.sprite_location = (self.sprite_location + self.direction) % self.max_slice
-            self.sprite_color = BLUE
+            raise Exception('You are in a bad state: {}'.format(self.state))
 
-        sprite_idx = (self.bottom_rows & set.union(*[
-            set(STATE.layout.slice[i % (self.max_slice + 1)])
-            for i in (self.sprite_location - 1, self.sprite_location, self.sprite_location + 1)
-        ]))
+    def _handle_miss(self, pixels, now, collaboration_state, osc_data):
+        # Note that there is no call to sprite.update()
+        self.pixels[self.target_idx] = YELLOW
+        columns = self.sprite.columns()
+        self.flash.render(self.now, self.pixels)
+        if self.now >= self.wait_until:
+            self.sprite.reverse(self.now)
+            self.wait_until = None
+            self.ignore_buttons_until = self.now + random.random() * 2 + .5
+            self.state = State.ACTIVE
 
-        # Now we are ready to color things in:
+    def _handle_hit(self, pixels, now, collaboration_state, osc_data):
+        # Note that there is no call to sprite.update()
+        self.pixels[self.target_idx] = YELLOW
+        columns = self.sprite.columns()
+        self.flash.render(self.now, self.pixels)
+        if self.now >= self.wait_until:
+            self.sprite.reverse(self.now)
+            self.wait_until = None
+            self.ignore_buttons_until = self.now + random.random() * 2 + .5
+            self.state = State.ACTIVE
 
-        # Since this will be a foreground layer, we can't fall back to other pix in the bottoms rows
-        for idx in self.bottom_rows:
-            pixels[idx] = self.sprite_color if idx in sprite_idx else \
-                    RED if idx in self.target_idx else \
-                        BLACK
+    def _handle_active(self, pixels, now, collaboration_state, osc_data):
+        self.sprite.update(self.now)
+        self.pixels[self.target_idx] = YELLOW
+        columns = self.sprite.columns()
+        # want to allow the sprite to move for a little while
+        # before allowing any buttons to be pressed
+        if self.now < self.ignore_buttons_until:
+            # have the sprite be light blue until a button can be
+            # pressed
+            # TODO: maybe increase the wait time if a button
+            # is pressed while the sprite is light blue; this will stop
+            # people from just spamming the buttons, although
+            # that is not a useful strategy.
+            self.pixels[self.bottom, columns] = (135, 206, 250)
+            return
+        else:
+            self.pixels[self.bottom, columns] = BLUE
+        sprite_idx = self.layout.grid[self.bottom, columns]
+        button_pressed, hit_section = self._find_hit_section(osc_data)
+        if hit_section is not None:
+            self.state = State.HIT
+            self.flash = Flash(sprite_idx, .25, (GREEN, BLACK)).start(now)
+            self.wait_until = self.now + 3
+            self.successful_sections[hit_section] += 1
+            self.set_target_idx()
+        elif button_pressed:
+            self.state = State.MISS
+            self.flash = Flash(sprite_idx, .25, (RED, BLACK)).start(now)
+            self.wait_until = self.now + 2
+
+    def _find_hit_section(self, osc_data):
+        columns = self.sprite.columns()
+        button_pressed = False
+        for i, station in enumerate(osc_data.stations):
+            if station.button_presses:
+                button_pressed = True
+                print i, station.button_presses
+                target = self.section_centers[i]
+                if target in columns:
+                    return True, i
+        return button_pressed, None
 
 
-class CollaborationCountBasedBackground(Effect):
-    def __init__(self, color=(0, 255, 0), max_count=6, bottom_row=3, max_row=216):
-        Effect.__init__(self)
-        self.color = color
-        self.bottom_row = bottom_row
-        self.top_row_dict = {
-            i: int(bottom_row + i * (max_row - bottom_row) / max_count)
-            for i in range(1, max_count + 1)
-        }
-        self.current_level = int(bottom_row + (max_row - bottom_row) / max_count)
-        self.target_row = self.current_level
+class Flash(object):
+    def __init__(self, idx, duration, colors):
+        self.idx = idx
+        self.duration = duration
+        self.colors = colors
+        self.next_switch = None
+        self.color_idx = 0
 
-    def next_frame(self, pixels, t, collaboration_state, osc_data):
-        self.target_row = self.top_row_dict[collaboration_state["count"]]
-        if self.target_row > self.current_level:
-            self.current_level += 1
-        elif self.target_row < self.current_level:
-            self.current_level -= 1
+    def start(self, now):
+        self.next_switch = now + self.duration
+        return self
 
-        for ii in set(
-                reduce(lambda a, b: a + b,
-                       [STATE.layout.row[i] for i in range(self.bottom_row, self.current_level)])):
-            pixels[ii] = self.color
+    def current_color(self):
+        return self.colors[self.color_idx]
+
+    def switch(self, now):
+        self.next_switch = now + self.duration
+        self.color_idx = (self.color_idx + 1) % len(self.colors)
+
+    def render(self, now, pixels):
+        if self.next_switch < now:
+            self.switch(now)
+        pixels[self.idx] = self.current_color()
+
+
+class State(object):
+    ACTIVE = 'active'
+    HIT = 'hit'
+    MISS = 'miss'
+
+
+class Sprite(object):
+    def __init__(self, layout, start_location, rotation_speed, width=3):
+        self.layout = layout
+        self.start_location = start_location
+        self.rotation_speed = rotation_speed
+        self.location = start_location
+        self.width = width
+        self.start_time = None
+
+    def start(self, now):
+        self.start_time = now
+
+    def reverse(self, now):
+        self.start_location = self.location
+        self.rotation_speed = -self.rotation_speed
+        self.start(now)
+
+    def update(self, now):
+        sprite_rotation = (now - self.start_time) * self.rotation_speed
+        location = int(self.layout.columns * sprite_rotation) + self.start_location
+        self.location = location % self.layout.columns
+
+    def columns(self):
+        left = int(self.width / 2)
+        right = self.width - left
+        return map(self.layout.colmod, range(self.location - left, self.location + right))
 
 
 SCENES = [
-    Scene(
-        "stoplight",
-        tags=[Scene.TAG_GAME, Scene.TAG_WIP],
-        collaboration_manager=StopTheLight(0, 2),
-        effects=[CollaborationCountBasedBackground()])
+    af.Scene(
+        'stop-the-light',
+        tags=[af.Scene.TAG_GAME],
+        collaboration_manager=collaboration.NoOpCollaborationManager(),
+        effects=[StopTheLight(STATE.layout)]),
 ]

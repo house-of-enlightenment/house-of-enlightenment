@@ -5,9 +5,6 @@ from hoe.animation_framework import CollaborationManager
 from hoe.animation_framework import EffectFactory
 from hoe.animation_framework import MultiEffect
 from hoe.state import STATE
-from generic_effects import NoOpCollaborationManager
-from generic_effects import SolidBackground
-from random import randrange
 
 
 class TonyTestEffect(Effect):

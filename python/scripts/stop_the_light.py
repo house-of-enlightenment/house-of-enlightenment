@@ -16,6 +16,7 @@ import numpy as np
 from hoe import layout
 from hoe import opc
 from hoe import osc_utils
+from hoe.state import STATE
 
 # TODO: fix this. Move the stream_up code somewhere shared
 import stream_up as su
@@ -42,9 +43,10 @@ def main():
     server = osc_utils.create_osc_server()
     # pylint: disable=no-value-for-parameter
     server.addMsgHandler("/input/button", lambda *args: add_station_id(osc_queue, *args))
-    background = su.UpAndRotateEffect(hoe_layout, su.RainbowRow(hoe_layout))
+    #background = su.UpAndRotateEffect(hoe_layout, su.RainbowRow(hoe_layout))
     interaction = Effect(hoe_layout, osc_queue)
-    render = su.Render(client, osc_queue, hoe_layout, [background, interaction])
+    STATE.fps = 30
+    render = su.Render(client, osc_queue, hoe_layout, [interaction])
     render.run_forever()
 
 

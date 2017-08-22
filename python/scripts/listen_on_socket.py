@@ -5,7 +5,7 @@ s.listen(1)
 conn, addr = s.accept()
 try:
     while 1:
-        data = conn.recv(1024) # pylint: disable=no-member
+        data = conn.recv(1024)  # pylint: disable=no-member
         print "Received data", data
 finally:
     conn.close()

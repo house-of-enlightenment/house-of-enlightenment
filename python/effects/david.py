@@ -10,7 +10,7 @@ from random import randint
 from random import getrandbits
 from itertools import product
 from math import ceil
-from generic_effects import SolidBackground
+from shared import SolidBackground
 from generic_effects import Rainbow
 from generic_effects import NoOpCollaborationManager
 from generic_effects import FrameRotator
@@ -30,8 +30,8 @@ class ButtonChaseController(Effect, CollaborationManager):
             draw_bottom_layer=True,  # Turn the bottom layer on or off
             flash_rate=10,  # Flash on (or off) every X frames
             backwards_progress=False,  # If true, missing a button actually removes a target
-            selection_time=5  # Time to hit before picking a new one (if backwards_progress, also lose progress)
-    ):
+            # Time to hit before picking a new one (if backwards_progress, also lose progress)
+            selection_time=5):
 
         # TODO Is this super initialization needed? Probably not, but future-proofs it
         Effect.__init__(self)
@@ -84,7 +84,9 @@ class ButtonChaseController(Effect, CollaborationManager):
                 collaboration_state.clear()
         else:
             collaboration_state.pop("last_hit_button", None)
-            if "last_hit_time" in collaboration_state and collaboration_state["last_hit_time"] + self.selection_time < t:
+            late = ("last_hit_time" in collaboration_state
+                    and collaboration_state["last_hit_time"] + self.selection_time < t)
+            if late:
                 # Too late!
                 self.pick_next(osc_data=osc_data, missed=True)
                 # Tick forward
@@ -132,7 +134,7 @@ class ButtonChaseController(Effect, CollaborationManager):
         if not missed and not self.off:
             # TODO: Terminate the animation
             print "Finished!"
-            self.reset_state()
+            self.reset_state(osc_data=osc_data)
             return True
 
         last_button = self.next_button
@@ -229,10 +231,14 @@ class DiskPulsers(Effect):
         self.top_row = top_row if top_row else STATE.layout.rows
         self.after_fill = after_fill
         self.frame = 0
-        self.row_indices = [range(STATE.layout.BOTTOM_DISC.center-r, self.bottom_row-1, -self.pulse_length) +\
-                             range(STATE.layout.BOTTOM_DISC.center+r,STATE.layout.DISC_MIDPOINT+1,self.pulse_length) + \
-                             range(STATE.layout.TOP_DISC.center - r, STATE.layout.DISC_MIDPOINT, -self.pulse_length) + \
-                             range(STATE.layout.TOP_DISC.center + r, self.top_row, self.pulse_length) for r in range(self.pulse_length)]
+        self.row_indices = [
+            range(STATE.layout.BOTTOM_DISC.center - r, self.bottom_row - 1, -self.pulse_length) +
+            range(STATE.layout.BOTTOM_DISC.center + r, STATE.layout.DISC_MIDPOINT + 1,
+                  self.pulse_length) + range(STATE.layout.TOP_DISC.center - r,
+                                             STATE.layout.DISC_MIDPOINT, -self.pulse_length) +
+            range(STATE.layout.TOP_DISC.center + r, self.top_row, self.pulse_length)
+            for r in range(self.pulse_length)
+        ]
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
         self.frame += 1
@@ -257,7 +263,8 @@ class RotatingWedge(Effect):
         self.color = np.asarray(color, np.uint8)
         self.width = width
         self.direction = direction
-        self.angle = angle * 1.0 * STATE.layout.columns / STATE.layout.rows if scale_ratio else angle
+        self.angle = (angle * 1.0 * STATE.layout.columns / STATE.layout.rows
+                      if scale_ratio else angle)
         self.start_col = 0
         self.end_col = start_col + width
         self.additive = additive
@@ -544,16 +551,6 @@ SCENES = [
         collaboration_manager=NoOpCollaborationManager(),
         effects=[SolidBackground(), TideLauncher(),
                  FrameRotator()]),
-    # TODO This is currently just an eyesore
-    # Scene("columnfunction",
-    #       NoOpCollaborationManager(),
-    #       Columns(color=(128, 0, 0), column_picker=partial(pick_mod_n, mod=4)),
-    #       Columns(color=(0,128,0), column_picker=partial(pick_mod_n, mod=4, value=2)),
-    #       FrameRotator(rate=.5),
-    #       Columns(color=(100,0,100), column_picker=partial(pick_mod_n, mod=4, value=1), additive=True),
-    #       Columns(color=(0,100,100), column_picker=partial(pick_mod_n, mod=4, value=3), additive=True),
-    #       FrameRotator(rate=-.25),
-    #       ),
     Scene(
         "rainbowblackoutcolumns",
         tags=[Scene.TAG_EXAMPLE],
