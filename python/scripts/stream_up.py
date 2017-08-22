@@ -104,7 +104,7 @@ class Render(object):
             for effect in self.effects:
                 effect.next_frame(now, self.pixels)
             # make half very dark gray for a more realistic view
-            self.pixels[:, 44:] = 5
+            #self.pixels[:, 44:] = 5
             self.pixels.put(self.client)
             self.sleep_until_next_frame(now)
 
