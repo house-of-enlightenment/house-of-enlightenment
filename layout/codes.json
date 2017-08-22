@@ -27,6 +27,101 @@
       "PURPLE" : [
         "GREEN", "BLUE"
       ]
+    }, "scene2": {
+      "RED": [
+        "WHITE", "RED"
+      ],
+      "ORANGE" : [
+        "RED", "WHITE", "BLUE"
+      ],
+      "YELLOW" : [
+        "BLUE"
+      ],
+      "GREEN" : [
+        "YELLOW", "WHITE"
+      ],
+      "BLUE" : [
+        "GREEN"
+      ],
+      "PURPLE" : [
+        "GREEN"
+      ]
+    },"scene3": {
+      "RED": [
+        "GREEN", "BLUE"
+      ],
+      "ORANGE" : [
+        "YELLOW"
+      ],
+      "YELLOW" : [
+        "WHITE"
+      ],
+      "GREEN" : [
+        "GREEN", "BLUE"
+      ],
+      "BLUE" : [
+        "YELLOW"
+      ],
+      "PURPLE" : [
+        "RED"
+      ]
+    }, "scene4": {
+      "RED": [
+        "WHITE"
+      ],
+      "ORANGE" : [
+        "RED", "BLUE"
+      ],
+      "YELLOW" : [
+        "BLUE"
+      ],
+      "GREEN" : [
+        "GREEN", "YELLOW"
+      ],
+      "BLUE" : [
+        "RED", "WHITE"
+      ],
+      "PURPLE" : [
+        "YELLOW", "GREEN", "BLUE"
+      ]
+    }, "scene5": {
+      "RED": [
+        "WHITE"
+      ],
+      "ORANGE" : [
+        "GREEN"
+      ],
+      "YELLOW" : [
+        "BLUE"
+      ],
+      "GREEN" : [
+        "RED"
+      ],
+      "BLUE" : [
+        "RED", "WHITE", "YELLOW"
+      ],
+      "PURPLE" : [
+        "YELLOW"
+      ]
+    }, "scene6": {
+      "RED": [
+        "BLUE"
+      ],
+      "ORANGE" : [
+        "BLUE"
+      ],
+      "YELLOW" : [
+        "BLUE", "WHITE"
+      ],
+      "GREEN" : [
+        "RED"
+      ],
+      "BLUE" : [
+        "RED"
+      ],
+      "PURPLE" : [
+        "RED", "WHITE"
+      ]
     }
   }
 }
