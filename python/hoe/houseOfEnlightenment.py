@@ -17,7 +17,7 @@ from hoe import opc
 from hoe import osc_utils
 from hoe.play_lidar import play_lidar
 from hoe.state import STATE
-from hoe.stations import Stations
+from hoe.stations import Stations, Codes
 from hoe import utils
 
 logger = logging.getLogger(__name__)
@@ -75,6 +75,7 @@ def parse_command_line():
     STATE.servers = parse_json_file(options.servers)
     STATE.fps = options.fps
     STATE.verbose = options.verbose
+    STATE.codes = Codes(parse_json_file(os.path.join(root_dir, "layout", "codes.json")))
     return options
 
 
@@ -159,8 +160,9 @@ def listen_for_keyboard(scene):
                 # Accepts disable (simulator|arduino|*) [b_id]
                 args = key_lower.split(" ", 2)
                 enabled = args[0] == "enable"
-                if len(args)==3:
-                    STATE.stations.change_client_status(enabled=enabled, client_type=args[1], station_id=int(args[2]))
+                if len(args) == 3:
+                    STATE.stations.change_client_status(
+                        enabled=enabled, client_type=args[1], station_id=int(args[2]))
                 elif len(args) == 2:
                     STATE.stations.change_client_status(enabled=enabled, client_type=args[1])
             else:
@@ -171,7 +173,6 @@ def listen_for_keyboard(scene):
                     osc_utils.send_simple_message(osc_client, args[0], args[1:])
         except:
             traceback.print_exc()
-
 
         sleep(.1)
 

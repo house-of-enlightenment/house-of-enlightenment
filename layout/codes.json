@@ -1,0 +1,127 @@
+{
+  "station_map": {
+    "RED": 0,
+    "ORANGE": 1,
+    "YELLOW": 2,
+    "GREEN": 3,
+    "BLUE": 4,
+    "PURPLE": 5
+  },
+  "book": {
+    "stop-the-light": {
+      "RED": [
+        "RED", "YELLOW"
+      ],
+      "ORANGE" : [
+        "GREEN", "BLUE"
+      ],
+      "YELLOW" : [
+        "RED", "YELLOW"
+      ],
+      "GREEN" : [
+        "GREEN", "BLUE"
+      ],
+      "BLUE" : [
+        "RED", "YELLOW"
+      ],
+      "PURPLE" : [
+        "GREEN", "BLUE"
+      ]
+    }, "scene2": {
+      "RED": [
+        "WHITE", "RED"
+      ],
+      "ORANGE" : [
+        "RED", "WHITE", "BLUE"
+      ],
+      "YELLOW" : [
+        "BLUE"
+      ],
+      "GREEN" : [
+        "YELLOW", "WHITE"
+      ],
+      "BLUE" : [
+        "GREEN"
+      ],
+      "PURPLE" : [
+        "GREEN"
+      ]
+    },"scene3": {
+      "RED": [
+        "GREEN", "BLUE"
+      ],
+      "ORANGE" : [
+        "YELLOW"
+      ],
+      "YELLOW" : [
+        "WHITE"
+      ],
+      "GREEN" : [
+        "GREEN", "BLUE"
+      ],
+      "BLUE" : [
+        "YELLOW"
+      ],
+      "PURPLE" : [
+        "RED"
+      ]
+    }, "scene4": {
+      "RED": [
+        "WHITE"
+      ],
+      "ORANGE" : [
+        "RED", "BLUE"
+      ],
+      "YELLOW" : [
+        "BLUE"
+      ],
+      "GREEN" : [
+        "GREEN", "YELLOW"
+      ],
+      "BLUE" : [
+        "RED", "WHITE"
+      ],
+      "PURPLE" : [
+        "YELLOW", "GREEN", "BLUE"
+      ]
+    }, "scene5": {
+      "RED": [
+        "WHITE"
+      ],
+      "ORANGE" : [
+        "GREEN"
+      ],
+      "YELLOW" : [
+        "BLUE"
+      ],
+      "GREEN" : [
+        "RED"
+      ],
+      "BLUE" : [
+        "RED", "WHITE", "YELLOW"
+      ],
+      "PURPLE" : [
+        "YELLOW"
+      ]
+    }, "scene6": {
+      "RED": [
+        "BLUE"
+      ],
+      "ORANGE" : [
+        "BLUE"
+      ],
+      "YELLOW" : [
+        "BLUE", "WHITE"
+      ],
+      "GREEN" : [
+        "RED"
+      ],
+      "BLUE" : [
+        "RED"
+      ],
+      "PURPLE" : [
+        "RED", "WHITE"
+      ]
+    }
+  }
+}

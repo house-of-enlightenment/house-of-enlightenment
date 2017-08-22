@@ -12,7 +12,6 @@ from hoe.state import STATE
 from hoe import translations
 from hoe import transitions
 
-
 logger = logging.getLogger(__name__)
 
 N_ROWS = 2
@@ -23,6 +22,7 @@ RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 GREEN = (0, 255, 0)
 YELLOW = (255, 255, 0)
+
 
 class StopTheLight(af.Effect):
     def __init__(self, layout):

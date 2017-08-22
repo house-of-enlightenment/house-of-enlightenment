@@ -34,5 +34,6 @@ class PassThru(object):
     """A collab manager where all of the responsibility for setting the
     state belongs to the effects.
     """
+
     def compute_state(self, t, collaboration_state, osc_date):
         return collaboration_state

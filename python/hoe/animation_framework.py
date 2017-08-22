@@ -14,6 +14,8 @@ from hoe.pixels import Pixels
 from hoe.state import STATE
 from hoe.opc import Client
 from hoe.osc_utils import update_buttons
+import hoe.stations
+import numpy as np
 
 
 class AnimationFramework(object):
@@ -22,6 +24,8 @@ class AnimationFramework(object):
         self.osc_server = osc_server
         self.opc_client = opc_client
         self.fps = STATE.fps
+        self.no_interaction_timeout = 5 * 60
+        self.max_scene_timeout = 15 * 60
 
         # Load all scenes from effects package. Then set initial index and load it up
         self.scenes = scenes or load_scenes(tags=tags)
@@ -96,6 +100,8 @@ class AnimationFramework(object):
         """Change the scene by taking the queued scene and swapping it in.
         """
 
+        self.check_game_state(now, osc_data)
+
         if self.queued_scene:
             # Cache the scene queue locally so it can't be changed on us
             next_scene, last_scene, self.queued_scene = self.queued_scene, self.curr_scene, None
@@ -126,6 +132,24 @@ class AnimationFramework(object):
             self.queued_scene = self.scenes[scene_name]
         else:
             print "Could not change scenes. Scene %s does not exist" % scene_name
+
+    def check_game_state(self, now, osc_data):
+        if self.curr_scene is None:
+            return
+
+        last_interaction = STATE.stations.last_interaction()
+        if self.curr_scene.is_completed(
+                now, osc_data
+        ) or last_interaction < now - self.no_interaction_timeout or last_interaction < now - self.max_scene_timeout:
+            # Pick new scene
+            pass
+        elif Scene.TAG_BACKGROUND in self.curr_scene.tags:
+            # Documented hack. We get the current state as 0/1 for each button and make it a string
+            # TODO if we want to optimize this, use a binary search tree (sparse?)
+            curr_state = STATE.stations.get_buttons_code()
+            if curr_state in STATE.codes.codes_to_scenes:
+                print "Picking new scene"
+                self.pick_scene(STATE.codes.codes_to_scenes[curr_state])
 
     # ---- LIFECYCLE (START/STOP) METHODS ----
 
@@ -434,6 +458,28 @@ class Scene(MultiEffect):
             t, self.collaboration_state, osc_data)
         # TODO Why didn't super(MultiEffect, self) work?
         self.next_frame(pixels, t, self.collaboration_state, osc_data)
+
+
+class ButtonFeedbackDisplay(Effect):
+    count_to_indices = {
+        0: [],
+        1: [(1, 10)],
+        2: [(1, 5), (6, 10)],
+        3: [(1, 4), (4, 7), (7, 10)],
+        4: [(1, 3), (3, 5), (6, 8), (8, 10)],
+        5: [(1, 3), (3, 5), (5, 6), (6, 8), (8, 10)]
+    }
+
+    def next_frame(self, pixels, now, collaboration_state, osc_data):
+        colors = np.zeros((STATE.layout.columns, 3), np.uint8)
+        for s_id, station in enumerate(STATE.stations):
+            high_buttons = station.buttons.get_high_buttons()
+            for i, sli in zip(high_buttons,
+                              ButtonFeedbackDisplay.count_to_indices[len(high_buttons)]):
+                colors[sli[0] + s_id * 11:sli[1] + s_id * 11, :] = hoe.stations.colors_to_rgb[
+                    hoe.stations.id_to_colors[i]]
+
+        pixels[0:2, :] = colors
 
 
 class EffectFactory(object):

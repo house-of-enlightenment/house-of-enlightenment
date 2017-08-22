@@ -28,6 +28,7 @@ class Global(Borg):
         self.stations = None
         self.fps = None
         self.verbose = False
+        self.codes = None
 
 
 STATE = Global()
