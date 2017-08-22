@@ -24,8 +24,8 @@ class AnimationFramework(object):
         self.osc_server = osc_server
         self.opc_client = opc_client
         self.fps = STATE.fps
-        self.no_interaction_timeout = 5*60
-        self.max_scene_timeout = 15*60
+        self.no_interaction_timeout = 5 * 60
+        self.max_scene_timeout = 15 * 60
 
         # Load all scenes from effects package. Then set initial index and load it up
         self.scenes = scenes or load_scenes(tags=tags)
@@ -138,7 +138,9 @@ class AnimationFramework(object):
             return
 
         last_interaction = STATE.stations.last_interaction()
-        if self.curr_scene.is_completed(now, osc_data) or last_interaction < now-self.no_interaction_timeout or last_interaction < now-self.max_scene_timeout:
+        if self.curr_scene.is_completed(
+                now, osc_data
+        ) or last_interaction < now - self.no_interaction_timeout or last_interaction < now - self.max_scene_timeout:
             # Pick new scene
             pass
         elif Scene.TAG_BACKGROUND in self.curr_scene.tags:
@@ -148,7 +150,6 @@ class AnimationFramework(object):
             if curr_state in STATE.codes.codes_to_scenes:
                 print "Picking new scene"
                 self.pick_scene(STATE.codes.codes_to_scenes[curr_state])
-
 
     # ---- LIFECYCLE (START/STOP) METHODS ----
 
@@ -215,6 +216,7 @@ class AnimationFramework(object):
 
     def shutdown(self):
         self.serve = False
+
 
 def load_scenes(effects_dir=None, tags=[]):
     # type: (str) -> {str, Scene}
@@ -460,22 +462,24 @@ class Scene(MultiEffect):
 
 class ButtonFeedbackDisplay(Effect):
     count_to_indices = {
-        0 : [],
-        1 : [(1,10)],
-        2 : [(1,5),(6,10)],
-        3 : [(1,4),(4,7),(7,10)],
-        4 : [(1,3),(3,5),(6,8),(8,10)],
-        5 : [(1,3),(3,5),(5,6),(6,8),(8,10)]
+        0: [],
+        1: [(1, 10)],
+        2: [(1, 5), (6, 10)],
+        3: [(1, 4), (4, 7), (7, 10)],
+        4: [(1, 3), (3, 5), (6, 8), (8, 10)],
+        5: [(1, 3), (3, 5), (5, 6), (6, 8), (8, 10)]
     }
 
     def next_frame(self, pixels, now, collaboration_state, osc_data):
-        colors = np.zeros((STATE.layout.columns,3),np.uint8)
+        colors = np.zeros((STATE.layout.columns, 3), np.uint8)
         for s_id, station in enumerate(STATE.stations):
             high_buttons = station.buttons.get_high_buttons()
-            for i,sli in zip(high_buttons, ButtonFeedbackDisplay.count_to_indices[len(high_buttons)]):
-                colors[sli[0]+s_id*11:sli[1]+s_id*11,:] = hoe.stations.colors_to_rgb[hoe.stations.id_to_colors[i]]
+            for i, sli in zip(high_buttons,
+                              ButtonFeedbackDisplay.count_to_indices[len(high_buttons)]):
+                colors[sli[0] + s_id * 11:sli[1] + s_id * 11, :] = hoe.stations.colors_to_rgb[
+                    hoe.stations.id_to_colors[i]]
 
-        pixels[0:2,:] = colors
+        pixels[0:2, :] = colors
 
 
 class EffectFactory(object):

@@ -7,22 +7,23 @@ from hoe.state import STATE
 from itertools import chain
 
 id_to_colors = {
-    0 : "YELLOW",
-    1 : "GREEN",
-    2 : "WHITE",
-    3 : "RED",
-    4 : "BLUE",
+    0: "YELLOW",
+    1: "GREEN",
+    2: "WHITE",
+    3: "RED",
+    4: "BLUE",
 }
 
-colors_to_id = {v: k for v, k in id_to_colors.items() }
+colors_to_id = {v: k for v, k in id_to_colors.items()}
 # TODO - Color scale?
 colors_to_rgb = {
-    "RED" : (255,0,0),
-    "GREEN" : (0,255,0),
-    "BLUE" : (0,0,255),
-    "YELLOW" : (200,200,0),
-    "WHITE" : (255,255,255)
+    "RED": (255, 0, 0),
+    "GREEN": (0, 255, 0),
+    "BLUE": (0, 0, 255),
+    "YELLOW": (200, 200, 0),
+    "WHITE": (255, 255, 255)
 }
+
 
 class Stations(object):
     def __init__(self):
@@ -50,7 +51,8 @@ class Stations(object):
         for station in stations:
             if isinstance(station.client, MultiReceiverStationClient):
                 if client_type is None or client_type == "*":
-                    station.client.change_client_status(arduino_enabled=enabled, simulator_enabled=enabled)
+                    station.client.change_client_status(
+                        arduino_enabled=enabled, simulator_enabled=enabled)
                 elif client_type is "arduino":
                     station.client.change_client_status(arduino_enabled=enabled)
                 elif client_type is "simulator":
@@ -66,6 +68,7 @@ class Stations(object):
     def last_interaction(self):
         #TODO:
         return time.time()
+
 
 class Station(object):
     def __init__(self, client, buttons=None):
@@ -116,6 +119,7 @@ class StationButtons(object):
 
     def as_array(self):
         return [b for b in self._buttons]  # TODO performance concerns
+
 
 class StationClient(object):
     def __init__(self, s_id, host, port, timeout=0.5):
@@ -181,6 +185,7 @@ class StationClient(object):
 
         return True
 
+
 class MultiReceiverStationClient(object):
     def __init__(self, simulator_client, arduino_client):
         self.simulator_client = simulator_client
@@ -199,6 +204,7 @@ class MultiReceiverStationClient(object):
             self.arduino_client.enabled = arduino_enabled
         if simulator_enabled is not None:
             self.simulator_client.enabled = simulator_enabled
+
 
 def _init_station_clients():
     assert ("remote" in STATE.servers) and ("station_controls" in STATE.servers["remote"]), \
@@ -245,16 +251,23 @@ def get_code_as_int(code_array):
 class Codes(object):
     def __init__(self, json):
         self.station_colors_to_station_id = {k: int(v) for k, v in json["station_map"].items()}
-        self.station_ids_to_station_colors = {v: k for k, v in self.station_colors_to_station_id.items()}
-        self.scenes_to_codes = {s: self.create_code_string_for_scene(s, codes) for s,codes in json["book"].items()}
+        self.station_ids_to_station_colors = {
+            v: k
+            for k, v in self.station_colors_to_station_id.items()
+        }
+        self.scenes_to_codes = {
+            s: self.create_code_string_for_scene(s, codes)
+            for s, codes in json["book"].items()
+        }
         self.codes_to_scenes = {v: k for k, v in self.scenes_to_codes.items()}
 
     def create_code_string_for_scene(self, scene, scene_code_array):
         assert len(scene_code_array) == 6, "Not enough codes"
 
-        stations = [0]*6
+        stations = [0] * 6
         for color in self.station_colors_to_station_id.keys():
-            assert color in scene_code_array, "Station color {} not specified for scene {}".format(color, scene)
+            assert color in scene_code_array, "Station color {} not specified for scene {}".format(
+                color, scene)
             station_id = self.station_colors_to_station_id[color]
             stations[station_id] = [id_to_colors[i] in scene_code_array[color] for i in range(5)]
         return get_code_as_int(stations)

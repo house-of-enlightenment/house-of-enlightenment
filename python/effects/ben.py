@@ -482,10 +482,8 @@ SCENES = [
         effects=[
             LaunchZigZag(except_station=0),
             FiniteDifference(
-                master_station=0,
-                boundary=FiniteDifference.NEUMANN,
-                pde=FiniteDifference.DIFFUSION)
-                #darken_mids=bool(rand.getrandbits(1)))
+                master_station=0, boundary=FiniteDifference.NEUMANN, pde=FiniteDifference.DIFFUSION)
+            #darken_mids=bool(rand.getrandbits(1)))
         ]),
     Scene(
         "lidar_fusion",

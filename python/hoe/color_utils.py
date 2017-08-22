@@ -6,6 +6,7 @@ from math import cos, sin, pi
 
 import numpy as np
 
+
 def remap(x, oldmin, oldmax, newmin, newmax):
     """Remap the float x from the range oldmin-oldmax to the range newmin-newmax
 

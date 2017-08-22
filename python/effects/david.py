@@ -382,7 +382,7 @@ class DavesAbstractLidarClass(Effect):
 
         row_slice = slice(row_bottom, row_top)
         if col_end < col_start:
-            return [(row_slice,slice(0, col_end)), (row_slice, slice(col_start, None))]
+            return [(row_slice, slice(0, col_end)), (row_slice, slice(col_start, None))]
         else:
             # print "No wrap"
             return [(row_slice, slice(col_start, col_end))]
@@ -396,8 +396,10 @@ class OpaqueLidar(DavesAbstractLidarClass):
     def render_lidar_input(self, pixels, obj_id, row_bottom, row_top, col_left, col_right):
         color = np.asarray((0, 0, 0), np.uint8)
         color[obj_id % 3] = (255 - 30) / 2
-        pixels.update_slices(additive=True, color=color, slices=self.get_default_slices(row_bottom, row_top, col_left,
-                                                                                        col_right))
+        pixels.update_slices(
+            additive=True,
+            color=color,
+            slices=self.get_default_slices(row_bottom, row_top, col_left, col_right))
 
 
 class SwappingLidar(DavesAbstractLidarClass):

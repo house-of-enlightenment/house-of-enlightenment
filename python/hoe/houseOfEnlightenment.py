@@ -160,8 +160,9 @@ def listen_for_keyboard(scene):
                 # Accepts disable (simulator|arduino|*) [b_id]
                 args = key_lower.split(" ", 2)
                 enabled = args[0] == "enable"
-                if len(args)==3:
-                    STATE.stations.change_client_status(enabled=enabled, client_type=args[1], station_id=int(args[2]))
+                if len(args) == 3:
+                    STATE.stations.change_client_status(
+                        enabled=enabled, client_type=args[1], station_id=int(args[2]))
                 elif len(args) == 2:
                     STATE.stations.change_client_status(enabled=enabled, client_type=args[1])
             else:
@@ -172,7 +173,6 @@ def listen_for_keyboard(scene):
                     osc_utils.send_simple_message(osc_client, args[0], args[1:])
         except:
             traceback.print_exc()
-
 
         sleep(.1)
 
@@ -191,6 +191,7 @@ def build_opc_client(verbose):
             client = create_opc_client(opc_servers['all'][0], verbose)
             clients[client] = range(STATE.layout.n_pixels)
         return opc.MultiClient(clients)
+
 
 def launch():
     config = parse_command_line()

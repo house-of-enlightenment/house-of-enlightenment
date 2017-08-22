@@ -61,8 +61,7 @@ class FaderRow(_Row):
 
     def __init__(self, layout, queue):
         self.layout = layout
-        self.rotate = translations.Rotate(
-            self.layout.columns, transitions.ConstantTransition(10))
+        self.rotate = translations.Rotate(self.layout.columns, transitions.ConstantTransition(10))
         # osc messages go here.
         self.queue = queue
         self.color = np.array((255, 255, 255))  # RED in HSV
@@ -102,8 +101,8 @@ class RainbowRow(_Row):
     #       and not coupled with the row
     def __init__(self, layout, rotate=None, sv=None, hue=None):
         self.layout = layout
-        self.rotate = rotate or translations.Rotate(
-            self.layout.columns, transitions.ConstantTransition(10))
+        self.rotate = rotate or translations.Rotate(self.layout.columns,
+                                                    transitions.ConstantTransition(10))
         self.sv = sv or transitions.SvTransition()
         self.hue = hue or transitions.HueTransition()
 

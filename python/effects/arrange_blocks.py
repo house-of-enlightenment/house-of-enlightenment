@@ -34,9 +34,7 @@ from hoe.state import STATE
 from hoe import translations
 from hoe import transitions
 
-
 logger = logging.getLogger(__name__)
-
 
 N_ROWS = 2
 N_STATIONS = 6
@@ -91,14 +89,8 @@ class ArrangeBlocks(af.Effect):
         n_blocks = EASY
         colors = [get_color(i, n_blocks) for i in range(n_blocks)]
         locations = shuffle_locations('by_row')
-        self.targets = [
-            Target(fast_blink, c, l, grid)
-            for c, l in zip(colors, locations)
-        ]
-        self.blocks = [
-            Block(blink, Block.OFF, t.color, t, t.location, grid)
-            for t in self.targets
-        ]
+        self.targets = [Target(fast_blink, c, l, grid) for c, l in zip(colors, locations)]
+        self.blocks = [Block(blink, Block.OFF, t.color, t, t.location, grid) for t in self.targets]
         self.station_handlers = [StationHandler(i, grid) for i in range(N_STATIONS)]
         self.needs_shuffle = True
         self.we_won = False
@@ -162,9 +154,9 @@ class ArrangeBlocks(af.Effect):
         for target in self.targets:
             target.led_override = On()
         self.we_won = True
-        self.rotate = translations.Rotate(
-            STATE.layout.columns,
-            transitions.ConstantTransition(STATE.layout.columns / 2)).start(now)
+        self.rotate = translations.Rotate(STATE.layout.columns,
+                                          transitions.ConstantTransition(
+                                              STATE.layout.columns / 2)).start(now)
 
     def update_state(self, collab):
         state = collections.defaultdict(list)
@@ -183,6 +175,7 @@ class ArrangeBlocks(af.Effect):
 
 class On(object):
     """led_override to keep an item on"""
+
     def update(self, now):
         return 1
 
@@ -236,6 +229,7 @@ class Grid(object):
 
 class GridItem(object):
     """A base class for items in the grid"""
+
     def __init__(self, location, grid):
         # the second item is 0 for bottom, 1 for top
         # first item in location is an in 0-6, representing the station
@@ -392,7 +386,7 @@ class StationHandler(object):
 
 class Blink(object):
     def __init__(self, delay):
-        self.item = (0, 1);
+        self.item = (0, 1)
         self.idx = 0
         self.next_update = 0
         self.delay = delay
@@ -406,9 +400,10 @@ class Blink(object):
 
 class BlinkCount(object):
     """Blinks `count` times and then stops"""
+
     def __init__(self, blink, count):
         self.blink = blink
-        self.target_count = 2*count
+        self.target_count = 2 * count
         self.current = None
         self.current_count = 0
 
@@ -446,8 +441,7 @@ class Block(GridItem, OnOffOverride):
     def move(self, motion):
         assert self.mode == Block.ON
         was_at_target = self.at_target()
-        location = translations.move(
-            self.location, motion, (N_ROWS - 1, N_STATIONS), (True, False))
+        location = translations.move(self.location, motion, (N_ROWS - 1, N_STATIONS), (True, False))
         if (location == self.location).all():
             logger.debug('Move failed; new location is the same as the old location')
             return False
@@ -529,5 +523,4 @@ SCENES = [
         tags=[af.Scene.TAG_TEST],
         collaboration_manager=collaboration.PassThru(),
         effects=[TestKeyboardInputs(ArrangeBlocks(Grid.make()))])
-
 ]
