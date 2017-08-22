@@ -17,7 +17,7 @@ from hoe import opc
 from hoe import osc_utils
 from hoe.play_lidar import play_lidar
 from hoe.state import STATE
-from hoe.stations import Stations
+from hoe.stations import Stations, Codes
 from hoe import utils
 
 logger = logging.getLogger(__name__)
@@ -75,6 +75,7 @@ def parse_command_line():
     STATE.servers = parse_json_file(options.servers)
     STATE.fps = options.fps
     STATE.verbose = options.verbose
+    STATE.codes = Codes(parse_json_file(os.path.join(root_dir, "layout", "codes.json")))
     return options
 
 
@@ -190,7 +191,6 @@ def build_opc_client(verbose):
             client = create_opc_client(opc_servers['all'][0], verbose)
             clients[client] = range(STATE.layout.n_pixels)
         return opc.MultiClient(clients)
-
 
 def launch():
     config = parse_command_line()

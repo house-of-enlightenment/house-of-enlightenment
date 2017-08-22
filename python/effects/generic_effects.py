@@ -140,7 +140,7 @@ SCENES = [
     Scene(
         "funkrainbow",
         tags=[Scene.TAG_BACKGROUND],
-        collaboration_manager=NoOpCollaborationManager(),
+        collaboration_manager=ButtonToggleResponderManager(),
         effects=[
             rainbow,
             FunctionFrameRotator(
