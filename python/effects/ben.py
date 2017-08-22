@@ -6,6 +6,7 @@ import numpy as np
 from hoe import color_utils
 from hoe.animation_framework import Scene, Effect, MultiEffect
 from hoe import color_utils
+from hoe.stations import StationButtons
 from hoe.state import STATE
 from hoe.utils import fader_interpolate
 
@@ -103,12 +104,25 @@ class WaveLauncher(MultiEffect):
         self.except_station = except_station
         self.last_launch = None
         self.time_out = time_out
+        self.launch_button = 2
+        #self._update_buttons()
 
     def _color(self):
         if bool(rand.getrandbits(1)):
             return (0xFF, 0, 0)
         else:
             return (0, 0xFF, 0)
+
+    def _update_buttons(self):
+        for sid in range(STATE.layout.sections):
+            if sid == self.except_station:
+                continue
+
+            for bid in range(5):
+                if bid == self.launch_button:
+                    STATE.stations[sid].buttons[bid] = StationButtons.BUTTON_ON
+                else:
+                    STATE.stations[sid].buttons[bid] = StationButtons.BUTTON_OFF
 
     def before_rendering(self, pixels, now, collaboration_state, osc_data):
         MultiEffect.before_rendering(self, pixels, now, collaboration_state, osc_data)
@@ -118,7 +132,8 @@ class WaveLauncher(MultiEffect):
             return
 
         for sid, station in enumerate(osc_data.stations):
-            if station.button_presses:
+            buttons = station.button_presses
+            if buttons and self.launch_button in buttons:
                 if sid != self.except_station:
                     self._launch_effect(now, sid)
 
@@ -130,6 +145,7 @@ class WaveLauncher(MultiEffect):
         if station_id is None:
             station_id = rand.randint(0, 5)
         self.add_effect(self.launch_effect(station_id))
+        #self._update_buttons()
 
     def launch_effect(self, station_id):
         raise NotImplementedError
@@ -146,20 +162,33 @@ class LaunchZigZag(WaveLauncher):
 
 
 class LaunchSeizure(MultiEffect):
-    def __init__(self, button=4):
+    def __init__(self, button=2):
         MultiEffect.__init__(self)
         self.button = button
+        #self._update_buttons()
+
+    def _update_buttons(self):
+        for sid in range(STATE.layout.sections):
+            for bid in range(5):
+                if bid == self.button and not self._is_effect_on_in(sid):
+                    STATE.stations[sid].buttons[bid] = StationButtons.BUTTON_ON
+                else:
+                    STATE.stations[sid].buttons[bid] = StationButtons.BUTTON_OFF
 
     def _is_effect_on_in(self, sid):
         return len([s for s in self.effects if s.station == sid]) > 0
 
     def before_rendering(self, pixels, now, collaboration_state, osc_data):
+        old_count = self.count()
         MultiEffect.before_rendering(self, pixels, now, collaboration_state, osc_data)
 
         for sid, station in enumerate(osc_data.stations):
             buttons = station.button_presses
             if buttons and self.button in buttons and not self._is_effect_on_in(sid):
                 self.add_effect(SeizureMode(station=sid, duration=3))
+
+        if self.count() != old_count:
+            #self._update_buttons()
 
 
 ##
@@ -179,6 +208,7 @@ class LaunchSeizure(MultiEffect):
 #   Is negitive is a pixel is compleatly green (0, 0xFF, 0)
 #
 class FiniteDifference(Effect):
+
     NEUMANN = "neumann"
     CONTINUOUS = "continuous"
 
@@ -248,13 +278,22 @@ class FiniteDifference(Effect):
             self.diffuse(pixels, delta_t)
 
         self.set_pixels(pixels)
+        #self._update_buttons(osc_data)
+
+    def _update_buttons(self, osc_data):
+        buttons = osc_data.stations[self.master_station].button_presses
+        if not buttons:
+            return
+
+        for bid in range(5):
+            STATE.stations[self.master_station].buttons[bid] = StationButtons.BUTTON_ON
 
     def _should_zero(self, osc_data):
         if self.master_station is None:
             return
 
         buttons = osc_data.stations[self.master_station].button_presses
-        return buttons and 4 in buttons
+        return buttons and 2 in buttons
 
     def _set_force(self, osc_data):
         if self.master_station is None:
@@ -264,11 +303,11 @@ class FiniteDifference(Effect):
         if not buttons:
             return
 
-        if 2 in buttons:
+        if 0 in buttons:
             self.force_constant = max(-1000, self.force_constant - 100)
             print(self.force_constant)
 
-        if 3 in buttons:
+        if 4 in buttons:
             self.force_constant = min(1000, self.force_constant + 100)
             print(self.force_constant)
 
@@ -284,7 +323,7 @@ class FiniteDifference(Effect):
             self.velocity_constant = min(50000, self.velocity_constant * 1.1)
             print(self.velocity_constant)
 
-        if 0 in buttons:
+        if 3 in buttons:
             self.velocity_constant = max(3000, self.velocity_constant * 0.9)
             print(self.velocity_constant)
 
@@ -440,7 +479,7 @@ class RedGreenSquares(DavesAbstractLidarClass):
 
 SCENES = [
     Scene(
-        "full_seizuree",
+        "full_seizure",
         tags=[Scene.TAG_BACKGROUND],
         collaboration_manager=NoOpCollaborationManager(),
         effects=[SolidBackground(), SeizureMode()]),
