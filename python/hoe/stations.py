@@ -15,6 +15,14 @@ id_to_colors = {
 }
 
 colors_to_id = {v: k for v, k in id_to_colors.items() }
+# TODO - Color scale?
+colors_to_rgb = {
+    "RED" : (255,0,0),
+    "GREEN" : (0,255,0),
+    "BLUE" : (0,0,255),
+    "YELLOW" : (200,200,0),
+    "WHITE" : (255,255,255)
+}
 
 class Stations(object):
     def __init__(self):
@@ -91,6 +99,9 @@ class StationButtons(object):
 
     def __len__(self):
         return len(self._buttons)
+
+    def get_high_buttons(self):
+        return filter(lambda i: self._buttons[i], range(len(self._buttons)))
 
     def send_button_light_update(self, remote_client, force=False):
         if force or self._last_change_timestamp > self._last_update_timestamp:

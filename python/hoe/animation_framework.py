@@ -14,6 +14,8 @@ from hoe.pixels import Pixels
 from hoe.state import STATE
 from hoe.opc import Client
 from hoe.osc_utils import update_buttons
+import hoe.stations
+import numpy as np
 
 
 class AnimationFramework(object):
@@ -454,6 +456,26 @@ class Scene(MultiEffect):
             t, self.collaboration_state, osc_data)
         # TODO Why didn't super(MultiEffect, self) work?
         self.next_frame(pixels, t, self.collaboration_state, osc_data)
+
+
+class ButtonFeedbackDisplay(Effect):
+    count_to_indices = {
+        0 : [],
+        1 : [(1,10)],
+        2 : [(1,5),(6,10)],
+        3 : [(1,4),(4,7),(7,10)],
+        4 : [(1,3),(3,5),(6,8),(8,10)],
+        5 : [(1,3),(3,5),(5,6),(6,8),(8,10)]
+    }
+
+    def next_frame(self, pixels, now, collaboration_state, osc_data):
+        colors = np.zeros((STATE.layout.columns,3),np.uint8)
+        for s_id, station in enumerate(STATE.stations):
+            high_buttons = station.buttons.get_high_buttons()
+            for i,sli in zip(high_buttons, ButtonFeedbackDisplay.count_to_indices[len(high_buttons)]):
+                colors[sli[0]+s_id*11:sli[1]+s_id*11,:] = hoe.stations.colors_to_rgb[hoe.stations.id_to_colors[i]]
+
+        pixels[0:2,:] = colors
 
 
 class EffectFactory(object):
