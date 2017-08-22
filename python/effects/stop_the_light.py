@@ -26,19 +26,73 @@ YELLOW = (255, 255, 0)
 LIGHT_BLUE = (135, 206, 250)
 
 
-
+# Each time a certain section hits a target, that
+# section gets less additional points.
+# The easiest way to get to 100 is to have each
+# section hit the target once (6 hits)
+# The hardest way is to only have one section
+# (12 hits)
 PTS = (17, 14, 12, 11, 10, 9, 8, 7, 6, 4, 2, 1)
+
+# start slow and fat
+WidthSpeed = collections.namedtuple('WidthSpeed', 'width speed')
+
+EASY = [5, 4, 3]
+MEDIUM = [4, 3, 2]
+HARD = [3, 3, 1]
+
+
+ACTIVE = 'active'
+HIT = 'hit'
+MISS = 'miss'
+
+
+class Level(object):
+    def __init__(self, widths):
+        self.widths = widths
+
+    def width(self, hits, misses):
+        idx = min(len(self.widths) - 1, hits // 4)
+        return self.widths[idx]
+
+    def speed(self, hits, misses):
+        return .25 + .05 * hits
+
+    @classmethod
+    def easy(cls):
+        return cls(EASY)
+
+    @classmethod
+    def medium(cls):
+        return cls(MEDIUM)
+
+    @classmethod
+    def hard(cls):
+        return cls(HARD)
 
 
 class StopTheLight(collaboration.CollaborationManager, af.Effect):
     def __init__(self, layout):
-        self.state = State.ACTIVE
+        self.state = ACTIVE
         self.successful_sections = [0] * layout.sections
         self.fps = STATE.fps
-        rotation_speed = .5  # rotation / second
+        self.level = Level.medium()
         location = 0
-        self.sprite = Sprite(layout, location, rotation_speed)
+        self.sprite = Sprite(
+            layout, location,
+            self.level.speed(0, 0),
+            self.level.width(0, 0),
+        )
         self.layout = layout
+        self.misses = 0
+
+    def hits(self):
+        return sum(self.successful_sections)
+
+    def update_sprite_difficulty(self):
+        hits = self.hits()
+        self.sprite.rotation_speed = self.level.speed(hits, self.misses)
+        self.sprite.width = self.level.width(hits, self.misses)
 
     def set_target_idx(self):
         self.target_idx = self.layout.grid[self.bottom, self.section_centers]
@@ -55,12 +109,16 @@ class StopTheLight(collaboration.CollaborationManager, af.Effect):
         self.pixels[self.bottom, :] = 32
 
     def compute_state(self, now, old_state, osc_data):
-        self._read_osc_data(now, osc_data)
+        if not self._ignore_buttons(now):
+            self._read_osc_data(now, osc_data)
         return self._compute_scores()
 
+    def _ignore_buttons(self, now):
+        return self.state != ACTIVE or now < self.ignore_buttons_until
+
     def _compute_scores(self):
-        total = 0
         scores = {}
+        total = 0
         for i, hits in enumerate(self.successful_sections):
             score = sum(PTS[:hits])
             total += score
@@ -69,33 +127,36 @@ class StopTheLight(collaboration.CollaborationManager, af.Effect):
         return scores
 
     def _read_osc_data(self, now, osc_data):
-        button_pressed, hit_section = self._find_hit_section(osc_data)
-        if button_pressed:
-            columns = self.sprite.columns()
-            sprite_idx = self.layout.grid[self.bottom, columns]
-            if hit_section is None:
-                self.state = State.MISS
-                self.flash = Flash(sprite_idx, .25, (RED, BLACK)).start(now)
-                self.wait_until = self.now + 2
-            else:
-                self.state = State.HIT
-                self.flash = Flash(sprite_idx, .25, (GREEN, BLACK)).start(now)
-                self.wait_until = self.now + 3
-                self.successful_sections[hit_section] += 1
-                print self.successful_sections
-                self.set_target_idx()
+        button_pressed, hit_section = self._find_hit_section(now, osc_data)
+        if not button_pressed:
+            return
+        columns = self.sprite.columns(now)
+        sprite_idx = self.layout.grid[self.bottom, columns]
+        if hit_section is None:
+            logger.debug('a button was pressed, but missed the target')
+            self.state = MISS
+            self.flash = Flash(sprite_idx, .25, (RED, BLACK)).start(now)
+            self.wait_until = self.now + 2
+            self.misses += 1
+        else:
+            logger.debug('section %s was hit!', hit_section)
+            self.state = HIT
+            self.flash = Flash(sprite_idx, .25, (GREEN, BLACK)).start(now)
+            self.wait_until = self.now + 3
+            self.successful_sections[hit_section] += 1
+            self.set_target_idx()
+            self.update_sprite_difficulty()
 
     def next_frame(self, pixels, now, collaboration_state, osc_data):
-        print collaboration_state
         self.now = now
         self.pixels = pixels
         self.init_pixels()
         self.pixels[self.target_idx] = YELLOW
-        if self.state == State.ACTIVE:
+        if self.state == ACTIVE:
             self._handle_active(pixels, now, collaboration_state, osc_data)
-        elif self.state == State.HIT:
+        elif self.state == HIT:
             self._flash_until_active(pixels, now)
-        elif self.state == State.MISS:
+        elif self.state == MISS:
             self._flash_until_active(pixels, now)
         else:
             raise Exception('You are in a bad state: {}'.format(self.state))
@@ -106,12 +167,12 @@ class StopTheLight(collaboration.CollaborationManager, af.Effect):
             self.sprite.reverse(now)
             self.wait_until = None
             self.ignore_buttons_until = now + random.random() * 2 + .5
-            self.state = State.ACTIVE
+            self.state = ACTIVE
 
     def _handle_active(self, pixels, now, collaboration_state, osc_data):
         self.sprite.update(self.now)
         self.pixels[self.target_idx] = YELLOW
-        columns = self.sprite.columns()
+        columns = self.sprite.columns(now)
         # want to allow the sprite to move for a little while
         # before allowing any buttons to be pressed
         if self.now < self.ignore_buttons_until:
@@ -126,7 +187,7 @@ class StopTheLight(collaboration.CollaborationManager, af.Effect):
         else:
             self.pixels[self.bottom, columns] = BLUE
 
-    def _find_hit_section(self, osc_data):
+    def _find_hit_section(self, now, osc_data):
         """Returns whether a button was pressed and whether a target was hit.
 
         Returns:
@@ -134,12 +195,11 @@ class StopTheLight(collaboration.CollaborationManager, af.Effect):
             section_hit: if a target was hit, return the id of the section
                 otherwise, it is a miss: return None.
         """
-        columns = self.sprite.columns()
+        columns = self.sprite.columns(now)
         button_pressed = False
         for i, station in enumerate(osc_data.stations):
             if station.button_presses:
                 button_pressed = True
-                print i, station.button_presses
                 target = self.section_centers[i]
                 if target in columns:
                     return True, i
@@ -171,27 +231,34 @@ class Flash(object):
         pixels[self.idx] = self.current_color()
 
 
-class State(object):
-    ACTIVE = 'active'
-    HIT = 'hit'
-    MISS = 'miss'
 
 
 class Sprite(object):
-    def __init__(self, layout, start_location, rotation_speed, width=3):
+    def __init__(self, layout, start_location, rotation_speed, width):
         self.layout = layout
         self.start_location = start_location
-        self.rotation_speed = rotation_speed
+        self._rotation_speed = rotation_speed
         self.location = start_location
         self.width = width
         self.start_time = None
+        self._reversed = False
+
+    def _get_rotation(self):
+        if self._reversed:
+            return -self._rotation_speed
+        else:
+            return self._rotation_speed
+
+    def _set_rotation(self, val):
+        self._rotation_speed = val
+    rotation_speed = property(_get_rotation, _set_rotation)
 
     def start(self, now):
         self.start_time = now
 
     def reverse(self, now):
         self.start_location = self.location
-        self.rotation_speed = -self.rotation_speed
+        self._reversed = not self._reversed
         self.start(now)
 
     def update(self, now):
@@ -199,7 +266,7 @@ class Sprite(object):
         location = int(self.layout.columns * sprite_rotation) + self.start_location
         self.location = location % self.layout.columns
 
-    def columns(self):
+    def columns(self, now):
         left = int(self.width / 2)
         right = self.width - left
         return map(self.layout.colmod, range(self.location - left, self.location + right))
