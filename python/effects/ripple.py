@@ -26,7 +26,7 @@ class Ripple(Effect):
         self.previous_ripple_state = np.zeros((STATE.layout.rows, STATE.layout.columns), int)
         self.ripple_state = np.zeros((STATE.layout.rows, STATE.layout.columns), int)
         self.ripple_state[2, 16] = 50
-        self.damping = .8
+        self.damping = .99
 
     def value_to_color(self, value):
         if value > 0:
@@ -41,6 +41,7 @@ class Ripple(Effect):
         self.ripple_state[idx] = np.random.randint(-50, 50)
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
+        pixels[:] = 5
         self.start_ripple()
         self.ripple_state[1:-1, 1:-1] = (
             self.previous_ripple_state[:-2, 1:-1] +
@@ -49,7 +50,7 @@ class Ripple(Effect):
             self.previous_ripple_state[1:-1, 2:]) / 4 - self.ripple_state[1:-1, 1:-1]
         # numpy doesn't like multiplying ints and floats so tell it to be unsafe
         np.multiply(self.ripple_state, self.damping, out=self.ripple_state, casting='unsafe')
-        pixels[:] = self.get_pixels()
+        pixels[:,:] = self.get_pixels()
         self.swap_buffers()
 
     def get_pixels(self):
@@ -59,8 +60,10 @@ class Ripple(Effect):
         print 'max', np.max(self.ripple_state)
         print 'min', np.min(self.ripple_state)
         v = np.array(np_value_to_color(self.ripple_state))
+        # moveaxis is because v starts off as a (3, 216, 66) array
+        # and we actually want (216, 66, 3)
         v = np.moveaxis(v, 0, 2)
-        return v.reshape(shape)
+        return v
 
     def swap_buffers(self):
         self.previous_ripple_state, self.ripple_state = \
