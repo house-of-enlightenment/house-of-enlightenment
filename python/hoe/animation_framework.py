@@ -204,15 +204,19 @@ class AnimationFramework(object):
         # Okay, now we're done for real. Wait for target FPS and warn if too slow
         completed_timestamp = time.time()
         sleep_amount = target_frame_end_time - completed_timestamp
-        if sleep_amount <= 0:
-            if abs(sleep_amount) > self.fps_warn_threshold:
-                # Note: possible change_scene() is called in between. Issue is trivial though
-                msg = "WARNING: scene {} is rendering slowly. Total: {} Render: {} OPC: {}"
-                print msg.format(self.curr_scene.name, completed_timestamp - frame_start_time,
-                                 render_timestamp - frame_start_time,
-                                 completed_timestamp - render_timestamp)
-        else:
+        self._log_timings(frame_start_time, render_timestamp, completed_timestamp, sleep_amount)
+        if sleep_amount > 0:
             time.sleep(sleep_amount)
+
+    def _log_timings(self, frame_start_time, render_ts, completed_ts, sleep_amount):
+        if sleep_amount < 0 and -sleep_amount > self.fps_warn_threshold:
+            print sleep_amount, self.fps_warn_threshold
+            # Note: possible change_scene() is called in between. Issue is trivial though
+            msg = "WARNING: scene {} is rendering slowly. Total: {} Render: {} OPC: {}"
+            print msg.format(self.curr_scene.name, completed_ts - frame_start_time,
+                             render_ts - frame_start_time,
+                             completed_ts - render_ts)
+
 
     def shutdown(self):
         self.serve = False
