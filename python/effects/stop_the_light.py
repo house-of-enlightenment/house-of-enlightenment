@@ -25,7 +25,6 @@ YELLOW = (255, 255, 0)
 # the color of the sprite when its not active
 LIGHT_BLUE = (135, 206, 250)
 
-
 # Each time a certain section hits a target, that
 # section gets less additional points.
 # The easiest way to get to 100 is to have each
@@ -42,6 +41,7 @@ MISS = 'miss'
 EASY = [5, 4, 3, 2, 1]
 MEDIUM = [4, 3, 2, 1]
 HARD = [3, 3, 1]
+
 
 class Level(object):
     def __init__(self, widths):
@@ -75,10 +75,10 @@ class StopTheLight(collaboration.CollaborationManager, af.Effect):
         self.level = Level.medium()
         location = 0
         self.sprite = Sprite(
-            layout, location,
+            layout,
+            location,
             self.level.speed(0, 0),
-            self.level.width(0, 0),
-        )
+            self.level.width(0, 0), )
         self.layout = layout
         self.misses = 0
 
@@ -227,8 +227,6 @@ class Flash(object):
         pixels[self.idx] = self.current_color()
 
 
-
-
 class Sprite(object):
     def __init__(self, layout, start_location, rotation_speed, width):
         self.layout = layout
@@ -247,6 +245,7 @@ class Sprite(object):
 
     def _set_rotation(self, val):
         self._rotation_speed = val
+
     rotation_speed = property(_get_rotation, _set_rotation)
 
     def start(self, now):
@@ -270,7 +269,7 @@ class Sprite(object):
 
 class BarelyGray(af.Effect):
     def next_frame(self, pixels, *args, **kwargs):
-        pixels[2:,:] = 10
+        pixels[2:, :] = 10
 
 
 SCENES = [
@@ -278,6 +277,5 @@ SCENES = [
         'stop-the-light',
         tags=[af.Scene.TAG_GAME],
         collaboration_manager=StopTheLight(STATE.layout),
-        effects=[BarelyGray()]
-    )
+        effects=[BarelyGray()])
 ]

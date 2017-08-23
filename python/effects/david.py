@@ -492,8 +492,7 @@ def pick_mod_n(columns, mod=2, value=0, **kwargs):
 
 class Columns(Effect):
     def __init__(self, color=(0, 0, 0), column_picker=pick_mod_n, additive=False):
-        Effect.__init__(
-            self, )
+        Effect.__init__(self, )
         self.picker = column_picker
         self.color = np.array(color, dtype=np.uint8)
         self.additive = additive

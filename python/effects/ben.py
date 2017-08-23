@@ -15,6 +15,7 @@ from shared import SolidBackground
 
 from zigzag import ZigZag
 from david import DavesAbstractLidarClass
+from finite_difference import FiniteDifference
 
 
 class SeizureMode(Effect):
@@ -64,6 +65,78 @@ class SeizureMode(Effect):
 
         fader = osc_data.stations[self.station].faders[0]
         self.delta_t = fader_interpolate(fader, 0.0005, 0.2)
+
+
+##
+# This effect is used in wedding0
+# Instructions:
+#   - Press white button on Station master_station (2) to setup scene
+#     white and black sides of will be devided.
+#   - Two people at the same time should press the red and green buttons on the
+#     master_station (2). If they press the buttons at the same time, they should get a really
+#     cool mixing effect. If one of them jumps the gun the scene will be overwelmed with
+#     white or black.
+#   - Pressing the white button will reset the effect.
+#   - Pressing the yellow button is the same as pressing red & white at the same time.
+
+
+# FYI: for wedding0, the FiniteDifference master_stationg (0) damper controlls damping.
+#
+class DevidedSouls(Effect):
+
+    RED = 3
+    GREEN = 1
+    WHITE = 2
+    YELLOW = 0
+
+    def __init__(self, master_station=2):
+        self.is_devided = True
+        self.red_slice = (slice(0, STATE.layout.rows), slice(0, STATE.layout.columns / 2 - 1))
+        self.green_slice = (slice(0, STATE.layout.rows), slice(STATE.layout.columns / 2 - 1,
+                                                               STATE.layout.columns))
+        self.is_green = True
+        self.is_red = True
+        self.master_station = master_station
+
+    def next_frame(self, pixels, now, collaboration_state, osc_data):
+        self._update_red_green(osc_data)
+
+        if self.is_red:
+            pixels[self.red_slice] = (0xFF, 0, 0)
+        if self.is_green:
+            pixels[self.green_slice] = (0, 0xFF, 0)
+
+    def _update_red_green(self, osc_data):
+
+        buttons = osc_data.stations[self.master_station].button_presses
+        if not buttons:
+            return
+
+        if self.YELLOW in buttons:
+            self.is_red = False
+            self.is_green = False
+
+        if self.RED in buttons:
+            self.is_red = not self.is_red
+
+        if self.GREEN in buttons:
+            self.is_green = not self.is_green
+
+        if self.WHITE in buttons:
+            self.is_red = True
+            self.is_green = True
+
+        self._update_buttons()
+
+    def _update_buttons(self):
+        for sid in range(STATE.layout.sections):
+            for bid in range(5):
+                if sid == self.master_station and (bid == self.WHITE or
+                                                   (bid == self.RED and self.is_red) or
+                                                   (bid == self.GREEN and self.is_green)):
+                    STATE.stations[sid].buttons[bid] = StationButtons.BUTTON_ON
+                else:
+                    STATE.stations[sid].buttons[bid] = StationButtons.BUTTON_OFF
 
 
 class UpBlock(Effect):
@@ -187,275 +260,6 @@ class LaunchSeizure(MultiEffect):
             if buttons and self.button in buttons and not self._is_effect_on_in(sid):
                 self.add_effect(SeizureMode(station=sid, duration=3))
 
-        if self.count() != old_count:
-            #self._update_buttons()
-            pass
-
-
-##
-# This runs an explicit 2d wave equation.
-#
-# OSC Button / Fader Input:
-#   Slider => Damping: Higher value, more damping
-#
-#   Up/Down (3/2): => Input force from strong negitive to strong
-#   positive, force is applied based on all white pixels
-#
-#   Left/Right (1/0): => Slower / Faster wave propagation.
-#   Center (4): Reset => Zeros out waves
-#
-# Forcing Function:
-#   Is positive if a pixel is compleatly red (0xFF, 0, 0)
-#   Is negitive is a pixel is compleatly green (0, 0xFF, 0)
-#
-class FiniteDifference(Effect):
-
-    NEUMANN = "neumann"
-    CONTINUOUS = "continuous"
-
-    WAVE = "wave"
-    DIFFUSION = "diffusion"
-
-    def __init__(self,
-                 station=None,
-                 master_station=None,
-                 auto_damp=True,
-                 base_hue=0xFFFF >> 1,
-                 boundary=CONTINUOUS,
-                 pde=WAVE,
-                 darken_mids=False):
-        self.pixels = []
-        self.time = []
-        self.fader_value = None
-        self.influence = 0b1111
-        self.X_MAX = STATE.layout.rows
-        self.Y_MAX = STATE.layout.columns
-        self.master_station = master_station
-        self.auto_damp = auto_damp
-        self.base_hue = base_hue
-        self.boundary = boundary
-        self.pde = pde
-        self.darken_mids = darken_mids
-
-    def _reset(self, now):
-        # Reset Constants
-        self.force_constant = rand.randint(300, 700)
-        self.velocity_constant = rand.randint(10000, 30000)  # Lower Value == Faster Speed
-        self.diffusion_constant = rand.uniform(0.0000001, 0.0001)  # Bigger Value == More Damping
-
-        print("force: " + str(self.force_constant))
-        print("1/velocity: " + str(self.velocity_constant))
-        print("damping: " + str(self.diffusion_constant))
-
-        # Reset Pixels
-        self.pixels = []
-        self._append_base_pixels()
-        self._append_base_pixels()
-
-        self.time = [(now - 0.3) * 1000, (now - 0.6) * 1000]
-
-    def _append_base_pixels(self):
-        # pylint: disable=no-member
-        self.pixels.append(np.full((self.X_MAX, self.Y_MAX), self.base_hue, dtype=float))
-
-    def next_frame(self, pixels, now, collaboration_state, osc_data):
-        if len(self.pixels) == 0 or self._should_zero(osc_data):
-            self._reset(now)
-
-        delta_t = (now * 1000 - self.time[0])
-        delta_t2 = delta_t * (self.time[0] - self.time[1])
-        self.time[1] = self.time[0]
-        self.time[0] = now * 1000
-
-        self._append_base_pixels()
-
-        self._set_damping(osc_data)
-        self._set_velocity(osc_data)
-        self._set_force(osc_data)
-
-        if self.pde == self.WAVE:
-            self.wave(pixels, delta_t, delta_t2)
-        elif self.pde == self.DIFFUSION:
-            self.diffuse(pixels, delta_t)
-
-        self.set_pixels(pixels)
-        #self._update_buttons(osc_data)
-
-    def _update_buttons(self, osc_data):
-        buttons = osc_data.stations[self.master_station].button_presses
-        if not buttons:
-            return
-
-        for bid in range(5):
-            STATE.stations[self.master_station].buttons[bid] = StationButtons.BUTTON_ON
-
-    def _should_zero(self, osc_data):
-        if self.master_station is None:
-            return
-
-        buttons = osc_data.stations[self.master_station].button_presses
-        return buttons and 2 in buttons
-
-    def _set_force(self, osc_data):
-        if self.master_station is None:
-            return
-
-        buttons = osc_data.stations[self.master_station].button_presses
-        if not buttons:
-            return
-
-        if 0 in buttons:
-            self.force_constant = max(-1000, self.force_constant - 100)
-            print(self.force_constant)
-
-        if 4 in buttons:
-            self.force_constant = min(1000, self.force_constant + 100)
-            print(self.force_constant)
-
-    def _set_velocity(self, osc_data):
-        if self.master_station is None:
-            return
-
-        buttons = osc_data.stations[self.master_station].button_presses
-        if not buttons:
-            return
-
-        if 1 in buttons:
-            self.velocity_constant = min(50000, self.velocity_constant * 1.1)
-            print(self.velocity_constant)
-
-        if 3 in buttons:
-            self.velocity_constant = max(3000, self.velocity_constant * 0.9)
-            print(self.velocity_constant)
-
-    def _set_damping(self, osc_data):
-        if self.master_station is None:
-            return
-
-        fader = osc_data.stations[self.master_station].faders[0]
-        if self.fader_value is not None and fader != self.fader_value:
-            self.diffusion_constant = fader_interpolate(fader, 0.00000001, 0.001)
-            print(self.diffusion_constant)
-
-        self.fader_value = fader
-
-    def set_pixels(self, pixels):
-
-        hsv = np.zeros((self.X_MAX, self.Y_MAX, 3), np.uint8)
-        hsv[:, :, 0] = self.pixels[2] / 0xFFFF * 0xFF
-        hsv[:, :, 1] = 0xFF
-        if self.darken_mids:
-            hsv[:, :, 2] = np.abs(self.pixels[2] - (0xFFFF >> 1)) / 0xFFFF * 0xFF
-        else:
-            hsv[:, :, 2] = 0xFF
-
-        rgb = color_utils.hsv2rgb(hsv)
-        pixels[:self.X_MAX, :self.Y_MAX] = rgb
-
-        self.pixels.pop(0)
-
-    ##
-    # Calculate next frame of explicit finite difference wave
-    #
-    def wave(self, pixels, delta_t, delta_t2):
-        self.pixels.append(np.empty([self.X_MAX, self.Y_MAX], dtype=float))
-
-        if delta_t2 < 10:
-            return
-
-        # Calculate Force based on if pixels is red or green
-        # pylint: disable=no-member
-        pix = np.array(pixels[:, :][:], dtype=np.uint32)
-        color = (pix[:, :, 0] << 16) | (pix[:, :, 1] << 8) | (pix[:, :, 2])
-        f = np.where(color == 0xFF0000, self.force_constant,
-                     np.where(color == 0xFF00, 0 - self.force_constant,
-                              0))[:self.X_MAX, :self.Y_MAX]
-
-        c = self.velocity_constant
-        beta = self.diffusion_constant
-        h1 = self.pixels[0]
-
-        h0 = self.pixels[1]
-        h, idx = self.hCalc()
-        h = (h - h0 * idx) / c
-        self._auto_damp(h, delta_t, delta_t2)
-        h = (h - beta * (h0 - h1) / delta_t) * delta_t2 + 2 * h0 - h1 + f
-
-        h = np.clip(h, 0, 0xFFFF)
-        self.pixels[2] = h
-
-    def _auto_damp(self, h_diff, delta_t, delta_t2):
-        if not self.auto_damp:
-            return
-
-        chaos = np.sum(np.fabs(h_diff)) / delta_t2
-        if chaos > 2.5 and self.diffusion_constant < 0.001:
-            self.diffusion_constant = self.diffusion_constant * 1.1
-
-        if chaos < 0.35 and self.diffusion_constant > 0.00000001:
-            self.diffusion_constant = self.diffusion_constant * 0.9
-
-    def diffuse(self, pixels, delta_t):
-        self.pixels.append(np.empty([self.X_MAX, self.Y_MAX], dtype=float))
-
-        if delta_t < 5:
-            return
-
-        v = self.diffusion_constant
-        h0 = self.pixels[1]
-        h, idx = self.hCalc()
-        hDiff = (h - h0 * idx)
-        h = hDiff * delta_t * v + h0
-
-        # pylint: disable=no-member
-        pix = np.array(pixels[:, :][:], dtype=np.int64)
-        color = (pix[:, :, 0] << 16) | (pix[:, :, 1] << 8) | (pix[:, :, 2])
-        f = np.where(color == 0xFF0000, 0xFFFF, np.where(color == 0xFF00, 0 - 0xFFFF,
-                                                         0))[:self.X_MAX, :self.Y_MAX]
-        h = h + f
-        h = np.clip(h, 0, 0xFFFF)
-        self.pixels[2] = np.clip(h, 0, 0xFFFF)
-
-    ##
-    # This is the differences between node i,j and it's closest neighbors
-    # it's used in calculateing spatial derivitives
-    #
-    def hCalc(self):
-        # pylint: disable=no-member
-        h = np.zeros([self.X_MAX, self.Y_MAX], dtype=np.uint32)
-        idx = 0
-        h0 = self.pixels[1]
-
-        if (self.influence & 0b0001) > 0:
-            h[1:, :] = h[1:, :] + h0[:self.X_MAX - 1, :]
-            if self.boundary == self.NEUMANN:
-                h[0, :] = h[0, :] + h0[1, :]
-            elif self.boundary == self.CONTINUOUS:
-                h[0, :] = h[0, :] + h0[self.X_MAX - 1, :]
-
-            idx = idx + 1
-
-        if (self.influence & 0b0010) > 0:
-            h[:self.X_MAX - 1, :] = h[:self.X_MAX - 1, :] + h0[1:, :]
-            if self.boundary == self.NEUMANN:
-                h[self.X_MAX - 1:, :] = h[self.X_MAX - 1, :] + h0[self.X_MAX - 2, :]
-            elif self.boundary == self.CONTINUOUS:
-                h[self.X_MAX - 1:, :] = h[self.X_MAX - 1, :] + h0[0, :]
-
-            idx = idx + 1
-
-        if (self.influence & 0b0100) > 0:
-            h[:, 1:] = h[:, 1:] + h0[:, :self.Y_MAX - 1]
-            h[:, 0] = h[:, 0] + h0[:, self.Y_MAX - 1]
-            idx = idx + 1
-
-        if (self.influence & 0b1000) > 0:
-            h[:, :self.Y_MAX - 1] = h[:, :self.Y_MAX - 1] + h0[:, 1:]
-            h[:, self.Y_MAX - 1] = h[:, self.Y_MAX - 1] + h0[:, 0]
-            idx = idx + 1
-
-        return h, idx
-
 
 #========================================================================
 # LIDAR
@@ -498,6 +302,25 @@ SCENES = [
             #SolidBackground(color=(0,0xFF,0), start_col=0, end_col=2, start_row=120, end_row=124),
             FrameRotator(rate=0.5),
             FiniteDifference(master_station=0, boundary=FiniteDifference.NEUMANN, base_hue=0)
+        ]),
+    Scene(
+        "wedding0",
+        tags=[Scene.TAG_BACKGROUND],
+        collaboration_manager=NoOpCollaborationManager(),
+        effects=[
+            SolidBackground(color=(0xFF, 0, 0), start_col=0, end_col=2, start_row=120, end_row=124),
+            SolidBackground(
+                color=(0, 0xFF, 0), start_col=33, end_col=35, start_row=120, end_row=124),
+            SolidBackground(color=(0xFF, 0, 0), start_col=0, end_col=2, start_row=30, end_row=34),
+            SolidBackground(color=(0, 0xFF, 0), start_col=33, end_col=35, start_row=30, end_row=34),
+            FrameRotator(rate=0.24),
+            DevidedSouls(),
+            FiniteDifference(
+                master_station=0,
+                boundary=FiniteDifference.NEUMANN,
+                auto_damp=False,
+                base_hue=0,
+                wave_type=FiniteDifference.VALUE)
         ]),
     Scene(
         "up_bloc",
