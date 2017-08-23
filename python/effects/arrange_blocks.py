@@ -496,6 +496,7 @@ def other_row(row):
 
 class TestKeyboardInputs(af.Effect):
     def __init__(self, effect, pause=0.5):
+        # effect should be an effect and collaboration manager
         self.effect = effect
         self.pause = pause
         self.next_input = None
@@ -503,6 +504,9 @@ class TestKeyboardInputs(af.Effect):
     def scene_starting(self, now, osc_data):
         self.next_input = now
         return self.effect.scene_starting(now, osc_data)
+
+    def compute_state(self, now, old_state, osc):
+        self.effect.compute_state(now, old_state, osc)
 
     def next_frame(self, pixels, now, collab, _):
         osc_data = af.StoredOSCData()
