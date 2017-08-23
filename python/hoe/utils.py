@@ -8,8 +8,8 @@ DEFAULT_FORMAT = "%(asctime)s %(levelname)-8s %(name)s:%(lineno)d: %(message)s"
 DEFAULT_FORMATTER = logging.Formatter(DEFAULT_FORMAT)
 
 
-def randrange(low, high):
-    return np.random.rand() * (high - low) + low
+def randrange(low, high, shape=1):
+    return np.random.random(shape) * (high - low) + low
 
 
 def fader_interpolate(fader, my_low, my_high):
