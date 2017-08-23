@@ -49,6 +49,7 @@ def main():
 
     background = Breathe(hoe_layout, args.n)
     render = su.Render(client, None, hoe_layout, [background])
+    render = su.Render(client, None, hoe_layout, [Static()])
     render.run_forever()
 
 
