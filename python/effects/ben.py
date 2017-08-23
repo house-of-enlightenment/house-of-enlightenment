@@ -313,8 +313,9 @@ SCENES = [
                 color=(0, 0xFF, 0), start_col=33, end_col=35, start_row=120, end_row=124),
             SolidBackground(color=(0xFF, 0, 0), start_col=0, end_col=2, start_row=30, end_row=34),
             SolidBackground(color=(0, 0xFF, 0), start_col=33, end_col=35, start_row=30, end_row=34),
-            FrameRotator(rate=0.24),
+            FrameRotator(rate=0.20),
             DevidedSouls(),
+            FrameRotator(rate=0.07),
             FiniteDifference(
                 master_station=0,
                 boundary=FiniteDifference.NEUMANN,
