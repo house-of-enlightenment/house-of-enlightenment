@@ -126,7 +126,7 @@ class StopTheLight(collaboration.CollaborationManager, af.Effect):
         button_pressed, hit_section = self._find_hit_section(now, osc_data)
         if not button_pressed:
             return
-        columns = self.sprite.columns(now)
+        columns = self.sprite.columns()
         sprite_idx = self.layout.grid[self.bottom, columns]
         if hit_section is None:
             logger.debug('a button was pressed, but missed the target')
@@ -168,7 +168,7 @@ class StopTheLight(collaboration.CollaborationManager, af.Effect):
     def _handle_active(self, pixels, now, collaboration_state, osc_data):
         self.sprite.update(self.now)
         self.pixels[self.target_idx] = YELLOW
-        columns = self.sprite.columns(now)
+        columns = self.sprite.columns()
         # want to allow the sprite to move for a little while
         # before allowing any buttons to be pressed
         if self.now < self.ignore_buttons_until:
@@ -191,7 +191,7 @@ class StopTheLight(collaboration.CollaborationManager, af.Effect):
             section_hit: if a target was hit, return the id of the section
                 otherwise, it is a miss: return None.
         """
-        columns = self.sprite.columns(now)
+        columns = self.sprite.columns()
         button_pressed = False
         for i, station in enumerate(osc_data.stations):
             if station.button_presses:
@@ -262,7 +262,7 @@ class Sprite(object):
         location = int(self.layout.columns * sprite_rotation) + self.start_location
         self.location = location % self.layout.columns
 
-    def columns(self, now):
+    def columns(self):
         left = int(self.width / 2)
         right = self.width - left
         return map(self.layout.colmod, range(self.location - left, self.location + right))
