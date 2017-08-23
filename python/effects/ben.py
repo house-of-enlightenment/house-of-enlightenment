@@ -189,6 +189,7 @@ class LaunchSeizure(MultiEffect):
 
         if self.count() != old_count:
             #self._update_buttons()
+            pass
 
 
 ##
