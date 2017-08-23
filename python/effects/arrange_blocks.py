@@ -78,7 +78,7 @@ def get_color(i, n=6):
     return color_utils.hsv2rgb((i * 255 / n, 255, 255))
 
 
-class ArrangeBlocks(af.Effect):
+class ArrangeBlocks(collaboration.CollaborationManager, af.Effect):
     def __init__(self, grid):
         # share a common blink so that they all blink at the same time
         self.grid = grid
