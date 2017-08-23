@@ -23,8 +23,8 @@ class Ripple(Effect):
         Effect.__init__(self)
         self.color = color
         # a grid of the row/columns of all 0's
-        self.previous_ripple_state = np.zeros((STATE.layout.rows, STATE.layout.columns), np.float)
-        self.ripple_state = np.zeros((STATE.layout.rows, STATE.layout.columns), np.float)
+        self.previous_ripple_state = np.zeros((STATE.layout.rows, STATE.layout.columns), int)
+        self.ripple_state = np.zeros((STATE.layout.rows, STATE.layout.columns), int)
         self.ripple_state[2, 16] = 50
         self.damping = .8
 
@@ -47,7 +47,8 @@ class Ripple(Effect):
             self.previous_ripple_state[2:, 1:-1] +
             self.previous_ripple_state[1:-1, :-2] +
             self.previous_ripple_state[1:-1, 2:]) / 4 - self.ripple_state[1:-1, 1:-1]
-        self.ripple_state *= self.damping
+        # numpy doesn't like multiplying ints and floats so tell it to be unsafe
+        np.multiply(self.ripple_state, self.damping, out=self.ripple_state, casting='unsafe')
         pixels[:] = self.get_pixels()
         self.swap_buffers()
 
