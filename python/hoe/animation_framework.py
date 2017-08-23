@@ -9,7 +9,7 @@ from threading import Thread
 
 from OSC import OSCServer
 
-from hoe.collaboration import CollaborationManager
+from hoe.collaboration import CollaborationManager, NoOpCollaborationManager
 from hoe.pixels import Pixels
 from hoe.state import STATE
 from hoe.opc import Client
