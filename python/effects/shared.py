@@ -1,5 +1,6 @@
 from hoe import animation_framework as af
 
+INTERACTION_ROWS = 2
 
 class SolidBackground(af.Effect):
     """Always return a singular color. Can be bound top/bottom and
@@ -14,3 +15,8 @@ class SolidBackground(af.Effect):
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
         pixels[self.slice] = self.color
+
+
+class BarelyGray(af.Effect):
+    def next_frame(self, pixels, *args, **kwargs):
+        pixels[INTERACTION_ROWS:,:] = 10

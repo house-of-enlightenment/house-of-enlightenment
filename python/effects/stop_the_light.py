@@ -12,6 +12,8 @@ from hoe.state import STATE
 from hoe import translations
 from hoe import transitions
 
+import shared
+
 logger = logging.getLogger(__name__)
 
 N_ROWS = 2
@@ -267,15 +269,11 @@ class Sprite(object):
         return map(self.layout.colmod, range(self.location - left, self.location + right))
 
 
-class BarelyGray(af.Effect):
-    def next_frame(self, pixels, *args, **kwargs):
-        pixels[2:, :] = 10
-
-
 SCENES = [
     af.Scene(
         'stop-the-light',
         tags=[af.Scene.TAG_GAME],
         collaboration_manager=StopTheLight(STATE.layout),
-        effects=[BarelyGray()])
+        effects=[shared.BarelyGray()]
+    )
 ]

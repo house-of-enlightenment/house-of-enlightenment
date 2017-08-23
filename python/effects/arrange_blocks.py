@@ -34,6 +34,8 @@ from hoe.state import STATE
 from hoe import translations
 from hoe import transitions
 
+import shared
+
 logger = logging.getLogger(__name__)
 
 N_ROWS = 2
@@ -119,6 +121,19 @@ class ArrangeBlocks(collaboration.CollaborationManager, af.Effect):
     def scene_starting(self, now, osc_data):
         pass
 
+    def compute_state(self, now, old_state, osc):
+        state = {}
+        block_scores = collections.defaultdict(list)
+        total = 0
+        n_blocks = len(self.blocks)
+        for b in self.blocks:
+            at_target = 100.0 / n_blocks if b.at_target() else 0
+            block_scores[b.station_id].append(at_target)
+            total += at_target
+        for i, targets in block_scores.items():
+            state[i] = int(np.mean(targets))
+        state['total'] = int(total)
+
     def next_frame(self, pixels, now, collab, osc):
         if self.needs_shuffle:
             self.shuffle(pixels, now)
@@ -137,7 +152,6 @@ class ArrangeBlocks(collaboration.CollaborationManager, af.Effect):
             if station.contains_change:
                 station_handler = self.station_handlers[i]
                 station_handler.handle_button_presses(station.button_presses)
-        self.update_state(collab)
         if self.did_we_win():
             self.on_winning(now)
         self.draw(pixels, now)
@@ -157,17 +171,6 @@ class ArrangeBlocks(collaboration.CollaborationManager, af.Effect):
         self.rotate = translations.Rotate(STATE.layout.columns,
                                           transitions.ConstantTransition(
                                               STATE.layout.columns / 2)).start(now)
-
-    def update_state(self, collab):
-        state = collections.defaultdict(list)
-        total = 0
-        for b in self.blocks:
-            at_target = 100 if b.at_target() else 0
-            state[b.station_id].append(at_target)
-            total += at_target
-        for i, targets in state.items():
-            collab[i] = np.mean(targets)
-        collab['total'] = int(total / len(self.blocks))
 
     def did_we_win(self):
         return all(b.at_target() for b in self.blocks)
@@ -516,11 +519,13 @@ SCENES = [
     af.Scene(
         'arrange-blocks',
         tags=[af.Scene.TAG_GAME],
-        collaboration_manager=collaboration.PassThru(),
-        effects=[ArrangeBlocks(Grid.make())]),
+        collaboration_manager=ArrangeBlocks(Grid.make()),
+        effects=[shared.BarelyGray()]
+    ),
     af.Scene(
         'arrange-blocks-debug',
         tags=[af.Scene.TAG_TEST],
-        collaboration_manager=collaboration.PassThru(),
-        effects=[TestKeyboardInputs(ArrangeBlocks(Grid.make()))])
+        collaboration_manager=TestKeyboardInputs(ArrangeBlocks(Grid.make())),
+        effects=[shared.BarelyGray()]
+    )
 ]
