@@ -9,6 +9,10 @@ from collections import deque
 
 
 class RisingLine(Effect):
+    """
+    base effect that is used for all the launchers below
+    """
+
     def __init__(self,
                  color=(255, 255, 0),
                  start_row=2,
@@ -49,6 +53,10 @@ class RisingLine(Effect):
 
 
 class RomanCandleLauncher(MultiEffect):
+    """
+    Roman Candle - go from left to right and back
+    """
+
     def __init__(self, start_col=16, end_col=24, color=(255, 0, 0)):
 
         forward_cols = range(start_col, end_col)
@@ -71,6 +79,10 @@ class RomanCandleLauncher(MultiEffect):
 
 
 class AroundTheWorldLauncher(MultiEffect):
+    """
+    Arround the world launcher - shoot small lines all the way around the gazebo
+    """
+
     def __init__(self, start_col=16, color=(0, 255, 0)):
         def shift(key, array):
             a = deque(array)  # turn list into deque
@@ -93,6 +105,28 @@ class AroundTheWorldLauncher(MultiEffect):
         MultiEffect.__init__(self, *effects)
 
 
+class FZeroLauncher(MultiEffect):
+    """
+    F-Zero Launcher - make a f-zero speed boost arrow around the start_col
+    """
+
+    def __init__(self, start_col=16, color=(0, 255, 255)):
+        self.color = color
+
+        # get 5 pixels to either side to select the 11 columns in this section
+        section = range(start_col - 5, start_col + 5 + 1)
+
+        # group them by levels to make an f-zero speed boost arrow
+        levels = [[section[5]], [section[4], section[6]], [section[3], section[7]],
+                  [section[2], section[8]], [section[1], section[9]], [section[0], section[10]]]
+
+        def make_line((i, col)):
+            return RisingLine(height=50, start_col=col, delay=i * 80, color=color)
+
+        effects = map(make_line, enumerate(levels))
+
+        MultiEffect.__init__(self, *effects)
+
 
 SCENES = [
     Scene(
@@ -107,5 +141,10 @@ SCENES = [
         collaboration_manager=NoOpCollaborationManager(),
         effects=[SolidBackground(color=(30, 30, 30)),
                  AroundTheWorldLauncher(start_col=16)]),
-
+    Scene(
+        "f-zero",
+        tags=[Scene.TAG_EXAMPLE],
+        collaboration_manager=NoOpCollaborationManager(),
+        effects=[SolidBackground(color=(30, 30, 30)),
+                 FZeroLauncher(start_col=16)]),
 ]
