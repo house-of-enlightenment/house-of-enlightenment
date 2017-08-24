@@ -11,7 +11,10 @@ class ZigZag(Effect):
         self.start_row = start_row
         self.start_col = start_col
         self.height = height
+        self.cur_top = self.start_row
+        self.cur_bottom = self.start_row
 
+    def scene_starting(self, now, osc_data):
         self.cur_top = self.start_row
         self.cur_bottom = self.start_row
 
