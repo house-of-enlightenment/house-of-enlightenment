@@ -20,7 +20,14 @@ import numpy as np
 
 
 class AnimationFramework(object):
-    def __init__(self, osc_server, opc_client, scenes=None, first_scene=None, no_interaction_timeout=5*60, max_scene_timeout=15*60, tags=[]):
+    def __init__(self,
+                 osc_server,
+                 opc_client,
+                 scenes=None,
+                 first_scene=None,
+                 no_interaction_timeout=5 * 60,
+                 max_scene_timeout=15 * 60,
+                 tags=[]):
         # type: (OSCServer, Client, List(OSCClient), {str, Scene}) -> None
         self.osc_server = osc_server
         self.opc_client = opc_client
@@ -30,7 +37,8 @@ class AnimationFramework(object):
 
         # Load all scenes from effects package. Then set initial index and load it up
         self.scenes = scenes or load_scenes(tags=tags)
-        self.non_game_scenes = [name for name,scene in self.scenes.items() if not scene.is_game()] #  TODO: validation
+        self.non_game_scenes = [name for name, scene in self.scenes.items()
+                                if not scene.is_game()]  #  TODO: validation
         self.curr_scene = None
         self.queued_scene = self.scenes[first_scene if first_scene else self.non_game_scenes[0]]
         self._last_scene_change_timestamp = time.time()
@@ -101,7 +109,8 @@ class AnimationFramework(object):
                 assert len(args) == 2
                 self.no_interaction_timeout, self.max_scene_timeout = float(args[0]), float(args[1])
             except (AssertionError, ValueError):
-                print "Received invalid set timeout message with args {}. Usage (times in seconds): \n /set/timeouts <no_interaction> <max_on_single_scene>".format(args)
+                print "Received invalid set timeout message with args {}. Usage (times in seconds): \n /set/timeouts <no_interaction> <max_on_single_scene>".format(
+                    args)
 
         self.osc_server.addMsgHandler("/set/timeouts", handle_set_timeout_command)
         print "Registered all OSC Handlers"
@@ -225,9 +234,7 @@ class AnimationFramework(object):
             # Note: possible change_scene() is called in between. Issue is trivial though
             msg = "WARNING: scene {} is rendering slowly. Total: {} Render: {} OPC: {}"
             print msg.format(self.curr_scene.name, completed_ts - frame_start_time,
-                             render_ts - frame_start_time,
-                             completed_ts - render_ts)
-
+                             render_ts - frame_start_time, completed_ts - render_ts)
 
     def shutdown(self):
         self.serve = False
@@ -400,7 +407,7 @@ class MultiEffect(Effect):
     def __init__(self, *effects):
         Effect.__init__(self)
         self.effects = list(effects)
-        self.clear_effects_after=True
+        self.clear_effects_after = True
 
     def scene_starting(self, now, osc_data):
         """Initialize a scene
@@ -480,6 +487,7 @@ class Scene(MultiEffect):
 
     def is_game(self):
         return Scene.TAG_GAME in self.tags
+
 
 class ButtonFeedbackDisplay(Effect):
     count_to_indices = {
