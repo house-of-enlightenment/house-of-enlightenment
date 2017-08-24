@@ -5,6 +5,7 @@ import importlib
 import os.path
 import sys
 import time
+from random import choice
 from threading import Thread
 
 from OSC import OSCServer
@@ -19,18 +20,20 @@ import numpy as np
 
 
 class AnimationFramework(object):
-    def __init__(self, osc_server, opc_client, scenes=None, first_scene=None, tags=[]):
+    def __init__(self, osc_server, opc_client, scenes=None, first_scene=None, no_interaction_timeout=5*60, max_scene_timeout=15*60, tags=[]):
         # type: (OSCServer, Client, List(OSCClient), {str, Scene}) -> None
         self.osc_server = osc_server
         self.opc_client = opc_client
         self.fps = STATE.fps
-        self.no_interaction_timeout = 5 * 60
-        self.max_scene_timeout = 15 * 60
+        self.no_interaction_timeout = no_interaction_timeout
+        self.max_scene_timeout = max_scene_timeout
 
         # Load all scenes from effects package. Then set initial index and load it up
         self.scenes = scenes or load_scenes(tags=tags)
+        self.non_game_scenes = [name for name,scene in self.scenes.items() if not scene.is_game()] #  TODO: validation
         self.curr_scene = None
-        self.queued_scene = self.scenes[first_scene if first_scene else self.scenes.keys()[0]]
+        self.queued_scene = self.scenes[first_scene if first_scene else self.non_game_scenes[0]]
+        self._last_scene_change_timestamp = time.time()
 
         self.serve = False
         self.is_running = False
@@ -93,6 +96,14 @@ class AnimationFramework(object):
         self.osc_server.addMsgHandler("/input/fader", handle_fader)
         self.osc_server.addMsgHandler("/lidar", handle_lidar)
 
+        def handle_set_timeout_command(path, tags, args, source):
+            try:
+                assert len(args) == 2
+                self.no_interaction_timeout, self.max_scene_timeout = float(args[0]), float(args[1])
+            except (AssertionError, ValueError):
+                print "Received invalid set timeout message with args {}. Usage (times in seconds): \n /set/timeouts <no_interaction> <max_on_single_scene>".format(args)
+
+        self.osc_server.addMsgHandler("/set/timeouts", handle_set_timeout_command)
         print "Registered all OSC Handlers"
 
     # ---- EFFECT CONTROL METHODS -----
@@ -103,6 +114,7 @@ class AnimationFramework(object):
         self.check_game_state(now, osc_data)
 
         if self.queued_scene:
+            self._last_scene_change_timestamp = time.time()
             # Cache the scene queue locally so it can't be changed on us
             next_scene, last_scene, self.queued_scene = self.queued_scene, self.curr_scene, None
             next_scene.scene_starting(now, osc_data)
@@ -137,14 +149,13 @@ class AnimationFramework(object):
         if self.curr_scene is None:
             return
 
-        last_interaction = STATE.stations.last_interaction()
+        last_interaction = max(STATE.stations.last_interaction(), self._last_scene_change_timestamp)
         if self.curr_scene.is_completed(
                 now, osc_data
         ) or last_interaction < now - self.no_interaction_timeout or last_interaction < now - self.max_scene_timeout:
             # Pick new scene
-            pass
-        elif Scene.TAG_BACKGROUND in self.curr_scene.tags:
-            # Documented hack. We get the current state as 0/1 for each button and make it a string
+            self.pick_scene(choice(self.non_game_scenes))
+        elif not self.curr_scene.is_game():
             # TODO if we want to optimize this, use a binary search tree (sparse?)
             curr_state = STATE.stations.get_buttons_code()
             if curr_state in STATE.codes.codes_to_scenes:
@@ -467,6 +478,8 @@ class Scene(MultiEffect):
         # TODO Why didn't super(MultiEffect, self) work?
         self.next_frame(pixels, t, self.collaboration_state, osc_data)
 
+    def is_game(self):
+        return Scene.TAG_GAME in self.tags
 
 class ButtonFeedbackDisplay(Effect):
     count_to_indices = {
