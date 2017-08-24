@@ -389,6 +389,7 @@ class MultiEffect(Effect):
     def __init__(self, *effects):
         Effect.__init__(self)
         self.effects = list(effects)
+        self.clear_effects_after=True
 
     def scene_starting(self, now, osc_data):
         """Initialize a scene
@@ -403,6 +404,8 @@ class MultiEffect(Effect):
     def scene_ended(self):
         for e in self.effects:
             e.scene_ended()
+        if self.clear_effects_after:
+            self.effects = []
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
         self.before_rendering(pixels, t, collaboration_state, osc_data)
@@ -453,6 +456,7 @@ class Scene(MultiEffect):
             # as top layer" % (name, collaboration_manager)
             self.effects = self.effects + [collaboration_manager]
         self.collaboration_state = {}
+        self.clear_effects_after = False
 
     def __str__(self):
         return "{}({})".format(self.__class__.__name__, self.name)
