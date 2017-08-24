@@ -91,16 +91,17 @@ class SampleEffectLauncher(MultiEffect):
 
 
 SCENES = [
-    Scene(
-        "spatial scene",
-        tags=[Scene.TAG_BACKGROUND],
-        collaboration_manager=NoOpCollaborationManager(),
-        effects=[SpatialStripesBackground()]),
-    Scene(
-        "adjustablebackground",
-        tags=[Scene.TAG_EXAMPLE],
-        collaboration_manager=NoOpCollaborationManager(),
-        effects=[SolidBackground(), AdjustableFillFromBottom()]),
+    # These scenes are too slow
+    # Scene(
+    #     "spatial scene",
+    #     tags=[Scene.TAG_BACKGROUND],
+    #     collaboration_manager=NoOpCollaborationManager(),
+    #     effects=[SpatialStripesBackground()]),
+    # Scene(
+    #     "adjustablebackground",
+    #     tags=[Scene.TAG_EXAMPLE],
+    #     collaboration_manager=NoOpCollaborationManager(),
+    #     effects=[SolidBackground(), AdjustableFillFromBottom()]),
     Scene(
         "launchdots",
         tags=[Scene.TAG_EXAMPLE],
