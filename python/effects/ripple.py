@@ -17,39 +17,55 @@ light_blue = (52, 152, 219)
 blue = (41, 128, 185)
 dark_blue=(0, 81, 134)
 
-
+# https://web.archive.org/web/20080731165022/http://freespace.virgin.net:80/hugo.elias/graphics/x_water.htm
 class Ripple(Effect):
-    def __init__(self, color=dark_blue, start_row=0, end_row=None, start_col=0, end_col=None):
+    def __init__(self, color=blue, start_row=0, end_row=None, start_col=0, end_col=None):
         Effect.__init__(self)
         self.color = color
         # a grid of the row/columns of all 0's
         self.previous_ripple_state = np.zeros((STATE.layout.rows, STATE.layout.columns), int)
         self.ripple_state = np.zeros((STATE.layout.rows, STATE.layout.columns), int)
-        self.ripple_state[2, 16] = 50
-        self.damping = .99
+        # self.ripple_state[2, 16] = 50
+        self.damping = 0.8
+        self.frameCount = 0
 
     def value_to_color(self, value):
+
         if value > 0:
             return (30, 30, 30)
         elif value < 0:
             return (255, 255, 255)
         else:
-            return blue
+            return self.color
 
     def start_ripple(self):
         idx = tuple(np.random.randint(0, s) for s in self.ripple_state.shape)
-        self.ripple_state[idx] = np.random.randint(-50, 50)
+
+        self.ripple_state[idx] = np.random.randint(0, 500)
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
-        pixels[:] = 5
-        self.start_ripple()
+
+        # attempt to get it to render every 2 frames, but it looks shitty
+        # self.frameCount += 1
+        # if (self.frameCount % 2 == 0):
+        #     pixels[:,:] = self.get_pixels()
+        #     return
+
+        # only generate a ripple every couple frames
+        if (random.random() < 0.12):
+            self.start_ripple()
+
+        # calculate a pixel values based on it's neighbors
         self.ripple_state[1:-1, 1:-1] = (
             self.previous_ripple_state[:-2, 1:-1] +
             self.previous_ripple_state[2:, 1:-1] +
             self.previous_ripple_state[1:-1, :-2] +
-            self.previous_ripple_state[1:-1, 2:]) / 4 - self.ripple_state[1:-1, 1:-1]
+            self.previous_ripple_state[1:-1, 2:]) * 0.5 - self.ripple_state[1:-1, 1:-1]
+
+        # damping
         # numpy doesn't like multiplying ints and floats so tell it to be unsafe
         np.multiply(self.ripple_state, self.damping, out=self.ripple_state, casting='unsafe')
+
         pixels[:,:] = self.get_pixels()
         self.swap_buffers()
 
@@ -75,5 +91,5 @@ SCENES = [
         "ripple",
         tags=[Scene.TAG_EXAMPLE],
         collaboration_manager=NoOpCollaborationManager(),
-        effects=[SolidBackground(color=dark_blue), Ripple()])
+        effects=[Ripple()])
 ]
