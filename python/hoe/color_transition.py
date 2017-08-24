@@ -4,7 +4,6 @@ from hoe import color_utils
 from hoe import transitions
 from hoe import utils
 
-
 MIN_HUE = -15
 MAX_HUE = 15
 
@@ -99,7 +98,5 @@ def dark():
 
 def weighted_bright():
     """Returns a medium to high bright value, with preference towards bright"""
-    return np.random.choice(
-        [17, 18, 19, 20, 21] * 1 +
-        [22, 23, 24, 25, 26] * 2 +
-        [27, 28, 29, 30, 31] * 3)
+    return np.random.choice([17, 18, 19, 20, 21] * 1 + [22, 23, 24, 25, 26] * 2 +
+                            [27, 28, 29, 30, 31] * 3)

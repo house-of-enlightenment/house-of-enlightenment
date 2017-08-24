@@ -44,6 +44,7 @@ The python application allows for some command prompt input to assist in develop
 | osc msg | anything else is sent as an osc message | /osc/path [arg1] [arg2] ... [argN] | See below |
 | osc button | simulate pressing a button | /input/button <station> <button> | /input/button 1 2 |
 | osc fader | simulate changing a fader | /input/fader <station> <fader> <value> | /input/fader 2 0 57 |
+| osc timeouts | change the timeouts for changing a scene | /set/timeouts <no_interaction> <max_time_on_one_scene> | /input/timeouts 300 600 |
 | lidar | replay lidar data | lidar <filename> | lidar lidar/newbag.sample |
 
 # Lidar

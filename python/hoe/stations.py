@@ -66,8 +66,7 @@ class Stations(object):
         return get_code_as_int([station.buttons.as_array() for station in self._stations])
 
     def last_interaction(self):
-        #TODO:
-        return time.time()
+        return max(map(lambda s: s.buttons.get_last_interaction_time(), self._stations))
 
 
 class Station(object):
@@ -119,6 +118,9 @@ class StationButtons(object):
 
     def as_array(self):
         return [b for b in self._buttons]  # TODO performance concerns
+
+    def get_last_interaction_time(self):
+        return self._last_change_timestamp
 
 
 class StationClient(object):
