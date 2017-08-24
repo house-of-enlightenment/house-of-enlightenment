@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 # -------------------------------------------------------------------------------
 # command line
-def parse_command_line():
+def parse_command_line(args=None):
     root_dir = find_root()
 
     parser = argparse.ArgumentParser()
@@ -58,7 +58,7 @@ def parse_command_line():
     parser.add_argument('-t', '--tags', dest='tags', action='append')
     parser.add_argument('-v', '--verbose', dest='verbose', default=False, action='store_true')
 
-    options = parser.parse_args()
+    options = parser.parse_args(args)
 
     log_level = 'DEBUG' if options.verbose else 'INFO'
     utils.configure_logging(level=log_level)
