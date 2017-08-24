@@ -34,8 +34,9 @@ def main():
             thread = mgr.serve_in_background()
             count = 0
             while True:
-                for scene in mgr.scenes:
-                    print "====="
+                count += 1
+                for i, scene in enumerate(mgr.scenes):
+                    print "== Loop: {} == Scene: {} ==".format(count, i)
                     print 'Testing {}'.format(scene)
                     mgr.pick_scene(scene)
                     time.sleep(args.time_per_scene)
