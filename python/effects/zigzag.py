@@ -5,7 +5,6 @@ from hoe.state import STATE
 from shared import SolidBackground
 
 
-
 class ZigZag(Effect):
     def __init__(self, color=(255, 255, 0), start_row=2, start_col=16, height=50):
         self.color = color

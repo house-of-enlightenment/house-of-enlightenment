@@ -12,10 +12,10 @@ from hoe.state import STATE
 from generic_effects import NoOpCollaborationManager
 from shared import SolidBackground
 
-
 light_blue = (52, 152, 219)
 blue = (41, 128, 185)
-dark_blue=(0, 81, 134)
+dark_blue = (0, 81, 134)
+
 
 # https://web.archive.org/web/20080731165022/http://freespace.virgin.net:80/hugo.elias/graphics/x_water.htm
 class Ripple(Effect):
@@ -57,16 +57,15 @@ class Ripple(Effect):
 
         # calculate a pixel values based on it's neighbors
         self.ripple_state[1:-1, 1:-1] = (
-            self.previous_ripple_state[:-2, 1:-1] +
-            self.previous_ripple_state[2:, 1:-1] +
-            self.previous_ripple_state[1:-1, :-2] +
-            self.previous_ripple_state[1:-1, 2:]) * 0.5 - self.ripple_state[1:-1, 1:-1]
+            self.previous_ripple_state[:-2, 1:-1] + self.previous_ripple_state[2:, 1:-1] +
+            self.previous_ripple_state[1:-1, :-2] + self.previous_ripple_state[1:-1, 2:]
+        ) * 0.5 - self.ripple_state[1:-1, 1:-1]
 
         # damping
         # numpy doesn't like multiplying ints and floats so tell it to be unsafe
         np.multiply(self.ripple_state, self.damping, out=self.ripple_state, casting='unsafe')
 
-        pixels[:,:] = self.get_pixels()
+        pixels[:, :] = self.get_pixels()
         self.swap_buffers()
 
     def get_pixels(self):
