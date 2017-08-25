@@ -161,11 +161,15 @@ class TetherBall(CollaborationManager, Effect):
     def _set_active_buttons(self):
 
         for station_id, station in enumerate(STATE.stations):
-            station.buttons.set_all(on=False)
+
             # print "station: %d %s" % (station_id, self._station_is_active(station_id))
             if self._station_is_active(station_id):
-                station.buttons[1] = 1
-                station.buttons[3] = 1
+                for b in range(5):
+                    # hack - setting forces and update, so don't set unless necessary to prevent network traffic
+                    if station.buttons[b] != b%2:
+                        station.buttons[b] = b%2
+            elif station.buttons.get_high_buttons():
+                station.buttons.set_all(on=False)
 
     def _get_x_offset(self, x):
         offset_x = x  #+ 33
@@ -253,15 +257,14 @@ class TetherBall(CollaborationManager, Effect):
         self._set_tetherball_pixels(pixels)
         self._set_bottom_ring_pixels(pixels)
 
-        # MultiEffect.before_rendering(self, pixels, t, collaboration_state, osc_data)
-        for s in range(STATE.layout.sections):
-            if osc_data.stations[s].button_presses:
-                if self._button_press_is_valid(s):
-                    if 3 in osc_data.stations[s].button_presses:
-                        self.direction = "right"
-                    if 1 in osc_data.stations[s].button_presses:
-                        self.direction = "left"
-                    self.velocity += 1.5
+        for s_id, buttons in osc_data.buttons.items():
+            if self._button_press_is_valid(s_id):
+                if 3 in buttons:
+                    self.direction = "right"
+                elif 1 in buttons:  #  Matt - did a small change here with elif
+                    self.direction = "left"
+                self.velocity += 1.5
+
 
         # slope = (0 - self.x)/216
         # slope = .02

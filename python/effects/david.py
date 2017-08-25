@@ -1,7 +1,7 @@
 from hoe import color_utils
 from hoe.animation_framework import Scene, Effect, MultiEffect
 from hoe.animation_framework import CollaborationManager
-from hoe.animation_framework import StoredOSCData
+from hoe.animation_framework import OSCDataAccumulator
 from hoe.animation_framework import StoredStationData
 from hoe.stations import StationButtons
 from hoe.state import STATE
@@ -65,7 +65,7 @@ class ButtonChaseController(Effect, CollaborationManager):
         self.flash_timer = 0
 
     def reset_state(self, osc_data):
-        # type: (StoredOSCData) -> None
+        # type: (OSCDataAccumulator) -> None
         """Resets the state for on, off, buttons, and timer"""
         self.on = []
         self.off = [c for c in self.all_combos]
@@ -76,7 +76,7 @@ class ButtonChaseController(Effect, CollaborationManager):
         self.pick_next(osc_data=osc_data)
 
     def compute_state(self, t, collaboration_state, osc_data):
-        # type: (long, {}, StoredOSCData) -> {}
+        # type: (long, {}, OSCDataAccumulator) -> {}
         if self.next_button[1] in osc_data.stations[self.next_button[0]].button_presses:
             collaboration_state["last_hit_button"] = self.next_button
             collaboration_state["last_hit_time"] = t
@@ -128,7 +128,7 @@ class ButtonChaseController(Effect, CollaborationManager):
         self.reset_state(osc_data=osc_data)
 
     def pick_next(self, osc_data, missed=False):
-        # type: (StoredOSCData, bool) -> bool
+        # type: (OSCDataAccumulator, bool) -> bool
         self.flash_timer = 0
 
         if not missed and not self.off:

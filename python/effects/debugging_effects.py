@@ -11,7 +11,7 @@ class PrintOSC(Effect):
     """A effect layer that just prints OSC info when it changes"""
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
-        if osc_data.contains_change:
+        if osc_data.faders or osc_data.buttons:
             print "Frame's osc_data is", osc_data
 
 
