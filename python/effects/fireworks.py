@@ -4,7 +4,9 @@ from hoe.animation_framework import MultiEffect
 from generic_effects import NoOpCollaborationManager
 from hoe.state import STATE
 from shared import SolidBackground
+# from ripple import Ripple
 import time
+import numpy as np
 from collections import deque
 
 
@@ -84,15 +86,11 @@ class AroundTheWorldLauncher(MultiEffect):
     """
 
     def __init__(self, start_col=16, color=(0, 255, 0)):
-        def shift(key, array):
-            a = deque(array)  # turn list into deque
-            a.rotate(key)  # rotate deque by key
-            return list(a)  # turn deque back into a list
 
         # [0, ..., 65]
         all_cols = range(0, STATE.layout.columns)
         # [start_col, ..., 65, 0, ..., start_col - 1]
-        shifted = shift(-start_col, all_cols)
+        shifted = np.roll(all_cols, -start_col)
 
         # print "start_col", start_col
         # print "shifted", shifted

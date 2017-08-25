@@ -71,9 +71,9 @@ class Ripple(Effect):
     def get_pixels(self):
         shape = (STATE.layout.rows * STATE.layout.columns, 3)
         np_value_to_color = np.vectorize(self.value_to_color)
-        print '---'
-        print 'max', np.max(self.ripple_state)
-        print 'min', np.min(self.ripple_state)
+        # print '---'
+        # print 'max', np.max(self.ripple_state)
+        # print 'min', np.min(self.ripple_state)
         v = np.array(np_value_to_color(self.ripple_state))
         # moveaxis is because v starts off as a (3, 216, 66) array
         # and we actually want (216, 66, 3)
