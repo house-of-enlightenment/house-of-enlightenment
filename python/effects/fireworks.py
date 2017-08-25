@@ -4,11 +4,18 @@ from hoe.animation_framework import MultiEffect
 from generic_effects import NoOpCollaborationManager
 from hoe.state import STATE
 from shared import SolidBackground
+# from ripple import Ripple
 import time
+import numpy as np
 from collections import deque
+import colorsys
 
 
 class RisingLine(Effect):
+    """
+    base effect that is used for all the launchers below
+    """
+
     def __init__(self,
                  color=(255, 255, 0),
                  start_row=2,
@@ -49,6 +56,10 @@ class RisingLine(Effect):
 
 
 class RomanCandleLauncher(MultiEffect):
+    """
+    Roman Candle - go from left to right and back
+    """
+
     def __init__(self, start_col=16, end_col=24, color=(255, 0, 0)):
 
         forward_cols = range(start_col, end_col)
@@ -71,16 +82,16 @@ class RomanCandleLauncher(MultiEffect):
 
 
 class AroundTheWorldLauncher(MultiEffect):
+    """
+    Arround the world launcher - shoot small lines all the way around the gazebo
+    """
+
     def __init__(self, start_col=16, color=(0, 255, 0)):
-        def shift(key, array):
-            a = deque(array)  # turn list into deque
-            a.rotate(key)  # rotate deque by key
-            return list(a)  # turn deque back into a list
 
         # [0, ..., 65]
         all_cols = range(0, STATE.layout.columns)
         # [start_col, ..., 65, 0, ..., start_col - 1]
-        shifted = shift(-start_col, all_cols)
+        shifted = np.roll(all_cols, -start_col)
 
         # print "start_col", start_col
         # print "shifted", shifted
@@ -92,6 +103,39 @@ class AroundTheWorldLauncher(MultiEffect):
 
         MultiEffect.__init__(self, *effects)
 
+
+class FZeroLauncher(MultiEffect):
+    """
+    F-Zero Launcher - make a f-zero speed boost arrow around the start_col
+    """
+
+    def __init__(self, start_col=16, color=(0, 255, 255)):
+
+        # get 5 pixels to either side to select the 11 columns in this section
+        section = range(start_col - 5, start_col + 5 + 1)
+
+        # group them by levels to make an f-zero speed boost arrow
+        levels = [[section[5]],
+                  [section[4], section[6]],
+                  [section[3], section[7]],
+                  [section[2], section[8]],
+                  [section[1], section[9]],
+                  [section[0], section[10]]]
+
+
+        def make_line((i, col)):
+
+            # fade the colors on the edges
+            def get_color():
+                hsv = colorsys.rgb_to_hsv(color[0] // 255, color[1] // 255, color[2] // 255)
+                rgb = colorsys.hsv_to_rgb(hsv[0], hsv[1], hsv[2] - (i * 0.12))
+                return (rgb[0] * 255, rgb[1] * 255, rgb[2] * 255)
+
+            return RisingLine(height=50, start_col=col, delay=i * 80, color=get_color())
+
+        effects = map(make_line, enumerate(levels))
+
+        MultiEffect.__init__(self, *effects)
 
 
 SCENES = [
@@ -107,5 +151,10 @@ SCENES = [
         collaboration_manager=NoOpCollaborationManager(),
         effects=[SolidBackground(color=(30, 30, 30)),
                  AroundTheWorldLauncher(start_col=16)]),
-
+    Scene(
+        "f-zero",
+        tags=[Scene.TAG_EXAMPLE],
+        collaboration_manager=NoOpCollaborationManager(),
+        effects=[SolidBackground(color=(30, 30, 30)),
+                 FZeroLauncher(start_col=16)]),
 ]

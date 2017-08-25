@@ -1,12 +1,17 @@
-import time
+from itertools import chain
+import logging
 import socket
+import time
+
+import osc_utils
 
 from hoe.osc_utils import update_buttons
-import osc_utils
 from hoe.state import STATE
-from itertools import chain
 
-id_to_colors = {
+
+logger = logging.getLogger(__name__)
+
+id_to_color_names = {
     0: "YELLOW",
     1: "GREEN",
     2: "WHITE",
@@ -14,7 +19,7 @@ id_to_colors = {
     4: "BLUE",
 }
 
-colors_to_id = {v: k for v, k in id_to_colors.items()}
+colors_to_id = {v: k for v, k in id_to_color_names.items()}
 # TODO - Color scale?
 colors_to_rgb = {
     "RED": (255, 0, 0),
@@ -23,6 +28,9 @@ colors_to_rgb = {
     "YELLOW": (200, 200, 0),
     "WHITE": (255, 255, 255)
 }
+
+N_BUTTONS = 5
+BUTTON_COLORS = [colors_to_rgb[id_to_color_names[i]] for i in range(N_BUTTONS)]
 
 
 class Stations(object):
@@ -44,7 +52,7 @@ class Stations(object):
             try:
                 client.disconnect()
             except:
-                print "Error shutting down client", client
+                logger.exception("Error shutting down client: %s", client)
 
     def change_client_status(self, enabled=True, station_id=None, client_type="*"):
         stations = [self._stations[station_id]] if station_id is not None else self._stations
@@ -58,7 +66,7 @@ class Stations(object):
                 elif client_type is "simulator":
                     station.client.change_client_status(arduino_enabled=enabled)
             else:
-                print "Enable/disabling client", station.client
+                logger.debug("Enable/disabling client %s", station.client)
                 station.client.enabled = enabled
 
     def get_buttons_code(self):
@@ -74,10 +82,10 @@ class Station(object):
         self.client = client
         self.buttons = buttons if buttons else StationButtons()
         self.fader_value = 50
-        # TODO fader
 
-    def get_button_string(self):
-        return self.buttons.as_string()
+    def set_button_values(self, values):
+        for i, v in enumerate(values):
+            self.buttons[i] = v
 
 
 class StationButtons(object):
@@ -89,6 +97,9 @@ class StationButtons(object):
         self._buttons = [initial_state] * 5
         self._last_change_timestamp = time.time()
         self._last_update_timestamp = 0
+
+    def __str__(self):
+        return str(self.as_array())
 
     def __getitem__(self, key):
         return self._buttons[key]
@@ -104,7 +115,7 @@ class StationButtons(object):
         return len(self._buttons)
 
     def get_high_buttons(self):
-        return filter(lambda i: self._buttons[i], range(len(self._buttons)))
+        return [i for i, val in enumerate(self._buttons) if val]
 
     def send_button_light_update(self, remote_client, force=False):
         if force or self._last_change_timestamp > self._last_update_timestamp:
@@ -140,49 +151,44 @@ class StationClient(object):
 
         """
         if self._socket:
-            self._debug('_ensure_connected: already connected, doing nothing')
+            logger.debug('_ensure_connected: already connected, doing nothing')
             return True
 
         try:
-            self._debug('_ensure_connected: trying to connect to {}:{}', self.host, self.port)
+            logger.debug('_ensure_connected: trying to connect to %s:%s', self.host, self.port)
             self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self._socket.settimeout(self.timeout)
             self._socket.connect((self.host, self.port))
-            self._debug('_ensure_connected:    ...success')
+            logger.debug('_ensure_connected:    ...success')
             return True
         except socket.error:
-            self._debug('_ensure_connected:    ...failure')
+            logger.debug('_ensure_connected:    ...failure')
             self._socket = None
             return False
 
     def disconnect(self):
         """Drop the connection to the server, if there is one."""
-        self._debug('disconnecting')
+        logger.debug('disconnecting')
         if self._socket:
             self._socket.close()
         self._socket = None
 
-    def _debug(self, msg, *args):
-        # TODO  Move verbose to state and IF on that, or something similar
-        if STATE.verbose:
-            print msg.format(*args)
-
     def send(self, buttons):
         if not self.enabled:
-            self._debug('Client currently disabled. Not sending')
+            logger.debug('Client currently disabled. Not sending')
             return
 
         is_connected = self._ensure_connected()
         if not is_connected:
-            self._debug('send: not connected.  ignoring these pixels.')
+            logger.debug('send: not connected.  ignoring these pixels.')
             return False
 
         data = reduce(lambda x, y: str(x) + str(y), buttons)
-        self._debug("Sending data %s to %s" % (data, self._socket))
+        logger.debug("Sending data %s to %s" % (data, self._socket))
         try:
             self._socket.send(data)
         except socket.error:
-            self._debug('send: connection lost.  could not send button data.')
+            logger.debug('send: connection lost.  could not send button data.')
             self._socket = None
             return False
 
@@ -216,7 +222,7 @@ def _init_station_clients():
 
     assert ("protocol" not in servers) or (servers["protocol"] == "tcp"), \
         "Unknown protocol %s" % servers["protocol"]
-    print "Establishing TCP socket connection to stations"
+    logger.info("Establishing TCP socket connection to stations")
     simulator_clients, arduino_clients = None, None
     if "simulator" in servers:
         assert len(
@@ -269,8 +275,9 @@ class Codes(object):
 
         stations = [0] * 6
         for color in self.station_colors_to_station_id.keys():
-            assert color in scene_code_array, "Station color {} not specified for scene {}".format(
-                color, scene)
+            assert color in scene_code_array, \
+                "Station color {} not specified for scene {}".format(color, scene)
             station_id = self.station_colors_to_station_id[color]
-            stations[station_id] = [id_to_colors[i] in scene_code_array[color] for i in range(5)]
+            stations[station_id] = [
+                id_to_color_names[i] in scene_code_array[color] for i in range(5)]
         return get_code_as_int(stations)

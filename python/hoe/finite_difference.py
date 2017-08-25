@@ -103,7 +103,7 @@ class FiniteDifference(Effect):
         #self._update_buttons(osc_data)
 
     def _update_buttons(self, osc_data):
-        buttons = osc_data.stations[self.master_station].button_presses
+        buttons = osc_data.buttons[self.master_station]
         if not buttons:
             return
 
@@ -115,14 +115,14 @@ class FiniteDifference(Effect):
         if self.master_station is None:
             return
 
-        buttons = osc_data.stations[self.master_station].button_presses
+        buttons = osc_data.buttons[self.master_station]
         return buttons and 2 in buttons
 
     def _set_force(self, osc_data):
         if self.master_station is None:
             return
 
-        buttons = osc_data.stations[self.master_station].button_presses
+        buttons = osc_data.buttons[self.master_station]
         if not buttons:
             return
 
@@ -138,7 +138,7 @@ class FiniteDifference(Effect):
         if self.master_station is None:
             return
 
-        buttons = osc_data.stations[self.master_station].button_presses
+        buttons = osc_data.buttons[self.master_station]
         if not buttons:
             return
 
@@ -154,7 +154,7 @@ class FiniteDifference(Effect):
         if self.master_station is None:
             return
 
-        fader = osc_data.stations[self.master_station].faders[0]
+        fader = STATE.stations[self.master_station].fader_value
         if self.fader_value is not None and fader != self.fader_value:
             self.diffusion_constant = fader_interpolate(fader, 0.00000001, 0.001)
             print(self.diffusion_constant)

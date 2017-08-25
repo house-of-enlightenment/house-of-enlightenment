@@ -2,7 +2,6 @@ from hoe import color_utils
 from hoe.animation_framework import Scene, Effect, MultiEffect
 from hoe.animation_framework import CollaborationManager
 from hoe.animation_framework import OSCDataAccumulator
-from hoe.animation_framework import StoredStationData
 from hoe.stations import StationButtons
 from hoe.state import STATE
 from random import choice
@@ -73,14 +72,14 @@ class ButtonChaseController(Effect, CollaborationManager):
         self.flash_timer = 0
         for station in STATE.stations:
             station.buttons.set_all(on=False)
-        self.pick_next(osc_data=osc_data)
+        self.pick_next()
 
     def compute_state(self, t, collaboration_state, osc_data):
         # type: (long, {}, OSCDataAccumulator) -> {}
-        if self.next_button[1] in osc_data.stations[self.next_button[0]].button_presses:
+        if self.next_button[1] in osc_data.buttons[self.next_button[0]]:
             collaboration_state["last_hit_button"] = self.next_button
             collaboration_state["last_hit_time"] = t
-            if self.pick_next(osc_data=osc_data):
+            if self.pick_next():
                 collaboration_state.clear()
         else:
             collaboration_state.pop("last_hit_button", None)
@@ -88,7 +87,7 @@ class ButtonChaseController(Effect, CollaborationManager):
                     and collaboration_state["last_hit_time"] + self.selection_time < t)
             if late:
                 # Too late!
-                self.pick_next(osc_data=osc_data, missed=True)
+                self.pick_next(missed=True)
                 # Tick forward
                 collaboration_state["last_hit_time"] = t
             # collaboration_state.pop("last_hit_time", None)  # Leave this for now for timing
@@ -127,14 +126,14 @@ class ButtonChaseController(Effect, CollaborationManager):
     def scene_starting(self, now, osc_data):
         self.reset_state(osc_data=osc_data)
 
-    def pick_next(self, osc_data, missed=False):
+    def pick_next(self, missed=False):
         # type: (OSCDataAccumulator, bool) -> bool
         self.flash_timer = 0
 
         if not missed and not self.off:
             # TODO: Terminate the animation
             print "Finished!"
-            self.reset_state(osc_data=osc_data)
+            self.reset_state()
             return True
 
         last_button = self.next_button
@@ -296,8 +295,8 @@ class RotatingWedge(Effect):
 
 
 def button_launch_checker(t, collaboration_state, osc_data):
-    for i in range(len(osc_data.stations)):
-        if osc_data.stations[i].button_presses:
+    for s, buttons in osc_data.buttons.items():
+        if buttons:
             return True
     return False
 
@@ -463,8 +462,8 @@ class RisingTide(Effect):
 class TideLauncher(MultiEffect):
     def before_rendering(self, pixels, t, collaboration_state, osc_data):
         MultiEffect.before_rendering(self, pixels, t, collaboration_state, osc_data)
-        for s in range(STATE.layout.sections):
-            if osc_data.stations[s].button_presses:
+        for s, buttons in osc_data.buttons.items():
+            if buttons:
                 self.launch_effect(t, s)
 
     def launch_effect(self, t, s):
