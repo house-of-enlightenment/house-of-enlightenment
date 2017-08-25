@@ -148,10 +148,10 @@ class ArrangeBlocks(collaboration.CollaborationManager, af.Effect):
         # each station has one, and only one, handler
         # if we get a key press we pass it along to the handler
         # and it will deal with moving blocks
-        for i, station in enumerate(osc.stations):
-            if station.contains_change:
-                station_handler = self.station_handlers[i]
-                station_handler.handle_button_presses(station.button_presses)
+        for station, buttons in osc.buttons.items():
+            station_handler = self.station_handlers[station]
+            if buttons:  #in case button presses were empty
+                station_handler.handle_button_presses(buttons)
         if self.did_we_win():
             self.on_winning(now)
         self.draw(pixels, now)
@@ -344,7 +344,9 @@ class StationHandler(object):
 
     def handle_button_presses(self, button_presses):
         # if you mash keys, we're just taking the first one
-        button_press = list(button_presses.keys())[0]
+        # From Dave: this may not be ordered and we're talking micro-second order, so just taking one randomly with pop
+        for button_press in button_presses:
+            break
         logger.debug('For station %s, button %s was pressed', self.station_id, button_press)
         label = LABEL[button_press]
         if label == 'MIDDLE':
@@ -509,7 +511,7 @@ class TestKeyboardInputs(af.Effect):
         self.effect.compute_state(now, old_state, osc)
 
     def next_frame(self, pixels, now, collab, _):
-        osc_data = af.StoredOSCData()
+        osc_data = af.OSCDataAccumulator()
         if now >= self.next_input:
             self.next_input = now + self.pause
             buttons = list(itertools.product(range(6), range(5)))

@@ -195,12 +195,12 @@ class StopTheLight(collaboration.CollaborationManager, af.Effect):
         """
         columns = self.sprite.columns()
         button_pressed = False
-        for i, station in enumerate(osc_data.stations):
-            if station.button_presses:
+        for s_id, buttons in osc_data.buttons.items():
+            if buttons:
                 button_pressed = True
-                target = self.section_centers[i]
+                target = self.section_centers[s_id]
                 if target in columns:
-                    return True, i
+                    return True, s_id
         return button_pressed, None
 
 

@@ -33,8 +33,8 @@ class SolidRow(Effect):
 class LaunchRows(MultiEffect):
     def before_rendering(self, pixels, t, collaboration_state, osc_data):
         MultiEffect.before_rendering(self, pixels, t, collaboration_state, osc_data)
-        for sid, station in enumerate(osc_data.stations):
-            if station.button_presses:
+        for sid, buttons in osc_data.buttons.items():
+            if buttons:
                 self.add_effect(
                     SolidRow(
                         color=(randrange(0, 255), randrange(0, 255), randrange(0, 255)),

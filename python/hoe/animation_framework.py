@@ -6,7 +6,8 @@ import os.path
 import sys
 import time
 from random import choice
-from threading import Thread
+from threading import Thread, Lock
+from collections import defaultdict, namedtuple
 
 from OSC import OSCServer
 
@@ -46,7 +47,7 @@ class AnimationFramework(object):
         self.serve = False
         self.is_running = False
 
-        self.osc_data = StoredOSCData()
+        self.osc_data = OSCDataAccumulator(last_data=None)
         self.setup_osc_input_handlers({0: 50})
 
     def next_scene_handler(self, path, tags, args, source):
@@ -80,13 +81,14 @@ class AnimationFramework(object):
 
         self.osc_server.addMsgHandler("/input/button", handle_button)
 
-        # Set up faders
-        for fader in faders:
-            self.osc_data.init_fader_on_all_stations(fader, faders[fader])
+        # # Set up faders
+        # for fader in faders:
+        #     self.osc_data.init_fader_on_all_stations(fader, faders[fader])
 
         def handle_fader(path, tags, args, source):
-            station, button_id, value = map(int, args)
-            self.osc_data.fader_changed(station, button_id, value)
+            station = int(args[0])
+            value = int(args[1+(len(args) == 3)])
+            self.osc_data.fader_changed(station, value)
 
         def handle_lidar(path, tags, args, source):
             object_id = args[0]
@@ -126,7 +128,7 @@ class AnimationFramework(object):
             self._last_scene_change_timestamp = time.time()
             # Cache the scene queue locally so it can't be changed on us
             next_scene, last_scene, self.queued_scene = self.queued_scene, self.curr_scene, None
-            next_scene.scene_starting(now, osc_data)
+            next_scene.scene_starting(self._last_scene_change_timestamp, osc_data)
             self.curr_scene = next_scene  # Go!
             print '\tScene %s started\n' % self.curr_scene
             # Now give the last scene a chance to cleanup
@@ -134,11 +136,13 @@ class AnimationFramework(object):
                 last_scene.scene_ended()
 
     def get_osc_frame(self, clear=True):
-        # type: (bool) -> StoredOSCData
+        # type: (bool) -> OSCDataAccumulator
         """Get the last frame of osc data and initialize the next frame"""
         # TODO: Do we need to explicitly synchronize here?
-        last_frame = self.osc_data
-        self.osc_data = StoredOSCData(last_data=last_frame)
+        last_frame, self.osc_data = self.osc_data, OSCDataAccumulator(last_data=self.osc_data)
+        # We polled, now update the fader before the next frame
+        for fader, value in last_frame.faders.items():
+            STATE.stations[fader].fader_value = value
         return last_frame
 
     def next_scene(self, increment=1):
@@ -206,13 +210,13 @@ class AnimationFramework(object):
         # TODO : Does this create lots of GC?
         frame_start_time = time.time()
         target_frame_end_time = frame_start_time + self.fps_frame_time
-        osc_frame = self.get_osc_frame()
+        osc_data = self.get_osc_frame()
 
-        self.poll_next_scene(now=frame_start_time, osc_data=osc_frame)
+        self.poll_next_scene(now=frame_start_time, osc_data=osc_data)
 
         # Create the pixels, set all, then put
         self.pixels[:] = 0
-        self.curr_scene.render(self.pixels, frame_start_time, osc_frame)
+        self.curr_scene.render(self.pixels, frame_start_time, osc_data)
         render_timestamp = time.time()
 
         #Now send
@@ -308,64 +312,26 @@ class LidarData(object):
         self.last_updated = time.time()
 
 
-class StoredStationData(object):
-    def __init__(self, station_id, last_data=None):
-        # type: (OSCClient, StoredStationData) -> None
-        self.button_presses = {}
-        self.station_id = station_id
-        if last_data is None:
-            self.faders = {}
-        else:
-            # TODO Check with python folks. Is this a memory leak?
-            self.faders = last_data.faders
-        self.contains_change = False
+class OSCDataAccumulator(object):
+    """ Used by OSC Handlers to update data. Reset each frame except for lidar
+    Should also reset itself but doesn't. Just create a new object each time instead, passing the old.
+    """
 
-    def __str__(self):
-        return "%s{buttons=%s, faders=%s, changed=%s}" % (self.__class__.__name__,
-                                                          str(self.button_presses),
-                                                          str(self.faders),
-                                                          str(self.contains_change))
-
-    def button_pressed(self, button):
-        self.button_presses[button] = 1
-        self.contains_change = True
-
-    def fader_changed(self, fader, value):
-        self.faders[fader] = value
-        self.contains_change = True
-
-
-class StoredOSCData(object):
-    def __init__(self, last_data=None, num_stations=6, lidar_removal_time=.5):
-        self.stations = [
-            StoredStationData(
-                station_id=i,
-                last_data=last_data.stations[i] if last_data else None, )
-            for i in range(num_stations)
-        ]
-        self.contains_change = False
+    def __init__(self, last_data=None, lidar_removal_time=.5):
+        self.faders = {}  # station_id -> new value
+        self.buttons = defaultdict(set)  # station_id -> [buttons that were pressed]
+        # Lidar is a little tricker - need to store it for a little in a dictionary and then purge if it goes stale
         self.lidar_removal_time = lidar_removal_time
         expired = time.time() - lidar_removal_time
-        self.lidar_objects = {
-            k: lidar
-            for (k, lidar) in last_data.lidar_objects.iteritems() if lidar.last_updated > expired
-        } if last_data else {}  # type: {str, LidarData}
-
-    def __str__(self):
-        return "{}({})".format(self.__class__.__name__,
-                               ','.join([str(station) for station in self.stations]))
+        self.lidar_objects = { k: lidar
+                         for (k, lidar) in last_data.lidar_objects.iteritems() if lidar.last_updated > expired
+           } if last_data else {}  # type: {str, LidarData}
 
     def button_pressed(self, station, button):
-        self.stations[station].button_pressed(button)
-        self.contains_change = True
+        self.buttons[station].add(button)
 
-    def fader_changed(self, station, fader, value):
-        self.stations[station].fader_changed(fader, value)
-        self.contains_change = True
-
-    def init_fader_on_all_stations(self, fader, value):
-        for station in self.stations:
-            station.faders[fader] = value
+    def fader_changed(self, station, value):
+        self.faders[station] = value
 
     def add_lidar_data(self, object_id, data):
         # type: (int, LidarData) -> None
@@ -377,7 +343,7 @@ class Effect(object):
         pass
 
     def next_frame(self, pixels, now, collaboration_state, osc_data):
-        # type: (Pixels, float, {}, StoredOscData) -> None
+        # type: (Pixels, float, {}, OSCDataAccumulator) -> None
         """Implement this method to render the next frame.
 
         Args:
@@ -435,7 +401,7 @@ class MultiEffect(Effect):
         self.cleanup_terminated_effects(pixels, t, collaboration_state, osc_data)
 
     def cleanup_terminated_effects(self, pixels, t, collaboration_state, osc_data):
-        # type: (Pixel, long, {}, OscStoredData) -> None
+        # type: (Pixel, long, {}, OSCDataAccumulator) -> None
         # TODO Debugging code here?
         self.effects[:] = [e for e in self.effects if not e.is_completed(t, osc_data)]
 

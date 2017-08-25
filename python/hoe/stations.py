@@ -81,6 +81,7 @@ class Station(object):
     def __init__(self, client, buttons=None):
         self.client = client
         self.buttons = buttons if buttons else StationButtons()
+        self.fader_value = 50
 
     def set_button_values(self, values):
         for i, v in enumerate(values):

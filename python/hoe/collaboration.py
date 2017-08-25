@@ -17,8 +17,8 @@ class ButtonToggleResponderManager(CollaborationManager):
 
     def compute_state(self, t, collaboration_state, osc_data):
         # type: (float, {}, StoredOSCData) -> None
-        for s, station in enumerate(osc_data.stations):
-            for b_id, val in station.button_presses.items():
+        for s, buttons in osc_data.buttons.items():
+            for b_id in buttons:
                 # pylint: disable=unsubscriptable-object
                 STATE.stations[s].buttons[b_id] = StationButtons.BUTTON_TOGGLE
 

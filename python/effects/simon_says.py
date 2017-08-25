@@ -50,12 +50,12 @@ class BasicSimonSays(af.Effect, af.CollaborationManager):
             # We wait for the first button press
             # when that happens, the person who pressed the button
             # becomes "simon" and they get to define a pattern
-            for i, station in enumerate(osc.stations):
+            for s_id, buttons in osc.buttons.items():
                 # ignore the middle button
-                first = next((b for b in station.button_presses if b != 2), None)
+                first = next((b for b in buttons if b != 2), None)
                 if first is not None:
-                    self.simon = i
-                    self.define_pattern = DefinePattern(self, i, first)
+                    self.simon = s_id
+                    self.define_pattern = DefinePattern(self, s_id, first)
                     self.flash(BUTTON_COLORS[first], now)
                     self.mode = DEFINE_PATTERN
                     return
@@ -65,13 +65,13 @@ class BasicSimonSays(af.Effect, af.CollaborationManager):
             # We wait for the first button press
             # when that happens, the person who pressed the button
             # is the one to try to copy simon
-            for i, station in enumerate(osc.stations):
-                if i == self.simon:
+            for s_id, buttons in osc.buttons.items():
+                if s_id == self.simon:
                     continue
                 # ignore the middle button
-                first = next((b for b in station.button_presses if b != 2), None)
+                first = next((b for b in buttons if b != 2), None)
                 if first == self.target_pattern[0]:
-                    self.copy_pattern = CopyPattern(self, i, self.target_pattern)
+                    self.copy_pattern = CopyPattern(self, s_id, self.target_pattern)
                     self.mode = COPY_PATTERN
                     return
         elif self.mode == COPY_PATTERN:
@@ -119,7 +119,7 @@ class CopyPattern(object):
         return self
 
     def compute_state(self, now, state, osc):
-        my_buttons = osc.stations[self.station_id].button_presses
+        my_buttons = osc.buttons[self.station_id]
         if not my_buttons:
             return
         # TOD: how likely is it that people would mash buttons
@@ -159,7 +159,7 @@ class DefinePattern(object):
         return self
 
     def compute_state(self, now, state, osc):
-        my_buttons = osc.stations[self.station_id].button_presses
+        my_buttons = osc.buttons[self.station_id]
         if len(self.pattern) > 2 and 2 in my_buttons:
             self.finish()
             self.parent.pattern_defined(self.pattern)

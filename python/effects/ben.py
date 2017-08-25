@@ -63,7 +63,7 @@ class SeizureMode(Effect):
         if self.station is None:
             return
 
-        fader = osc_data.stations[self.station].faders[0]
+        fader = STATE.stations[self.station].fader_value
         self.delta_t = fader_interpolate(fader, 0.0005, 0.2)
 
 
@@ -108,7 +108,7 @@ class DevidedSouls(Effect):
 
     def _update_red_green(self, osc_data):
 
-        buttons = osc_data.stations[self.master_station].button_presses
+        buttons = osc_data.buttons[self.master_station]
         if not buttons:
             return
 
@@ -204,8 +204,7 @@ class WaveLauncher(MultiEffect):
             self._launch_effect(now)
             return
 
-        for sid, station in enumerate(osc_data.stations):
-            buttons = station.button_presses
+        for sid, buttons in osc_data.buttons.items():
             if buttons and self.launch_button in buttons:
                 if sid != self.except_station:
                     self._launch_effect(now, sid)
@@ -255,8 +254,7 @@ class LaunchSeizure(MultiEffect):
         old_count = self.count()
         MultiEffect.before_rendering(self, pixels, now, collaboration_state, osc_data)
 
-        for sid, station in enumerate(osc_data.stations):
-            buttons = station.button_presses
+        for sid, buttons in osc_data.buttons.items():
             if buttons and self.button in buttons and not self._is_effect_on_in(sid):
                 self.add_effect(SeizureMode(station=sid, duration=3))
 

@@ -4,7 +4,7 @@ from hoe.animation_framework import Scene
 from hoe.animation_framework import Effect
 from hoe.animation_framework import CollaborationManager
 from hoe.animation_framework import MultiEffect
-from hoe.animation_framework import StoredOSCData
+from hoe.animation_framework import OSCDataAccumulator
 from hoe.animation_framework import ButtonFeedbackDisplay
 from hoe.collaboration import ButtonToggleResponderManager, NoOpCollaborationManager
 import hoe.color_utils

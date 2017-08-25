@@ -77,17 +77,15 @@ class AdjustableFillFromBottom(Effect):
 class SampleEffectLauncher(MultiEffect):
     def before_rendering(self, pixels, t, collaboration_state, osc_data):
         MultiEffect.before_rendering(self, pixels, t, collaboration_state, osc_data)
-        for s in range(STATE.layout.sections):
-            if osc_data.stations[s].button_presses:
-                self.launch_effect(t, s)
+        for s_id, buttons in osc_data.buttons.items():
+            if buttons:
+                self.launch_effect(t, s_id)
 
     def launch_effect(self, t, s):
-        print "Adding Effect"
         per_section = int(STATE.layout.columns / STATE.layout.sections)
         e = ColumnStreak(
             column=randrange(0 + s * per_section, (s + 1) * per_section), color=(255, 0, 0))
         self.effects.append(e)
-        print self.effects
 
 
 SCENES = [
