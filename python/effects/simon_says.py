@@ -1,6 +1,7 @@
 import logging
 
 from hoe import animation_framework as af
+from hoe import stations
 from hoe.state import STATE
 
 
@@ -15,10 +16,14 @@ WON = 'won'
 logger = logging.getLogger(__name__)
 
 
+BUTTON_COLORS = stations.BUTTON_COLORS
+
+
 class BasicSimonSays(af.Effect, af.CollaborationManager):
     def __init__(self):
         self.mode = DEFINE_PATTERN_WAIT
         self.success = False
+        self._flash = None
 
     def _set_mode(self, val):
         logger.debug('Setting mode to %s', val)
@@ -29,11 +34,18 @@ class BasicSimonSays(af.Effect, af.CollaborationManager):
 
     mode = property(_get_mode, _set_mode)
 
+    def flash(self, color, now, duration=0.35):
+        assert self._flash is None
+        until = now + .35
+        self._flash = (until, color)
+
     def scene_starting(self, now, osc):
         for s in STATE.stations:
             s.buttons._buttons = [1, 1, 0, 1, 1]
 
     def compute_state(self, now, state, osc):
+        if self._flash:
+            return
         if self.mode == DEFINE_PATTERN_WAIT:
             # We wait for the first button press
             # when that happens, the person who pressed the button
@@ -44,6 +56,7 @@ class BasicSimonSays(af.Effect, af.CollaborationManager):
                 if first is not None:
                     self.simon = i
                     self.define_pattern = DefinePattern(self, i, first)
+                    self.flash(BUTTON_COLORS[first], now)
                     self.mode = DEFINE_PATTERN
                     return
         elif self.mode == DEFINE_PATTERN:
@@ -79,6 +92,12 @@ class BasicSimonSays(af.Effect, af.CollaborationManager):
         self.mode = COPY_PATTERN_WAIT
 
     def next_frame(self, pixels, now, state, osc):
+        if self._flash:
+            until, color = self._flash
+            if now <= until:
+                pixels[:2,] = color
+            else:
+                self._flash = None
         if self.mode == WON:
             pixels[:] = 255
 
@@ -148,6 +167,7 @@ class DefinePattern(object):
             first = next((b for b in my_buttons if b != 2), None)
             if first is not None:
                 logger.debug('Adding button %s to pattern', first)
+                self.parent.flash(BUTTON_COLORS[first], now)
                 self.pattern.append(first)
 
     def finish(self):

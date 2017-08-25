@@ -11,7 +11,7 @@ from hoe.state import STATE
 
 logger = logging.getLogger(__name__)
 
-id_to_colors = {
+id_to_color_names = {
     0: "YELLOW",
     1: "GREEN",
     2: "WHITE",
@@ -19,7 +19,7 @@ id_to_colors = {
     4: "BLUE",
 }
 
-colors_to_id = {v: k for v, k in id_to_colors.items()}
+colors_to_id = {v: k for v, k in id_to_color_names.items()}
 # TODO - Color scale?
 colors_to_rgb = {
     "RED": (255, 0, 0),
@@ -28,6 +28,9 @@ colors_to_rgb = {
     "YELLOW": (200, 200, 0),
     "WHITE": (255, 255, 255)
 }
+
+N_BUTTONS = 5
+BUTTON_COLORS = [colors_to_rgb[id_to_color_names[i]] for i in range(N_BUTTONS)]
 
 
 class Stations(object):
@@ -269,8 +272,9 @@ class Codes(object):
 
         stations = [0] * 6
         for color in self.station_colors_to_station_id.keys():
-            assert color in scene_code_array, "Station color {} not specified for scene {}".format(
-                color, scene)
+            assert color in scene_code_array, \
+                "Station color {} not specified for scene {}".format(color, scene)
             station_id = self.station_colors_to_station_id[color]
-            stations[station_id] = [id_to_colors[i] in scene_code_array[color] for i in range(5)]
+            stations[station_id] = [
+                id_to_color_names[i] in scene_code_array[color] for i in range(5)]
         return get_code_as_int(stations)
