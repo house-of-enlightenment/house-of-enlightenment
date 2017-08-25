@@ -63,7 +63,7 @@ class ButtonChaseController(Effect, CollaborationManager):
         self.next_button = None
         self.flash_timer = 0
 
-    def reset_state(self, osc_data):
+    def reset_state(self):
         # type: (OSCDataAccumulator) -> None
         """Resets the state for on, off, buttons, and timer"""
         self.on = []
@@ -124,7 +124,7 @@ class ButtonChaseController(Effect, CollaborationManager):
             pixels[0:2, c:c + 2 + self.next_button[1] / 4] = self.button_colors[self.next_button[1]]
 
     def scene_starting(self, now, osc_data):
-        self.reset_state(osc_data=osc_data)
+        self.reset_state()
 
     def pick_next(self, missed=False):
         # type: (OSCDataAccumulator, bool) -> bool
