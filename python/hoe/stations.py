@@ -76,9 +76,6 @@ class Station(object):
         self.buttons = buttons if buttons else StationButtons()
         # TODO fader
 
-    def get_button_string(self):
-        return self.buttons.as_string()
-
 
 class StationButtons(object):
     BUTTON_OFF = 0
