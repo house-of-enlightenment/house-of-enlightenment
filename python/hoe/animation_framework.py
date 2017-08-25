@@ -506,7 +506,7 @@ class ButtonFeedbackDisplay(Effect):
             for i, sli in zip(high_buttons,
                               ButtonFeedbackDisplay.count_to_indices[len(high_buttons)]):
                 colors[sli[0] + s_id * 11:sli[1] + s_id * 11, :] = hoe.stations.colors_to_rgb[
-                    hoe.stations.id_to_colors[i]]
+                    hoe.stations.id_to_color_names[i]]
 
         pixels[0:2, :] = colors
 
