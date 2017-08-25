@@ -8,6 +8,7 @@ from shared import SolidBackground
 import time
 import numpy as np
 from collections import deque
+import colorsys
 
 
 class RisingLine(Effect):
@@ -109,17 +110,28 @@ class FZeroLauncher(MultiEffect):
     """
 
     def __init__(self, start_col=16, color=(0, 255, 255)):
-        self.color = color
 
         # get 5 pixels to either side to select the 11 columns in this section
         section = range(start_col - 5, start_col + 5 + 1)
 
         # group them by levels to make an f-zero speed boost arrow
-        levels = [[section[5]], [section[4], section[6]], [section[3], section[7]],
-                  [section[2], section[8]], [section[1], section[9]], [section[0], section[10]]]
+        levels = [[section[5]],
+                  [section[4], section[6]],
+                  [section[3], section[7]],
+                  [section[2], section[8]],
+                  [section[1], section[9]],
+                  [section[0], section[10]]]
+
 
         def make_line((i, col)):
-            return RisingLine(height=50, start_col=col, delay=i * 80, color=color)
+
+            # fade the colors on the edges
+            def get_color():
+                hsv = colorsys.rgb_to_hsv(color[0] // 255, color[1] // 255, color[2] // 255)
+                rgb = colorsys.hsv_to_rgb(hsv[0], hsv[1], hsv[2] - (i * 0.12))
+                return (rgb[0] * 255, rgb[1] * 255, rgb[2] * 255)
+
+            return RisingLine(height=50, start_col=col, delay=i * 80, color=get_color())
 
         effects = map(make_line, enumerate(levels))
 
