@@ -99,12 +99,13 @@ SCENES = [
     #     tags=[Scene.TAG_EXAMPLE],
     #     collaboration_manager=NoOpCollaborationManager(),
     #     effects=[SolidBackground(), AdjustableFillFromBottom()]),
-    Scene(
-        "launchdots",
-        tags=[Scene.TAG_EXAMPLE],
-        collaboration_manager=NoOpCollaborationManager(),
-        effects=[SolidBackground(color=(30, 30, 30)),
-                 SampleEffectLauncher()]),
+    # Removed in favor of fountaindots example
+    # Scene(
+    #     "launchdots",
+    #     tags=[Scene.TAG_EXAMPLE],
+    #     collaboration_manager=NoOpCollaborationManager(),
+    #     effects=[SolidBackground(color=(30, 30, 30)),
+    #              SampleEffectLauncher()]),
     Scene(
         "fountaindots",
         tags=[Scene.TAG_EXAMPLE],

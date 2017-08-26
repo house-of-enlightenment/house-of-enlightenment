@@ -58,7 +58,7 @@ class RisingLine(Effect):
 
 def roman_candle_fountain(start_col=16, width=8, color=(255, 0, 0), **kwargs):
 
-    forward_cols = range(start_col, start_col+width)
+    forward_cols = map(lambda col: col % STATE.layout.columns, range(start_col, start_col+width))
     backward_cols = forward_cols[::-1]  # reverse
 
     sequence = forward_cols + backward_cols

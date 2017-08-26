@@ -1,11 +1,12 @@
 from hoe.animation_framework import Effect
 from hoe.animation_framework import Scene
+from hoe.fountain_models import FountainDefinition, get_default_arg_generators
 from hoe.state import STATE
 from hoe.pixels import cleanup_pairwise_indicies
-from generic_effects import NoOpCollaborationManager
 from shared import SolidBackground
 import numpy as np
 import math
+from random import randint
 
 # ---------------- Movement Functions -----------
 
@@ -93,15 +94,15 @@ def _diamond_indicies(half_height, half_width):
 class Shape(Effect):
     def __init__(self,
                  color=(255, 255, 255),
-                 indices=[(0, 0)],
+                 indices=None,
                  movement_function=None,
                  start_col=0,
-                 start_row=0):
+                 start_row=2):
         self.color = color
         self.start_row = start_row
         self.start_col = start_col
         # normalize indices:
-        min_row = min(indices, key=lambda x: x[0])[0]
+        min_row = min(indices or [(0, 0)], key=lambda x: x[0])[0]
         self.base_indices = np.array(indices)
         self.frame_indices = None
         self.curr_row = start_row
@@ -124,12 +125,25 @@ class Shape(Effect):
     def is_completed(self, t, osc_data):
         return self.curr_row >= STATE.layout.rows
 
+def make_upwards_triange(start_col, color, height=None):
+    height = height or randint(2,5)
+    return Shape(movement_function=move_up, indices=_upward_triangle_indicies(height), start_col=start_col, color=color)
+
+def make_upwards_diamond(start_col, color, width=None, height=None):
+    half_height = int(math.ceil(height/2.0)) if height else randint(2,10)
+    half_width = int(math.ceil(width/2.0)) if width else randint(2,5)
+    return Shape(movement_function=move_up, indices=_diamond_indicies(half_height, half_width), start_col=start_col, color=color)
+
+
+FOUNTAINS = [
+    FountainDefinition("uptriangle", make_upwards_triange),
+    FountainDefinition("diamondup", make_upwards_diamond)
+]
 
 SCENES = [
     Scene(
         "sinediamond",
         tags=[Scene.TAG_WIP],
-        collaboration_manager=NoOpCollaborationManager(),
         effects=[
             SolidBackground(),
             Shape(
@@ -140,17 +154,8 @@ SCENES = [
     Scene(
         "distortingdiamond",
         tags=[Scene.TAG_WIP],
-        collaboration_manager=NoOpCollaborationManager(),
         effects=[
             SolidBackground(),
             Shape(indices=_diamond_indicies(5, 5), movement_function=rotate_in_place, start_row=20)
-        ]),
-    Scene(
-        "uptriangle",
-        tags=[Scene.TAG_WIP],
-        collaboration_manager=NoOpCollaborationManager(),
-        effects=[
-            SolidBackground(),
-            Shape(movement_function=move_up, indices=_upward_triangle_indicies(height=5))
         ])
 ]

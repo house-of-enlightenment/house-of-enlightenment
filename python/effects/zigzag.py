@@ -1,5 +1,6 @@
 from hoe.animation_framework import Scene
 from hoe.animation_framework import Effect
+from hoe.fountain_models import FountainDefinition
 from generic_effects import NoOpCollaborationManager
 from hoe.state import STATE
 from shared import SolidBackground
@@ -47,12 +48,12 @@ class ZigZag(Effect):
         return self.cur_bottom >= STATE.layout.rows - 1
 
 
+FOUNTAINS = [
+    FountainDefinition("zigzag", ZigZag)
+]
+
 SCENES = [
-    Scene(
-        "zigzag",
-        tags=[Scene.TAG_EXAMPLE],
-        collaboration_manager=NoOpCollaborationManager(),
-        effects=[SolidBackground(color=(30, 30, 30)), ZigZag()])
+
 ]
 """
 5 |             x

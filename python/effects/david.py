@@ -453,7 +453,7 @@ FOUNTAINS = [
                           arg_generators = { 'start_col' : fm.pick_random_start_column,
                                              'direction' : lambda section, button: choice([-1,1]),
                                              'angle' : lambda section, button: choice([-1,0,1]),
-                                             'color' : fm.pick_fader_color
+                                             'color' : fm.pick_button_color
                                             }
                          ),
     # fm.FountainDefinition('tide', RisingTide.factory,
@@ -476,6 +476,10 @@ SCENES = [
         tags=[Scene.TAG_EXAMPLE],
         background_effects=[],
         foreground_names=['wedge']
+    ),
+    fm.FountainScene(
+        name="plainfountain",
+        background_effects=[SolidBackground(color=(30,30,30))]
     ),
     Scene(
         "sinedots",

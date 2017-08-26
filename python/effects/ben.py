@@ -6,6 +6,7 @@ import numpy as np
 from hoe import color_utils
 from hoe.animation_framework import Scene, Effect, MultiEffect
 from hoe.collaboration import NoOpCollaborationManager
+from hoe.fountain_models import FountainDefinition
 from hoe.stations import StationButtons
 from hoe.state import STATE
 from hoe.utils import fader_interpolate
@@ -279,6 +280,10 @@ class RedGreenSquares(DavesAbstractLidarClass):
 
 
 #========================================================================
+
+FOUNTAINS = [
+    # FountainDefinition("up_bloc", UpBlock)   #  Same as ColumnStreak?
+]
 
 SCENES = [
     Scene(

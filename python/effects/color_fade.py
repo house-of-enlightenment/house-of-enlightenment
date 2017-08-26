@@ -12,6 +12,7 @@ from hoe import animation_framework as af
 from hoe import color_transition
 from hoe import color_utils
 from hoe import distance
+from hoe.fountain_models import FountainScene
 from hoe import layout
 from hoe import opc
 from hoe import osc_utils
@@ -186,35 +187,35 @@ class BreatheDown(af.Effect):
 
 
 SCENES = [
-    af.Scene(
+    FountainScene(
         'rgb-static',
         tags=[],
-        effects=[Static()]
+        background_effects=[Static()]
     ),
-    af.Scene(
+    FountainScene(
         'analogous-color-static',
         tags=[],
-        effects=[AnalogousColorStatic()]
+        background_effects=[AnalogousColorStatic()]
     ),
-    af.Scene(
+    FountainScene(
         'rainbow-blink',
         tags=[],
-        effects=[RainbowBlink()]
+        background_effects=[RainbowBlink()]
     ),
-    af.Scene(
+    FountainScene(
         'color-breathe-8',
         tags=[],
-        effects=[Breathe(STATE.layout, 8)]
+        background_effects=[Breathe(STATE.layout, 8)]
     ),
-    af.Scene(
+    FountainScene(
         'color-breathe-32',
         tags=[],
-        effects=[Breathe(STATE.layout, 32)]
+        background_effects=[Breathe(STATE.layout, 32)]
     ),
-    af.Scene(
+    FountainScene(
         'color-breathe-down-32',
         tags=[],
-        effects=[BreatheDown(STATE.layout, 32)]
+        background_effects=[BreatheDown(STATE.layout, 32)]
     ),
 
 ]
