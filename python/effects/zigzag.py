@@ -10,17 +10,17 @@ from shared import SolidBackground
 class ZigZag(Effect):
     """
       Fountain effect that zigzags to the top.
-      define color2 to add a border
+      define border_color to add a border
     """
 
     def __init__(self,
                  color=(255, 255, 0),
-                 color2=(255, 0, 0),
+                 border_color=(255, 0, 0),
                  start_row=2,
                  start_col=16,
                  height=50):
         self.color = color
-        self.color2 = color2
+        self.border_color = border_color
         self.start_row = start_row
         self.start_col = start_col
         self.height = height
@@ -56,12 +56,12 @@ class ZigZag(Effect):
             pixels[y, self.start_col + x - 1] = self.color
             pixels[y, self.start_col + x + 1] = self.color
 
-            # add a border if color2 is defined
-            if self.color2:
-                pixels[y, self.start_col + x - 2] = self.color2
-                pixels[y, self.start_col + x + 2] = self.color2
-                pixels[y, self.start_col + x - 3] = self.color2
-                pixels[y, self.start_col + x + 3] = self.color2
+            # add a border if border_color is defined
+            if self.border_color:
+                pixels[y, self.start_col + x - 2] = self.border_color
+                pixels[y, self.start_col + x + 2] = self.border_color
+                pixels[y, self.start_col + x - 3] = self.border_color
+                pixels[y, self.start_col + x + 3] = self.border_color
 
     def is_completed(self, t, osc_data):
         return self.cur_bottom >= STATE.layout.rows - 1
