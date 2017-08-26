@@ -18,12 +18,16 @@ class RisingLine(Effect):
 
     def __init__(self,
                  color=(255, 255, 0),
+                 border_color=None,
+                 border_thickness=0,
                  start_row=2,
                  start_col=16,
                  height=5,
                  delay=0,
                  ceil=STATE.layout.rows - 1):
         self.color = color
+        self.border_color = border_color
+        self.border_thickness = border_thickness
         self.start_row = start_row
         self.start_col = start_col
         self.height = height
@@ -50,6 +54,11 @@ class RisingLine(Effect):
 
         for y in range(bottom, top):
             pixels[y, self.start_col] = self.color
+
+        if self.border_color:
+            for y in range(0, self.border_thickness):
+                pixels[bottom + y, self.start_col] = self.border_color
+                pixels[top - y, self.start_col] = self.border_color
 
     def is_completed(self, t, osc_data):
         return self.cur_bottom >= self.ceil
@@ -84,9 +93,19 @@ class RomanCandleLauncher(MultiEffect):
 class AroundTheWorldLauncher(MultiEffect):
     """
     Arround the world launcher - shoot small lines all the way around the gazebo
+
+    Define border_color and border_thickness to add a border.
+    The border will be drawn *inside* the height, so make sure
+    2*border_thickness < height
     """
 
-    def __init__(self, start_col=16, color=(0, 255, 0), reverse=True):
+    def __init__(self,
+                 start_col=16,
+                 color=(0, 255, 0),
+                 border_color=(255, 0, 0),
+                 border_thickness=3,
+                 height=9,
+                 reverse=True):
 
         # [0, ..., 65]
         all_cols = range(0, STATE.layout.columns)
@@ -100,7 +119,14 @@ class AroundTheWorldLauncher(MultiEffect):
         # print "shifted", shifted
 
         def make_line((i, col)):
-            return RisingLine(height=9, start_col=col, delay=i * 30, color=color, ceil=50)
+            return RisingLine(
+                height=height,
+                start_col=col,
+                delay=i * 30,
+                color=color,
+                border_color=border_color,
+                border_thickness=border_thickness,
+                ceil=50)
 
         effects = map(make_line, enumerate(shifted))
 
