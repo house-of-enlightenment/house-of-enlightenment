@@ -25,10 +25,9 @@ class TurnOnButtonsAndWaitForPress(object):
         allowed_pressed_buttons = pressed_buttons & self.right_buttons
         if allowed_pressed_buttons:
             button = allowed_pressed_buttons.pop()
-            self._on_correct_button_press(now, button)
             # if you pressed a right and wrong button, we'll give you
             # the benefit of the doubt
-            return
+            return self._on_correct_button_press(now, button)
         other_buttons = pressed_buttons - self.right_buttons
         if other_buttons:
             self._on_wrong_button_press(now,other_buttons)
@@ -42,10 +41,10 @@ class TurnOnButtonsAndWaitForPress(object):
             station.buttons[b] = 1
 
     def _on_correct_button_press(self, now, button):
-        self.parent._on_correct_button_press(now, button)
+        return self.parent._on_correct_button_press(now, button)
 
     def _on_wrong_button_press(self, now, other_buttons):
-        self.parent._on_wrong_button_press(now, other_buttons)
+        return self.parent._on_wrong_button_press(now, other_buttons)
 
 #
 # this turned into an ugly mess quick.
@@ -69,10 +68,10 @@ class TurnOnOnlyMyButtonAndWaitForPress(object):
             self.set_buttons = True
         pressed_buttons = osc.buttons[self.station_id]
         if self.button in pressed_buttons:
-            self._on_correct_button_press(now)
+            return self._on_correct_button_press(now)
         other_buttons = pressed_buttons - set([self.button])
         if other_buttons:
-            self._on_wrong_button_press(now, other_buttons)
+            return self._on_wrong_button_press(now, other_buttons)
 
     def _on_correct_button_press(self, now):
         self._turn_off_button()
@@ -81,6 +80,8 @@ class TurnOnOnlyMyButtonAndWaitForPress(object):
                 self.parent, BUTTON_COLORS[self.button], self.on_finished, now)
         else:
             self.on_finished()
+        print "we got a point"
+        return {self.station_id: 1}
 
     def _on_wrong_button_press(self, now, wrong_buttons):
         pass
@@ -119,5 +120,4 @@ class TurnOnMyButtonAndWaitForPressFollower(TurnOnMyButtonAndWaitForPress):
         self._turn_off_button()
         self.parent.render = FlashStation(
             self.parent, self.station_id, WRONG_COLOR, callback, now)
-
 

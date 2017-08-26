@@ -29,7 +29,7 @@ class SimonSaysGame(af.CollaborationManager, af.Effect):
         self.on_finished = on_finished
 
     def compute_state(self, now, state, osc):
-        self.step.compute_state(now, state, osc)
+        return self.step.compute_state(now, state, osc)
 
     def next_frame(self, pixels, now, state, osc):
         self.step.next_frame(pixels, now, state, osc)
@@ -61,7 +61,7 @@ class SimonSaysRound(af.CollaborationManager, af.Effect):
         self.now = now
         if not self.step:
             return
-        self.step.compute_state(now, state, osc)
+        return self.step.compute_state(now, state, osc)
 
     def next_frame(self, pixels, now, state, osc):
         if not self.render:
@@ -105,9 +105,9 @@ class SetPattern(object):
         self.pattern = []
 
     def compute_state(self, now, state, osc):
-        self.step.compute_state(now, state, osc)
         for ign in self.ignore:
             ign.compute_state(now, state, osc)
+        return self.step.compute_state(now, state, osc)
 
     def next_frame(self, pixels, now, state, osc):
         if self.render:
@@ -119,6 +119,7 @@ class SetPattern(object):
     def _on_correct_button_press(self, now, button):
         self._turn_off_button(button)
         if button == ENTER_BUTTON:
+            STATE.stations[self.station_id].set_button_values([0, 0, 0, 0, 0])
             self.on_finished(self.pattern)
         else:
             def callback():
@@ -161,8 +162,12 @@ class MultiStation(object):
 
     def compute_state(self, now, state, osc):
         assert self.started
+        points = {}
         for follower in self.followers:
-            follower.compute_state(now, state, osc)
+            pt = follower.compute_state(now, state, osc)
+            if pt:
+                points.update(pt)
+        return points
 
     def next_frame(self, pixels, now, state, osc):
         for follower in self.followers:
@@ -207,7 +212,7 @@ class PlayAndFollowPattern(object):
             STATE.stations[self.station_id].set_button_values([0, 0, 0, 0, 0])
             self.on_finished(self.station_id, correct=False)
         else:
-            self.step.compute_state(now, state, osc)
+            return self.step.compute_state(now, state, osc)
 
     def next_frame(self, pixels, now, state, osc):
         if not self.render:
@@ -220,6 +225,8 @@ class PlayAndFollowPattern(object):
     def _on_correct_button_press(self, now, button):
         self._turn_off_button(button)
         self.next_step(now, True)
+        logger.info('Station %s got a point', self.station_id)
+        return {self.station_id: 1}
 
     def _on_wrong_button_press(self, now, other_buttons):
         self.finished = True

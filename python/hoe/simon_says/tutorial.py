@@ -1,4 +1,5 @@
 from shared import *
+from buttons import *
 # We need a tutorial to introduce everybody to the game.
 #
 # First round:
@@ -15,15 +16,19 @@ from shared import *
 class MultiLevelTutorial(af.CollaborationManager, af.Effect):
     def __init__(self, on_finished):
         self.station_id = np.random.randint(N_STATIONS)
-        players = set(range(N_STATIONS))
-        players.remove(self.station_id)
+        players = self.get_players()
         self.idx = 0
         self.pattern_lengths = (2, 3, 4)
         self.step = SimonSaysTutorial(self.station_id, 2, self.next_step, players, set())
         self.on_finished = on_finished
 
+    def get_players(self):
+        players = set(range(N_STATIONS))
+        players.remove(self.station_id)
+        return players
+
     def compute_state(self, now, state, osc):
-        self.step.compute_state(now, state, osc)
+        return self.step.compute_state(now, state, osc)
 
     def next_frame(self, pixels, now, state, osc):
         self.step.next_frame(pixels, now, state, osc)
@@ -36,6 +41,9 @@ class MultiLevelTutorial(af.CollaborationManager, af.Effect):
             self.on_finished()
         else:
             pattern_length = self.pattern_lengths[self.idx]
+            if not winners:
+                winner = self.get_players()
+                losers = set()
             self.step = SimonSaysTutorial(
                 self.station_id, pattern_length, self.next_step, winners, losers)
 
@@ -57,7 +65,7 @@ class SimonSaysTutorial(af.CollaborationManager, af.Effect):
         self.now = now
         if not self.step:
             return
-        self.step.compute_state(now, state, osc)
+        return self.step.compute_state(now, state, osc)
 
     def next_frame(self, pixels, now, state, osc):
         if not self.render:
@@ -90,7 +98,7 @@ class SetPattern(object):
         self.pattern = []
 
     def compute_state(self, now, state, osc):
-        self.step.compute_state(now, state, osc)
+        return self.step.compute_state(now, state, osc)
 
     def next_frame(self, pixels, now, state, osc):
         if self.render:
@@ -131,8 +139,12 @@ class MultiStation(object):
             follower.start(now)
 
     def compute_state(self, now, state, osc):
+        points = {}
         for follower in self.followers:
-            follower.compute_state(now, state, osc)
+            pt = follower.compute_state(now, state, osc)
+            if pt:
+                points.update(pt)
+        return points
 
     def next_frame(self, pixels, now, state, osc):
         for follower in self.followers:
@@ -163,7 +175,7 @@ class PlayAndFollowPattern(object):
         self.deadline = None
 
     def start(self, now):
-        self.deadline = now + len(self.pattern) * 5
+        self.deadline = now + len(self.pattern) * 10
 
     def compute_state(self, now, state, osc):
         if self.finished:
@@ -175,7 +187,7 @@ class PlayAndFollowPattern(object):
             # step and lose the color
             self.on_finished(self.station_id, correct=False)
         else:
-            self.step.compute_state(now, state, osc)
+            return self.step.compute_state(now, state, osc)
 
     def next_frame(self, pixels, now, state, osc):
         if not self.render:
@@ -201,75 +213,75 @@ class PlayAndFollowPattern(object):
             self, self.station_id, self.pattern[self.pattern_idx], flash=False)
 
 
-#
-# this turned into an ugly mess quick.
-#
-class TurnOnOnlyMyButtonAndWaitForPress(object):
-    def __init__(
-            self, parent, station_id, button=None, last_button=None, flash=True, on_finished=None):
-        self.parent = parent
-        self.station_id = station_id
-        self.button = self.get_button(button, last_button)
-        self.set_buttons = False
-        self.flash = flash
-        self.on_finished = on_finished or self.parent.next_step
+# #
+# # this turned into an ugly mess quick.
+# #
+# class TurnOnOnlyMyButtonAndWaitForPress(object):
+#     def __init__(
+#             self, parent, station_id, button=None, last_button=None, flash=True, on_finished=None):
+#         self.parent = parent
+#         self.station_id = station_id
+#         self.button = self.get_button(button, last_button)
+#         self.set_buttons = False
+#         self.flash = flash
+#         self.on_finished = on_finished or self.parent.next_step
 
-    def get_button(self, button, last_button):
-        return button if button is not None else get_random_game_button(excluding=last_button)
+#     def get_button(self, button, last_button):
+#         return button if button is not None else get_random_game_button(excluding=last_button)
 
-    def compute_state(self, now, state, osc):
-        if not self.set_buttons:
-            self._only_turn_on_my_button()
-            self.set_buttons = True
-        pressed_buttons = osc.buttons[self.station_id]
-        if self.button in pressed_buttons:
-            self._on_correct_button_press(now)
-        other_buttons = pressed_buttons - set([self.button])
-        if other_buttons:
-            self._on_wrong_button_press(now, other_buttons)
+#     def compute_state(self, now, state, osc):
+#         if not self.set_buttons:
+#             self._only_turn_on_my_button()
+#             self.set_buttons = True
+#         pressed_buttons = osc.buttons[self.station_id]
+#         if self.button in pressed_buttons:
+#             self._on_correct_button_press(now)
+#         other_buttons = pressed_buttons - set([self.button])
+#         if other_buttons:
+#             self._on_wrong_button_press(now, other_buttons)
 
-    def _on_correct_button_press(self, now):
-        self._turn_off_button()
-        if self.flash:
-            self.parent.render = Flash(
-                self.parent, BUTTON_COLORS[self.button], self.on_finished, now)
-        else:
-            self.on_finished()
+#     def _on_correct_button_press(self, now):
+#         self._turn_off_button()
+#         if self.flash:
+#             self.parent.render = Flash(
+#                 self.parent, BUTTON_COLORS[self.button], self.on_finished, now)
+#         else:
+#             self.on_finished()
 
-    def _on_wrong_button_press(self, now, wrong_buttons):
-        pass
+#     def _on_wrong_button_press(self, now, wrong_buttons):
+#         pass
 
-    def _only_turn_on_my_button(self):
-        logger.debug('Setting buttons')
-        for i, s in enumerate(STATE.stations):
-            s.set_button_values([0, 0, 0, 0, 0])
-            if i == self.station_id:
-                s.buttons[self.button] = 1
+#     def _only_turn_on_my_button(self):
+#         logger.debug('Setting buttons')
+#         for i, s in enumerate(STATE.stations):
+#             s.set_button_values([0, 0, 0, 0, 0])
+#             if i == self.station_id:
+#                 s.buttons[self.button] = 1
 
-    def _turn_off_button(self):
-        STATE.stations[self.station_id].buttons[self.button] = 0
-
-
-class TurnOnMyButtonAndWaitForPress(TurnOnOnlyMyButtonAndWaitForPress):
-    def _only_turn_on_my_button(self):
-        logger.debug('Setting buttons for my section (%s - %s)', self.station_id, self.button)
-        station = STATE.stations[self.station_id]
-        station.set_button_values([0, 0, 0, 0, 0])
-        station.buttons[self.button] = 1
+#     def _turn_off_button(self):
+#         STATE.stations[self.station_id].buttons[self.button] = 0
 
 
-class TurnOnMyButtonAndWaitForPressFollower(TurnOnMyButtonAndWaitForPress):
-    def _on_correct_button_press(self, now):
-        def callback():
-            self.parent.next_step(correct=True)
-        self._turn_off_button()
-        print 'Parent:', self.parent
-        self.parent.render = FlashStation(
-            self.parent, self.station_id, RIGHT_COLOR, callback, now)
+# class TurnOnMyButtonAndWaitForPress(TurnOnOnlyMyButtonAndWaitForPress):
+#     def _only_turn_on_my_button(self):
+#         logger.debug('Setting buttons for my section (%s - %s)', self.station_id, self.button)
+#         station = STATE.stations[self.station_id]
+#         station.set_button_values([0, 0, 0, 0, 0])
+#         station.buttons[self.button] = 1
 
-    def _on_wrong_button_press(self, now, wrong_buttons):
-        def callback():
-            self.parent.next_step(correct=False)
-        self._turn_off_button()
-        self.parent.render = FlashStation(
-            self.parent, self.station_id, WRONG_COLOR, callback, now)
+
+# class TurnOnMyButtonAndWaitForPressFollower(TurnOnMyButtonAndWaitForPress):
+#     def _on_correct_button_press(self, now):
+#         def callback():
+#             self.parent.next_step(correct=True)
+#         self._turn_off_button()
+#         print 'Parent:', self.parent
+#         self.parent.render = FlashStation(
+#             self.parent, self.station_id, RIGHT_COLOR, callback, now)
+
+#     def _on_wrong_button_press(self, now, wrong_buttons):
+#         def callback():
+#             self.parent.next_step(correct=False)
+#         self._turn_off_button()
+#         self.parent.render = FlashStation(
+#             self.parent, self.station_id, WRONG_COLOR, callback, now)

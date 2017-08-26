@@ -14,39 +14,34 @@ from hoe.simon_says import game
 logger = logging.getLogger(__name__)
 
 
-N_STATIONS = 6
-N_BUTTONS = 5
-BUTTON_COLORS = stations.BUTTON_COLORS
-
-
-# want to use GREEN / RED, but don't want to match
-# the colors that flash when a pattern is being set
-RIGHT_COLOR = (34, 139, 34) # forest green
-WRONG_COLOR = (176, 28, 46) # stop sign red
-
-
-
-
 class SimonSays(af.Effect, af.CollaborationManager):
     def __init__(self):
-        self.step = tutorial.MultiLevelTutorial(on_finished=self.start_game)
+        self.points = {i: 0 for i in range(6)}
+        self.points['total'] = 0
+        self.step = game.SimonSaysGame(self.on_end_of_game) #tutorial.MultiLevelTutorial(on_finished=self.start_game)
 
     def start_game(self):
-        self.step = game.SimonSaysGame(echo)
+        self.step = game.SimonSaysGame(self.on_end_of_game)
 
     def compute_state(self, now, state, osc):
-        self.step.compute_state(now, state, osc)
+        new_points = self.step.compute_state(now, state, osc)
+        if new_points:
+            print 'new points', new_points
+            total = sum(new_points.values())
+            self.points['total'] += total
+            for k, v in new_points.items():
+                self.points[k] += v
+            print self.points
+        return self.points
+
+    def on_end_of_game(self, winner):
+        # nobody could be a winner
+        print '%s is a winner' % winner
 
     def next_frame(self, pixels, now, state, osc):
         self.step.next_frame(pixels, now, state, osc)
 
 
-def echo(*args):
-    print args
-
-
 SCENES = [
-#    af.Scene('basic-simon-says', tags=[], collaboration_manager=BasicSimonSays()),
-#    af.Scene('simon-says-tutorial', tags=[], collaboration_manager=MultiLevelTutorial())
     af.Scene('simon-says', tags=[], collaboration_manager=SimonSays())
 ]
