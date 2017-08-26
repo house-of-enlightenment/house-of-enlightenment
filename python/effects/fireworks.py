@@ -86,12 +86,15 @@ class AroundTheWorldLauncher(MultiEffect):
     Arround the world launcher - shoot small lines all the way around the gazebo
     """
 
-    def __init__(self, start_col=16, color=(0, 255, 0)):
+    def __init__(self, start_col=16, color=(0, 255, 0), reverse=True):
 
         # [0, ..., 65]
         all_cols = range(0, STATE.layout.columns)
         # [start_col, ..., 65, 0, ..., start_col - 1]
         shifted = np.roll(all_cols, -start_col)
+
+        if reverse:
+            shifted = shifted[::-1]  # reverse
 
         # print "start_col", start_col
         # print "shifted", shifted
