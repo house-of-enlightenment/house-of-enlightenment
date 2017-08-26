@@ -1,14 +1,28 @@
 from hoe.animation_framework import Scene
 from hoe.animation_framework import Effect
-from hoe.fountain_models import FountainDefinition
+import hoe.fountain_models as fm
 from generic_effects import NoOpCollaborationManager
 from hoe.state import STATE
+import hoe.stations
 from shared import SolidBackground
+from random import choice
+# from ripple import Ripple
 
 
 class ZigZag(Effect):
-    def __init__(self, color=(255, 255, 0), start_row=2, start_col=16, height=50):
+    """
+      Fountain effect that zigzags to the top.
+      define border_color to add a border
+    """
+
+    def __init__(self,
+                 color=(255, 255, 0),
+                 border_color=(255, 0, 0),
+                 start_row=2,
+                 start_col=16,
+                 height=50):
         self.color = color
+        self.border_color = border_color
         self.start_row = start_row
         self.start_col = start_col
         self.height = height
@@ -44,12 +58,21 @@ class ZigZag(Effect):
             pixels[y, self.start_col + x - 1] = self.color
             pixels[y, self.start_col + x + 1] = self.color
 
+            # add a border if border_color is defined
+            if self.border_color:
+                pixels[y, self.start_col + x - 2] = self.border_color
+                pixels[y, self.start_col + x + 2] = self.border_color
+                pixels[y, self.start_col + x - 3] = self.border_color
+                pixels[y, self.start_col + x + 3] = self.border_color
+
     def is_completed(self, t, osc_data):
         return self.cur_bottom >= STATE.layout.rows - 1
 
+def pick_different_border_color(section, button):
+    return hoe.stations.BUTTON_COLORS[choice([i for i in range(5) if i!=button])]
 
 FOUNTAINS = [
-    FountainDefinition("zigzag", ZigZag)
+    fm.FountainDefinition("zigzag", ZigZag, arg_generators=fm.get_default_arg_generators(border_color=pick_different_border_color))
 ]
 
 SCENES = [

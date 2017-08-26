@@ -19,9 +19,18 @@ dark_blue = (0, 81, 134)
 
 # https://web.archive.org/web/20080731165022/http://freespace.virgin.net:80/hugo.elias/graphics/x_water.htm
 class Ripple(Effect):
-    def __init__(self, color=blue, start_row=0, end_row=None, start_col=0, end_col=None):
+    def __init__(self,
+                 color=blue,
+                 dark_color=(0, 0, 0),
+                 light_color=(255, 255, 255),
+                 start_row=0,
+                 end_row=None,
+                 start_col=0,
+                 end_col=None):
         Effect.__init__(self)
         self.color = color
+        self.light_color = light_color
+        self.dark_color = dark_color
         # a grid of the row/columns of all 0's
         self.previous_ripple_state = np.zeros((STATE.layout.rows, STATE.layout.columns), int)
         self.ripple_state = np.zeros((STATE.layout.rows, STATE.layout.columns), int)
@@ -32,9 +41,9 @@ class Ripple(Effect):
     def value_to_color(self, value):
 
         if value > 0:
-            return (30, 30, 30)
+            return self.dark_color
         elif value < 0:
-            return (255, 255, 255)
+            return self.light_color
         else:
             return self.color
 
@@ -45,11 +54,11 @@ class Ripple(Effect):
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
 
-        # attempt to get it to render every 2 frames, but it looks shitty
-        # self.frameCount += 1
-        # if (self.frameCount % 2 == 0):
-        #     pixels[:,:] = self.get_pixels()
-        #     return
+        # render every 2 frames so the ripples are slower
+        self.frameCount += 1
+        if (self.frameCount % 2 == 0):
+            pixels[:, :] = self.get_pixels()
+            return
 
         # only generate a ripple every couple frames
         if (random.random() < 0.12):
@@ -90,5 +99,11 @@ SCENES = [
         "ripple",
         tags=[Scene.TAG_EXAMPLE],
         collaboration_manager=NoOpCollaborationManager(),
-        effects=[Ripple()])
+        effects=[
+            Ripple()
+            # Ripple(
+            #     color=blue,
+            #     light_color=(200, 138, 255),
+            #     dark_color=(20, 1, 85))
+        ])
 ]

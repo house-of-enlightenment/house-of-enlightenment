@@ -59,6 +59,7 @@ def main():
 
     coordinated = CoordinatedTransition()
     rotation = Rotate(hoe_layout.columns, coordinated.first())
+    up_speed = consistent_speed_to_pixels(1)  # rows / second
 
     if args.row == 'single':
         row = SingleColumn(hoe_layout, rotation)
@@ -76,9 +77,10 @@ def main():
     elif args.row == 'linear':
         row = LinearBrightness(hoe_layout)
     if args.row == 'linear':
-        effect = UpAndRotateEffect(hoe_layout, row, rotate_speed=consistent_speed_to_pixels(0))
+        effect = UpAndRotateEffect(
+            hoe_layout, row, up_speed, rotate_speed=consistent_speed_to_pixels(0))
     else:
-        effect = UpAndRotateEffect(hoe_layout, row, rotate_speed=coordinated.second())
+        effect = UpAndRotateEffect(hoe_layout, row, up_speed, rotate_speed=coordinated.second())
     #effect = UpAndExpandEffect(hoe_layout)
     render = Render(client, osc_queue, hoe_layout, [effect])
     render.run_forever()
@@ -96,13 +98,13 @@ class Render(object):
     def run_forever(self):
         now = time.time()
         for effect in self.effects:
-            effect.start(now)
+            effect.scene_starting(now, None)
         self.pixels = pixels.Pixels(self.layout)
         while True:
             now = time.time()
             self.pixels[:] = 0
             for effect in self.effects:
-                effect.next_frame(now, self.pixels)
+                effect.next_frame(self.pixels, now, None, None)
             # make half very dark gray for a more realistic view
             #self.pixels[:, 44:] = 5
             self.pixels.put(self.client)

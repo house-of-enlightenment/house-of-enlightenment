@@ -135,10 +135,11 @@ class Rotate(object):
             units = pixels / second
     """
 
-    def __init__(self, n, rotation_speed):
+    def __init__(self, n, rotation_speed, axis=0):
         self.rotation = 0
         self.n = n
         self.rotation_speed = rotation_speed
+        self.axis=axis
 
     def start(self, now):
         self.last_time = now
@@ -152,12 +153,7 @@ class Rotate(object):
         delta = (now - self.last_time) * speed
         self.last_time = now
         self.rotation = (self.rotation + delta) % self.n
-        return rotate(arr, int(self.rotation))
-
-
-# idx can be negative
-def rotate(arr, idx):
-    return np.roll(arr, idx, axis=1)
+        return np.roll(arr, int(self.rotation), axis=self.axis)
 
 
 # constants to make moving easier to specify

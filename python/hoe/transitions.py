@@ -165,8 +165,6 @@ class RangeTransition(Transition):
         start = self._start()
         length = self._length()
         end = start + length
-        with open('ranges.txt', 'a') as f:
-            f.write('{}, {}\n'.format(start, end))
         return np.array([start, end])
 
 

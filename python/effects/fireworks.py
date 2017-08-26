@@ -3,14 +3,15 @@ from hoe.animation_framework import Effect
 from hoe.animation_framework import MultiEffect
 from generic_effects import NoOpCollaborationManager
 from hoe.state import STATE
-from hoe.fountain_models import FountainDefinition, FountainLaunchingController
+import hoe.stations
+import hoe.fountain_models as fm
 from shared import SolidBackground
 # from ripple import Ripple
 import time
 import numpy as np
 from collections import deque
 import colorsys
-
+from random import choice
 
 class RisingLine(Effect):
     """
@@ -19,12 +20,16 @@ class RisingLine(Effect):
 
     def __init__(self,
                  color=(255, 255, 0),
-                 start_row=2,
+                 border_color=None,
+                 border_thickness=0,
+                 start_row=0,
                  start_col=16,
                  height=5,
                  delay=0,
                  ceil=STATE.layout.rows - 1):
         self.color = color
+        self.border_color = border_color
+        self.border_thickness = border_thickness
         self.start_row = start_row
         self.start_col = start_col
         self.height = height
@@ -50,14 +55,17 @@ class RisingLine(Effect):
         top = min(self.cur_top, STATE.layout.rows - 1)
 
         for y in range(bottom, top):
-            pixels[y, self.start_col] = self.color
+            # figure out if this pixel is the border, or in the middle
+            is_border = (y - self.cur_bottom <= self.border_thickness) or (self.cur_top - y <=
+                                                                           self.border_thickness)
+            color = self.border_color if is_border else self.color
+            pixels[y, self.start_col] = color
 
     def is_completed(self, t, osc_data):
         return self.cur_bottom >= self.ceil
 
 
-def roman_candle_fountain(start_col=16, width=8, color=(255, 0, 0), **kwargs):
-
+def roman_candle_fountain(start_col=16, width=8, color=(255, 0, 0),border_color=(0,255,0), border_thickness=4, height=30):
     forward_cols = map(lambda col: col % STATE.layout.columns, range(start_col, start_col+width))
     backward_cols = forward_cols[::-1]  # reverse
 
@@ -70,16 +78,31 @@ def roman_candle_fountain(start_col=16, width=8, color=(255, 0, 0), **kwargs):
     # print "sequence", sequence
 
     def make_line((i, col)):
-        return RisingLine(height=30, start_col=col, delay=i * 100, color=color)
+        return RisingLine(
+            height=height,
+            start_col=col,
+            delay=i * 100,
+            color=color,
+            border_color=border_color,
+            border_thickness=border_thickness)
 
     effects = map(make_line, enumerate(sequence))
 
     return MultiEffect(*effects)
 
 
-def around_the_world_fountain(start_col=16, color=(0, 255, 0), **kwargs):
+def around_the_world_fountain(start_col=16,
+                 color=(0, 255, 0),
+                 border_color=(255, 0, 0),
+                 border_thickness=6,
+                 height=18,
+                 reverse=True):
     """
-    Around the world launcher - shoot small lines all the way around the gazebo
+    Arround the world launcher - shoot small lines all the way around the gazebo
+
+    Define border_color and border_thickness to add a border.
+    The border will be drawn *inside* the height, so make sure
+    2*border_thickness < height
     """
 
     # [0, ..., 65]
@@ -87,23 +110,37 @@ def around_the_world_fountain(start_col=16, color=(0, 255, 0), **kwargs):
     # [start_col, ..., 65, 0, ..., start_col - 1]
     shifted = np.roll(all_cols, -start_col)
 
+    if reverse:
+        shifted = shifted[::-1]  # reverse
+
     # print "start_col", start_col
     # print "shifted", shifted
 
     def make_line((i, col)):
-        return RisingLine(height=9, start_col=col, delay=i * 30, color=color, ceil=50)
+        return RisingLine(
+            height=height,
+            start_col=col,
+            delay=i * 30,
+            color=color,
+            border_color=border_color,
+            border_thickness=border_thickness,
+            ceil=50)
 
     effects = map(make_line, enumerate(shifted))
 
     return MultiEffect(*effects)
 
 
-def fzero_fountain(section=1, color=(0, 255, 255), **kwargs):
+def fzero_fountain(start_col=16,
+                 color=(0, 255, 255),
+                 border_color=(255, 0, 0),
+                 border_thickness=10,
+                 height=50):
     """
         F-Zero Launcher - make a f-zero speed boost arrow around the start_col
         """
     # get 5 pixels to either side to select the 11 columns in this section
-    cols = range(section*11, (section+1)*11)
+    cols = map(lambda c: c % STATE.layout.columns, range(start_col - 5, start_col + 5 + 1))
 
     # group them by levels to make an f-zero speed boost arrow
     levels = [[cols[5]],
@@ -113,24 +150,34 @@ def fzero_fountain(section=1, color=(0, 255, 255), **kwargs):
               [cols[1], cols[9]],
               [cols[0], cols[10]]]
 
-
     def make_line((i, col)):
-
         # fade the colors on the edges
         def get_color():
             hsv = colorsys.rgb_to_hsv(color[0] // 255, color[1] // 255, color[2] // 255)
             rgb = colorsys.hsv_to_rgb(hsv[0], hsv[1], hsv[2] - (i * 0.12))
             return (rgb[0] * 255, rgb[1] * 255, rgb[2] * 255)
 
-        return RisingLine(height=50, start_col=col, delay=i * 80, color=get_color())
+        return RisingLine(
+            height=height,
+            start_col=col,
+            delay=i * 80,
+            color=get_color(),
+            border_color=border_color,
+            border_thickness=border_thickness)
 
     effects = map(make_line, enumerate(levels))
 
     return MultiEffect(*effects)
 
+def pick_different_border_color(section, button):
+    return hoe.stations.BUTTON_COLORS[choice([i for i in range(5) if i!=button])]
 
 FOUNTAINS = [
-    FountainDefinition("roman", roman_candle_fountain),
-    FountainDefinition("aroundtheworld", around_the_world_fountain),
-    FountainDefinition("fzero", fzero_fountain),
+    fm.FountainDefinition("roman", roman_candle_fountain, tags=['fireworks'], arg_generators=fm.get_default_arg_generators(border_color=pick_different_border_color)),
+    fm.FountainDefinition("aroundtheworld", around_the_world_fountain, tags=['fireworks'], arg_generators=fm.get_default_arg_generators(border_color=pick_different_border_color)),
+    fm.FountainDefinition("fzero", fzero_fountain, tags=['fireworks'], arg_generators=fm.get_default_arg_generators(border_color=pick_different_border_color)),
+]
+
+SCENES = [
+    fm.FountainScene("fireworks", background_effects=[], tags=[Scene.TAG_EXAMPLE], foreground_tags=['fireworks'])
 ]

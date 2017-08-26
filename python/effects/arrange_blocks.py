@@ -51,6 +51,7 @@ STAY = translations.STAY
 MOVEMENTS = [UP, LEFT, STAY, RIGHT, DOWN]
 LABEL = ['UP', 'LEFT', 'MIDDLE', 'RIGHT', 'DOWN']
 
+TESTING = 1
 EASY = 6
 MEDIUM = 8
 HARD = 10
@@ -169,9 +170,13 @@ class ArrangeBlocks(collaboration.CollaborationManager, af.Effect):
         for target in self.targets:
             target.led_override = On()
         self.we_won = True
-        self.rotate = translations.Rotate(STATE.layout.columns,
-                                          transitions.ConstantTransition(
-                                              STATE.layout.columns / 2)).start(now)
+        self.rotate = translations.Rotate(
+            STATE.layout.columns,
+            transitions.ConstantTransition(STATE.layout.columns / 2),
+            # if axis=0 (the default) we rotate up/down instead of
+            # around
+            axis=1
+        ).start(now)
 
     def did_we_win(self):
         return all(b.at_target() for b in self.blocks)
@@ -344,10 +349,8 @@ class StationHandler(object):
         self.grid = grid
 
     def handle_button_presses(self, button_presses):
-        # if you mash keys, we're just taking the first one
-        # From Dave: this may not be ordered and we're talking micro-second order, so just taking one randomly with pop
-        for button_press in button_presses:
-            break
+        # if you mash keys, we're just taking one of them
+        button_press = button_presses.pop()
         logger.debug('For station %s, button %s was pressed', self.station_id, button_press)
         label = LABEL[button_press]
         if label == 'MIDDLE':
