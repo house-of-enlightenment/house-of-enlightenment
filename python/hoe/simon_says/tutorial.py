@@ -1,194 +1,4 @@
-import functools
-import logging
-
-
-import numpy as np
-
-from hoe import animation_framework as af
-from hoe import stations
-from hoe.state import STATE
-
-
-# different modes for the game
-DEFINE_PATTERN = 'define-pattern'
-DEFINE_PATTERN_WAIT = 'define-pattern-wait'
-COPY_PATTERN = 'copy-pattern'
-COPY_PATTERN_WAIT = 'copy-pattern-wait'
-WON = 'won'
-
-
-logger = logging.getLogger(__name__)
-
-N_STATIONS = 6
-N_BUTTONS = 5
-BUTTON_COLORS = stations.BUTTON_COLORS
-
-
-# want to use GREEN / RED, but don't want to match
-# the colors that flash when a pattern is being set
-RIGHT_COLOR = (34, 139, 34) # forest green
-WRONG_COLOR = (176, 28, 46) # stop sign red
-
-
-class BasicSimonSays(af.Effect, af.CollaborationManager):
-    def __init__(self):
-        self.mode = DEFINE_PATTERN_WAIT
-        self.success = False
-        self._flash = None
-
-    def _set_mode(self, val):
-        logger.debug('Setting mode to %s', val)
-        self._mode = val
-
-    def _get_mode(self):
-        return self._mode
-
-    mode = property(_get_mode, _set_mode)
-
-    def flash(self, color, now, duration=0.35):
-        assert self._flash is None
-        until = now + .35
-        self._flash = (until, color)
-
-    def scene_starting(self, now, osc):
-        for s in STATE.stations:
-            s.buttons._buttons = [1, 1, 0, 1, 1]
-
-    def compute_state(self, now, state, osc):
-        if self._flash:
-            return
-        if self.mode == DEFINE_PATTERN_WAIT:
-            # We wait for the first button press
-            # when that happens, the person who pressed the button
-            # becomes "simon" and they get to define a pattern
-            for s_id, buttons in osc.buttons.items():
-                # ignore the middle button
-                first = next((b for b in buttons if b != 2), None)
-                if first is not None:
-                    self.simon = s_id
-                    self.define_pattern = DefinePattern(self, s_id, first)
-                    self.flash(BUTTON_COLORS[first], now)
-                    self.mode = DEFINE_PATTERN
-                    return
-        elif self.mode == DEFINE_PATTERN:
-            self.define_pattern.compute_state(now, state, osc)
-        elif self.mode == COPY_PATTERN_WAIT:
-            # We wait for the first button press
-            # when that happens, the person who pressed the button
-            # is the one to try to copy simon
-            for s_id, buttons in osc.buttons.items():
-                if s_id == self.simon:
-                    continue
-                # ignore the middle button
-                first = next((b for b in buttons if b != 2), None)
-                if first == self.target_pattern[0]:
-                    self.copy_pattern = CopyPattern(self, s_id, self.target_pattern)
-                    self.mode = COPY_PATTERN
-                    return
-        elif self.mode == COPY_PATTERN:
-            self.copy_pattern.compute_state(now, state, osc)
-
-    def pattern_defined(self, pattern):
-        assert len(pattern) >= 2
-        self.target_pattern = pattern
-        self.mode = COPY_PATTERN_WAIT
-
-    def pattern_copied(self):
-        for s in STATE.stations:
-            s.set_button_values([0, 0, 0, 0, 0])
-        self.mode = WON
-
-    def pattern_failed(self):
-        self.define_pattern.finish()
-        self.mode = COPY_PATTERN_WAIT
-
-    def next_frame(self, pixels, now, state, osc):
-        if self._flash:
-            until, color = self._flash
-            if now <= until:
-                pixels[:2,] = color
-            else:
-                self._flash = None
-        if self.mode == WON:
-            pixels[:] = 255
-
-
-class CopyPattern(object):
-    def __init__(self, parent, station_id, target_pattern):
-        self.parent = parent
-        self.station_id = station_id
-        self.target_pattern = target_pattern
-        self.idx = 1 # not 0, we've already matched the first by time we are here
-        self._start()
-
-    def _start(self):
-        for i, s in enumerate(STATE.stations):
-            if i == self.station_id:
-                s.set_button_values([1, 1, 0, 1, 1])
-            else:
-                s.set_button_values([0, 0, 0, 0, 0])
-        return self
-
-    def compute_state(self, now, state, osc):
-        my_buttons = osc.buttons[self.station_id]
-        if not my_buttons:
-            return
-        # TODO: how likely is it that people would mash buttons
-        #      and we'd get two hits at the same time?
-        expected = self.target_pattern[self.idx]
-        if expected in my_buttons:
-            logger.debug('Success. Pressed the right button')
-            self.advance()
-        else:
-            logger.debug('Failed. Pressed %s, expected %s', my_buttons, expected)
-            self.fail()
-
-    def advance(self):
-        self.idx += 1
-        if self.idx >= len(self.target_pattern):
-            self.parent.pattern_copied()
-
-    def fail(self):
-        self.parent.pattern_failed()
-
-
-class DefinePattern(object):
-    def __init__(self, parent, station_id, first_button):
-        self.parent = parent
-        self.station_id = station_id
-        self.pattern = [first_button]
-        self._start()
-
-    def _start(self):
-        for i, s in enumerate(STATE.stations):
-            if i == self.station_id:
-                # TODO: shouldn't turn on the middle button until
-                # the pattern is at least two long
-                s.set_button_values([1, 1, 1, 1, 1])
-            else:
-                s.set_button_values([0, 0, 0, 0, 0])
-        return self
-
-    def compute_state(self, now, state, osc):
-        my_buttons = osc.buttons[self.station_id]
-        if len(self.pattern) > 2 and 2 in my_buttons:
-            self.finish()
-            self.parent.pattern_defined(self.pattern)
-        else:
-            first = next((b for b in my_buttons if b != 2), None)
-            if first is not None:
-                logger.debug('Adding button %s to pattern', first)
-                self.parent.flash(BUTTON_COLORS[first], now)
-                self.pattern.append(first)
-
-    def finish(self):
-        for i, s in enumerate(STATE.stations):
-            if i == self.station_id:
-                s.set_button_values([0, 0, 0, 0, 0])
-            else:
-                s.set_button_values([1, 1, 0, 1, 1])
-
-
+from shared import *
 # We need a tutorial to introduce everybody to the game.
 #
 # First round:
@@ -199,75 +9,18 @@ class DefinePattern(object):
 # The center button flashes.
 # Now, the first button flashes on all of the other stations
 # After being pressed, the second one flashes.
-#
-# Second round, same thing, but with three buttons.
-#
-# Third round, the leader gets two options instead of being forced
-
-
-ENTER_BUTTON = 2
-GAME_BUTTONS = [0, 1, 3, 4]
-
-
-class Flash(object):
-    def __init__(self, parent, color, on_finish, now, duration=0.35):
-        self.parent = parent
-        self.color = color
-        self.on_finish = on_finish
-        self.until = now + duration
-        self.finished = False
-
-    def next_frame(self, pixels, now, state, osc):
-        if now >= self.until:
-            assert self.finished == False
-            self.on_finish()
-            self.finished = True
-        else:
-            self.draw(pixels)
-
-    def draw(self, pixels):
-        pixels[:2,] = self.color
-
-
-class FlashStation(Flash):
-    def __init__(self, parent, section_id, color, on_finish, now, duration=0.35):
-        self.section_id = section_id
-        Flash.__init__(self, parent, color, on_finish, now, duration)
-
-    def draw(self, pixels):
-        section = STATE.layout.STATIONS[self.section_id]
-        pixels[:2, section.left:section.right] = self.color
-
-
-class ColorStation(object):
-    def __init__(self, station_id, color):
-        self.station_id = station_id
-        self.color = color
-
-    def next_frame(self, pixels, now, state, osc):
-        section = STATE.layout.STATIONS[self.station_id]
-        pixels[:2, section.left:section.right] = self.color
-
-
-def get_random_game_button(excluding=None):
-    if excluding is None:
-        exclude = set()
-    elif isinstance(excluding, (list, tuple)):
-        exclude = set(excluding)
-    else:
-        exclude = set([excluding])
-    game_buttons = set(GAME_BUTTONS) - exclude
-    return np.random.choice(list(game_buttons))
+# Repeat this, but for a sequence of 3 buttons and a sequence of 4 buttons
 
 
 class MultiLevelTutorial(af.CollaborationManager, af.Effect):
-    def __init__(self):
+    def __init__(self, on_finished):
         self.station_id = np.random.randint(N_STATIONS)
         players = set(range(N_STATIONS))
         players.remove(self.station_id)
         self.idx = 0
         self.pattern_lengths = (2, 3, 4)
         self.step = SimonSaysTutorial(self.station_id, 2, self.next_step, players, set())
+        self.on_finished = on_finished
 
     def compute_state(self, now, state, osc):
         self.step.compute_state(now, state, osc)
@@ -279,7 +32,8 @@ class MultiLevelTutorial(af.CollaborationManager, af.Effect):
         logger.info('Finished tutorial with %s steps', self.pattern_lengths[self.idx])
         self.idx += 1
         if self.idx >= len(self.pattern_lengths):
-            print "We reached the end"
+            logger.info('Finished with the tutorial')
+            self.on_finished()
         else:
             pattern_length = self.pattern_lengths[self.idx]
             self.step = SimonSaysTutorial(
@@ -519,9 +273,3 @@ class TurnOnMyButtonAndWaitForPressFollower(TurnOnMyButtonAndWaitForPress):
         self._turn_off_button()
         self.parent.render = FlashStation(
             self.parent, self.station_id, WRONG_COLOR, callback, now)
-
-
-SCENES = [
-    af.Scene('basic-simon-says', tags=[], collaboration_manager=BasicSimonSays()),
-    af.Scene('simon-says-tutorial', tags=[], collaboration_manager=MultiLevelTutorial())
-]
