@@ -4,10 +4,23 @@ from generic_effects import NoOpCollaborationManager
 from hoe.state import STATE
 from shared import SolidBackground
 
+# from ripple import Ripple
+
 
 class ZigZag(Effect):
-    def __init__(self, color=(255, 255, 0), start_row=2, start_col=16, height=50):
+    """
+      Fountain effect that zigzags to the top.
+      define color2 to add a border
+    """
+
+    def __init__(self,
+                 color=(255, 255, 0),
+                 color2=(255, 0, 0),
+                 start_row=2,
+                 start_col=16,
+                 height=50):
         self.color = color
+        self.color2 = color2
         self.start_row = start_row
         self.start_col = start_col
         self.height = height
@@ -43,6 +56,13 @@ class ZigZag(Effect):
             pixels[y, self.start_col + x - 1] = self.color
             pixels[y, self.start_col + x + 1] = self.color
 
+            # add a border if color2 is defined
+            if self.color2:
+                pixels[y, self.start_col + x - 2] = self.color2
+                pixels[y, self.start_col + x + 2] = self.color2
+                pixels[y, self.start_col + x - 3] = self.color2
+                pixels[y, self.start_col + x + 3] = self.color2
+
     def is_completed(self, t, osc_data):
         return self.cur_bottom >= STATE.layout.rows - 1
 
@@ -52,7 +72,11 @@ SCENES = [
         "zigzag",
         tags=[Scene.TAG_EXAMPLE],
         collaboration_manager=NoOpCollaborationManager(),
-        effects=[SolidBackground(color=(30, 30, 30)), ZigZag()])
+        effects=[
+            SolidBackground(color=(30, 30, 30)),
+            #  Ripple(),
+            ZigZag()
+        ])
 ]
 """
 5 |             x
