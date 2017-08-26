@@ -523,13 +523,13 @@ class TestKeyboardInputs(af.Effect):
 
 
 SCENES = [
-    af.Scene(
+    af.Game(
         'arrange-blocks',
-        tags=[af.Scene.TAG_GAME],
+        tags=[],
         collaboration_manager=ArrangeBlocks(Grid.make()),
         effects=[shared.BarelyGray()]
     ),
-    af.Scene(
+    af.Game(
         'arrange-blocks-debug',
         tags=[af.Scene.TAG_TEST],
         collaboration_manager=TestKeyboardInputs(ArrangeBlocks(Grid.make())),

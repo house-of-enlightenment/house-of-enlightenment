@@ -29,6 +29,7 @@ class Global(Borg):
         self.fps = None
         self.verbose = False
         self.codes = None
+        self.fountains = None
 
 
 STATE = Global()

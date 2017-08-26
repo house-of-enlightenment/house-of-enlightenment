@@ -134,7 +134,3 @@ FOUNTAINS = [
     FountainDefinition("aroundtheworld", around_the_world_fountain),
     FountainDefinition("fzero", fzero_fountain),
 ]
-
-SCENES = [
-    Scene("fountain", collaboration_manager=NoOpCollaborationManager(), effects=[SolidBackground(color=(30, 30, 30)), FountainLaunchingController(fountain_pool=FOUNTAINS)])
-]

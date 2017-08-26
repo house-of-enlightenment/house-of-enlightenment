@@ -1,7 +1,13 @@
 from collections import namedtuple
 from random import choice, randrange
 
-from animation_framework import MultiEffect
+import numpy as np
+
+import hoe.stations
+from animation_framework import MultiEffect, Scene
+from collaboration import ButtonToggleResponderManager
+from hoe.animation_framework import Effect
+from hoe.state import STATE
 from state import STATE
 import inspect
 
@@ -55,7 +61,7 @@ class FountainDefinition(object):
             var_names = factory_or_class.__init__.__func__.__code__.co_varnames
         else:
             var_names = factory_or_class.__code__.co_varnames
-        self.arg_generators = { kw : func for kw, func in arg_generators.items()
+        self.arg_generators = { kw : fnc for kw, fnc in arg_generators.items()
                                 # if arg_generators != 'default' or  # if explicitly state just go with it
                                 if kw in var_names and kw not in static_args }
 
@@ -63,8 +69,23 @@ class FountainDefinition(object):
         kwargs = self._generate_kwargs(section=section, button=button)
         return self.factory(**kwargs)
 
+    def is_in_pool(self, pool_names, pool_tags):
+        if not pool_names and not pool_tags:
+            return True
+
+        if pool_names and pool_tags:
+            return self.name in pool_names and any(tag in pool_tags for tag in self.tags)
+
+        if pool_names:
+            return self.name in pool_names
+
+        # Tags logic could stand to improve. Just take it is one matches
+        if pool_tags:
+            return any(tag in pool_tags for tag in self.tags)
+
     def _generate_kwargs(self, section, button):
-        return { kw : func(section=section, button=button) for kw, func in self.arg_generators.items() }
+        return { kw : fnc(section=section, button=button) for kw, fnc in self.arg_generators.items() }
+
 
 class FountainLaunchingController(MultiEffect):
     def __init__(self, fountain_pool):
@@ -86,3 +107,45 @@ class FountainLaunchingController(MultiEffect):
 
     def _generate_button_mapping(self):
         return { s_id : [choice(self.fountain_pool) for b in range(5)] for s_id in range(6) }
+
+    def is_completed(self, t, osc_data):
+        return False  # Never completes - a new button is always just around the corner ;)
+
+
+class FountainScene(Scene):
+    def __init__(self, name, tags, background_effects, foreground_names=None, foreground_tags=[], feedback=None):
+        feedback = feedback or ButtonFeedbackDisplay()
+        Scene.__init__(self, name, tags, ButtonToggleResponderManager(), effects=background_effects+[feedback])
+        # ^... Response Manager could probably be shared...
+
+        self.foreground_names = foreground_names
+        self.foreground_tags = foreground_tags
+        self.fountain_effects_initialized = False
+
+    def after_all_scenes_loaded(self):
+        assert not self.fountain_effects_initialized, "Already initialized"
+        definitions = filter(lambda definition: definition.is_in_pool(self.foreground_names, self.foreground_tags), STATE.fountains)
+        launcher = FountainLaunchingController(definitions)
+        self.add_effect(launcher, before=False)
+
+
+class ButtonFeedbackDisplay(Effect):
+    count_to_indices = {
+        0: [],
+        1: [(1, 10)],
+        2: [(1, 5), (6, 10)],
+        3: [(1, 4), (4, 7), (7, 10)],
+        4: [(1, 3), (3, 5), (6, 8), (8, 10)],
+        5: [(1, 3), (3, 5), (5, 6), (6, 8), (8, 10)]
+    }
+
+    def next_frame(self, pixels, now, collaboration_state, osc_data):
+        colors = np.zeros((STATE.layout.columns, 3), np.uint8)
+        for s_id, station in enumerate(STATE.stations):
+            high_buttons = station.buttons.get_high_buttons()
+            for i, sli in zip(high_buttons,
+                              ButtonFeedbackDisplay.count_to_indices[len(high_buttons)]):
+                colors[sli[0] + s_id * 11:sli[1] + s_id * 11, :] = hoe.stations.colors_to_rgb[
+                    hoe.stations.id_to_color_names[i]]
+
+        pixels[0:2, :] = colors

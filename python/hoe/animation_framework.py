@@ -1,23 +1,20 @@
 """Framework for running animations and effects"""
-from collections import OrderedDict
 import glob
 import importlib
 import os.path
 import sys
 import time
+from collections import OrderedDict
+from collections import defaultdict
 from random import choice
-from threading import Thread, Lock
-from collections import defaultdict, namedtuple
+from threading import Thread
 
 from OSC import OSCServer
 
-from hoe.collaboration import CollaborationManager, NoOpCollaborationManager
+from hoe.opc import Client
 from hoe.pixels import Pixels
 from hoe.state import STATE
-from hoe.opc import Client
-from hoe.osc_utils import update_buttons
-import hoe.stations
-import numpy as np
+from hoe.collaboration import NoOpCollaborationManager, CollaborationManager
 
 
 class AnimationFramework(object):
@@ -37,9 +34,13 @@ class AnimationFramework(object):
         self.max_scene_timeout = max_scene_timeout
 
         # Load all scenes from effects package. Then set initial index and load it up
-        self.scenes = scenes or load_scenes(tags=tags)
+        loaded_scenes = load_scenes_and_fountains(tags=tags)
+        self.scenes = scenes or loaded_scenes
         self.non_game_scenes = [name for name, scene in self.scenes.items()
                                 if not scene.is_game()]  #  TODO: validation
+
+        map(lambda s: s.after_all_scenes_loaded(), self.scenes.values())
+
         self.curr_scene = None
         self.queued_scene = self.scenes[first_scene if first_scene else self.non_game_scenes[0]]
         self._last_scene_change_timestamp = time.time()
@@ -244,7 +245,7 @@ class AnimationFramework(object):
         self.serve = False
 
 
-def load_scenes(effects_dir=None, tags=[]):
+def load_scenes_and_fountains(effects_dir=None, tags=[]):
     # type: (str) -> {str, Scene}
     if not effects_dir:
         pwd = os.path.dirname(__file__)
@@ -253,12 +254,15 @@ def load_scenes(effects_dir=None, tags=[]):
     # so we need it to be on the path
     sys.path.append(effects_dir)
     scenes = OrderedDict()
+    fountains = []
     for filename in glob.glob(os.path.join(effects_dir, '*.py')):
         pkg_name = os.path.basename(filename)[:-3]
         if pkg_name.startswith("_"):
             continue
         load_scenes_from_file(pkg_name, scenes, tags)
+        load_fountains_from_file(pkg_name, fountains)
     print "Loaded %s scenes from %s directory\n" % (len(scenes), effects_dir)
+    STATE.fountains = fountains
     return scenes
 
 
@@ -295,6 +299,18 @@ def save_scenes(input_scenes, output_scenes, tags):
         else:
             print "Skipped %s. Tags %s not in %s" % (scene, scene.tags, tags)
 
+
+def load_fountains_from_file(pkg_name, fountains):
+    try:
+        if pkg_name in sys.modules:
+            fountain_dict = sys.modules[pkg_name]
+            if hasattr(fountain_dict, 'FOUNTAINS'):
+                fountains.extend(fountain_dict.FOUNTAINS)
+    except (ImportError, SyntaxError) as e:
+        import traceback
+        print "WARNING: could not load fountains from %s" % pkg_name
+        traceback.print_exc()
+        print
 
 def get_first_non_empty(pixels):
     return next(pix for pix in pixels if pix is not None)
@@ -359,6 +375,9 @@ class Effect(object):
         raise NotImplementedError("All effects must implement next_frame")
         # TODO: Use abc
 
+    def after_all_scenes_loaded(self):
+        pass
+
     def scene_starting(self, now, osc_data):
         pass
 
@@ -368,16 +387,16 @@ class Effect(object):
     def is_completed(self, t, osc_data):
         return False
 
-    @classmethod
-    def factory(cls, *args, **kwargs):
-        return cls(*args, **kwargs)
-
 
 class MultiEffect(Effect):
     def __init__(self, *effects):
         Effect.__init__(self)
         self.effects = list(effects)
         self.clear_effects_after = True
+
+    def after_all_scenes_loaded(self):
+        for e in self.effects:
+            e.after_all_scenes_loaded()
 
     def scene_starting(self, now, osc_data):
         """Initialize a scene
@@ -427,17 +446,16 @@ class EffectLauncher(MultiEffect):
 
 class Scene(MultiEffect):
     TAG_BACKGROUND = 'background'
-    TAG_GAME = 'game'
     TAG_TEST = 'test'
     TAG_EXAMPLE = 'example'
     TAG_WIP = 'wip'  # Work in Progress
 
-    def __init__(self, name, tags=[TAG_BACKGROUND], collaboration_manager=None, effects=[]):
+    def __init__(self, name, tags, collaboration_manager=None, effects=[]):
         # str, CollaborationManager, List[Effect] -> None
         MultiEffect.__init__(self, *effects)
         self.name = name
         self.tags = tags
-        self.collaboration_manager = collaboration_manager
+        self.collaboration_manager = collaboration_manager or NoOpCollaborationManager()
         if isinstance(collaboration_manager, Effect) and collaboration_manager not in self.effects:
             # print "WARNING: Scene %s has collaboration manager %s
             # that is an effect but is not part of layers. Inserting
@@ -456,69 +474,12 @@ class Scene(MultiEffect):
         self.next_frame(pixels, t, self.collaboration_state, osc_data)
 
     def is_game(self):
-        return Scene.TAG_GAME in self.tags
+        return False
 
 
-class ButtonFeedbackDisplay(Effect):
-    count_to_indices = {
-        0: [],
-        1: [(1, 10)],
-        2: [(1, 5), (6, 10)],
-        3: [(1, 4), (4, 7), (7, 10)],
-        4: [(1, 3), (3, 5), (6, 8), (8, 10)],
-        5: [(1, 3), (3, 5), (5, 6), (6, 8), (8, 10)]
-    }
+class Game(Scene):
+    def __init__(self, name, tags, collaboration_manager, effects):
+        Scene.__init__(self, name=name, tags=tags, collaboration_manager=collaboration_manager, effects=effects)
 
-    def next_frame(self, pixels, now, collaboration_state, osc_data):
-        colors = np.zeros((STATE.layout.columns, 3), np.uint8)
-        for s_id, station in enumerate(STATE.stations):
-            high_buttons = station.buttons.get_high_buttons()
-            for i, sli in zip(high_buttons,
-                              ButtonFeedbackDisplay.count_to_indices[len(high_buttons)]):
-                colors[sli[0] + s_id * 11:sli[1] + s_id * 11, :] = hoe.stations.colors_to_rgb[
-                    hoe.stations.id_to_color_names[i]]
-
-        pixels[0:2, :] = colors
-
-
-class EffectFactory(object):
-    def __init__(self, name, clazz, **kwargs):  # TODO inputs
-        # str, class -> None
-        self.clazz = clazz
-        self.name = name
-        self.kwargs = kwargs
-
-    def __str__(self):
-        return "{}({})".format(self.__class__.__name__, self.name)
-
-    def create_effect(self):
-        # None -> Effect
-        print "\tCreating instance of effect %s" % self
-        return self.clazz(**self.kwargs)
-
-
-class LaunchedEffect(object):
-    @classmethod
-    def launch_effect(cls, *args, **kwargs):
-        # TODO: inspect these?
-        return cls(*args, **kwargs)
-
-EffectPoolFactory = namedtuple(typename='EffectPoolFactory', field_names=['name', 'definitions', 'tags'])
-
-class LaunchedEffectPool(MultiEffect):
-    def __init__(self, effect_pool):
-        MultiEffect.__init__(self)
-        for effect in effect_pool:
-            pass
-            # assert isinstance(effect, LaunchedEffect), 'effect {} not instanceof LaunchedEffect'.format(effect)
-        self.effect_pool = effect_pool
-        self.button_mapping = None
-
-    def scene_starting(self, now, osc_data):
-        self.button_mapping = { s_id : [choice(self.effect_pool) for b in range(5)] for s_id in range(6) }
-        MultiEffect.scene_starting(self, now, osc_data)
-
-    def before_rendering(self, pixels, t, collaboration_state, osc_data):
-        for s_id, buttons in osc_data.buttons.items():
-            for b_id in buttons:
-                self.add_effect(self.button_mapping[s_id][b_id].launch_effect(s_id=s_id, b_id=b_id))
+    def is_game(self):
+        return True

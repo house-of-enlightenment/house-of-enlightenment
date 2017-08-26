@@ -2,11 +2,10 @@ import numpy as np
 
 from hoe.animation_framework import Scene
 from hoe.animation_framework import Effect
-from hoe.animation_framework import CollaborationManager
 from hoe.animation_framework import MultiEffect
 from hoe.animation_framework import OSCDataAccumulator
-from hoe.animation_framework import ButtonFeedbackDisplay
-from hoe.collaboration import ButtonToggleResponderManager, NoOpCollaborationManager
+from hoe.fountain_models import ButtonFeedbackDisplay
+from hoe.collaboration import CollaborationManager, ButtonToggleResponderManager, NoOpCollaborationManager
 import hoe.color_utils
 from hoe.osc_utils import update_buttons
 from hoe.state import STATE

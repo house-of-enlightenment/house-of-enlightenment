@@ -189,37 +189,31 @@ SCENES = [
     af.Scene(
         'rgb-static',
         tags=[],
-        collaboration_manager=af.NoOpCollaborationManager(),
         effects=[Static()]
     ),
     af.Scene(
         'analogous-color-static',
         tags=[],
-        collaboration_manager=af.NoOpCollaborationManager(),
         effects=[AnalogousColorStatic()]
     ),
     af.Scene(
         'rainbow-blink',
         tags=[],
-        collaboration_manager=af.NoOpCollaborationManager(),
         effects=[RainbowBlink()]
     ),
     af.Scene(
         'color-breathe-8',
         tags=[],
-        collaboration_manager=af.NoOpCollaborationManager(),
         effects=[Breathe(STATE.layout, 8)]
     ),
     af.Scene(
         'color-breathe-32',
         tags=[],
-        collaboration_manager=af.NoOpCollaborationManager(),
         effects=[Breathe(STATE.layout, 32)]
     ),
     af.Scene(
         'color-breathe-down-32',
         tags=[],
-        collaboration_manager=af.NoOpCollaborationManager(),
         effects=[BreatheDown(STATE.layout, 32)]
     ),
 

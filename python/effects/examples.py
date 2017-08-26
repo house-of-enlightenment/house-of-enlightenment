@@ -1,5 +1,5 @@
 from hoe import color_utils
-from hoe.animation_framework import Scene, Effect, MultiEffect, LaunchedEffect, LaunchedEffectPool
+from hoe.animation_framework import Scene, Effect, MultiEffect
 from hoe.state import STATE
 import hoe.fountain_models as fm
 from generic_effects import NoOpCollaborationManager

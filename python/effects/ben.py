@@ -5,12 +5,12 @@ import numpy as np
 
 from hoe import color_utils
 from hoe.animation_framework import Scene, Effect, MultiEffect
-from hoe import color_utils
+from hoe.collaboration import NoOpCollaborationManager
 from hoe.stations import StationButtons
 from hoe.state import STATE
 from hoe.utils import fader_interpolate
 
-from generic_effects import NoOpCollaborationManager, FrameRotator
+from generic_effects import FrameRotator
 from shared import SolidBackground
 
 from zigzag import ZigZag

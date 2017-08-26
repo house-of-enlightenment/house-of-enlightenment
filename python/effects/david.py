@@ -1,6 +1,6 @@
 from hoe import color_utils
-from hoe.animation_framework import Scene, Effect, MultiEffect
-from hoe.animation_framework import CollaborationManager
+from hoe.animation_framework import Scene, Game, Effect, MultiEffect
+from hoe.collaboration import CollaborationManager
 from hoe.animation_framework import OSCDataAccumulator
 import hoe.fountain_models as fm
 from hoe.stations import StationButtons, BUTTON_COLORS
@@ -466,16 +466,16 @@ FOUNTAINS = [
 ]
 
 SCENES = [
-    Scene(
+    Game(
         "buttonchaser",
-        tags=[Scene.TAG_GAME],
+        tags=[],
         collaboration_manager=ButtonChaseController(draw_bottom_layer=True),
         effects=[ButtonRainbow(max_value=255 - 30), Pulser()]),
-    Scene(
-        "wedges",
+    fm.FountainScene(
+        name="wedges",
         tags=[Scene.TAG_EXAMPLE],
-        collaboration_manager=NoOpCollaborationManager(),
-        effects=[fm.FountainLaunchingController(fountain_pool=FOUNTAINS)]
+        background_effects=[],
+        foreground_names=['wedge']
     ),
     Scene(
         "sinedots",
