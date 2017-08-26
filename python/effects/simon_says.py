@@ -278,9 +278,12 @@ class MultiLevelTutorial(af.CollaborationManager, af.Effect):
     def next_step(self, winners, losers):
         logger.info('Finished tutorial with %s steps', self.pattern_lengths[self.idx])
         self.idx += 1
-        pattern_length = self.pattern_lengths[self.idx]
-        self.step = SimonSaysTutorial(
-            self.station_id, pattern_length, self.next_step, winners, losers)
+        if self.idx >= len(self.pattern_lengths):
+            print "We reached the end"
+        else:
+            pattern_length = self.pattern_lengths[self.idx]
+            self.step = SimonSaysTutorial(
+                self.station_id, pattern_length, self.next_step, winners, losers)
 
 
 # I just realized that this game is basically an annoying state-machine
@@ -294,8 +297,10 @@ class SimonSaysTutorial(af.CollaborationManager, af.Effect):
         self.on_finished = on_finished
         self.winners = winners
         self.losers = losers
+        self.now = None
 
     def compute_state(self, now, state, osc):
+        self.now = now
         if not self.step:
             return
         self.step.compute_state(now, state, osc)
@@ -311,12 +316,17 @@ class SimonSaysTutorial(af.CollaborationManager, af.Effect):
         self.on_finished(winners, losers)
 
     def pattern_defined(self, pattern):
-        self.step = MultiStation(self.winners, pattern, self.finished)
+        self.step = MultiStation(self.winners, self.losers, pattern, self.finished)
         self.render = self.step
+        self.step.start(self.now)
 
 
 class SetPattern(object):
-    """A set of steps that defines a pattern"""
+    """A set of steps that defines a pattern
+
+    In this case, the pattern is picked for the user and they just
+    have to go along.
+    """
     def __init__(self, station_id, pattern_length, on_finished):
         self.station_id = station_id
         self.pattern_length = pattern_length
@@ -353,14 +363,18 @@ class SetPattern(object):
 
 class MultiStation(object):
     # doesn't actually render anything, just passes the work along.
-    def __init__(self, stations, pattern, on_finished):
+    def __init__(self, winners, losers, pattern, on_finished):
         self.pattern = pattern
-        self.followers = [
-            PlayAndFollowPattern(s, pattern, self.next_step) for s in stations]
+        self.followers = [PlayAndFollowPattern(s, pattern, self.next_step) for s in winners]
+        self.out = [ColorStation(s, WRONG_COLOR) for s in losers]
         self.on_finished = on_finished
         self.finished_count = 0
         self.winners = set()
         self.losers = set()
+
+    def start(self, now):
+        for follower in self.followers:
+            follower.start(now)
 
     def compute_state(self, now, state, osc):
         for follower in self.followers:
@@ -369,6 +383,8 @@ class MultiStation(object):
     def next_frame(self, pixels, now, state, osc):
         for follower in self.followers:
             follower.next_frame(pixels, now, state, osc)
+        for out in self.out:
+            out.next_frame(pixels, now, state, osc)
 
     def next_step(self, station_id, correct):
         logger.info('Station %s got %s', station_id, 'right' if correct else 'wrong')
@@ -387,11 +403,25 @@ class PlayAndFollowPattern(object):
         self.pattern = pattern
         self.on_finished = on_finished
         self.pattern_idx = -1
+        self.finished = False
         self.next_step(correct=True)
         self.render = False
+        self.deadline = None
+
+    def start(self, now):
+        self.deadline = now + len(self.pattern) * 5
 
     def compute_state(self, now, state, osc):
-        self.step.compute_state(now, state, osc)
+        if self.finished:
+            return
+        if now >= self.deadline:
+            self.finished = True
+            logger.debug('Station %s failed because they took too long', self.station_id)
+            # flashing the color is dumb here; we move onto the next
+            # step and lose the color
+            self.on_finished(self.station_id, correct=False)
+        else:
+            self.step.compute_state(now, state, osc)
 
     def next_frame(self, pixels, now, state, osc):
         if not self.render:
@@ -399,15 +429,16 @@ class PlayAndFollowPattern(object):
         self.render.next_frame(pixels, now, state, osc)
 
     def next_step(self, correct):
-        logger.debug('Removing the render')
+        assert self.finished == False
         self.render = None
         if not correct:
-            print "You fucked up"
+            self.finished = True
             self.render = ColorStation(self.station_id, WRONG_COLOR)
             self.on_finished(self.station_id, correct=False)
             return
         self.pattern_idx += 1
         if self.pattern_idx >= len(self.pattern):
+            self.finished = True
             logger.debug('Stations %s is finished', self.station_id)
             self.render = ColorStation(self.station_id, RIGHT_COLOR)
             self.on_finished(self.station_id, correct=True)
