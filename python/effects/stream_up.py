@@ -110,7 +110,7 @@ class SingleColumn(object):
 
     def __init__(self, layout, rotate):
         self.layout = layout
-        self.rotate = rotate or translations.Rotate(layout.columns)
+        self.rotate = rotate
         self.hue = 0
 
     def start(self, now):
