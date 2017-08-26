@@ -77,8 +77,51 @@ def make_stream_up():
         STATE.layout,
         row,
         up_speed=distance.PixelsPerFrame(1),
+        rotate_speed=distance.VaryingPixelsPerFrame(structure_rotation)
+    )
+    return effect
+
+
+def make_stream_up_single():
+    # speed here is pixels / second
+    rotation = translations.Rotate(
+        STATE.layout.columns, transitions.ConstantTransition(1))
+
+    # I wish this had more red in it
+    row = SingleColumn(STATE.layout, rotation)
+
+    # the rotation units here are pixels / frame
+    # mostly prefer to be slow, but the occasional spike up is interesting
+    structure_rotation = transitions.ConstantTransition(2)
+
+    effect = translations.UpAndRotateEffect(
+        STATE.layout,
+        row,
+        up_speed=distance.PixelsPerFrame(1),
         rotate_speed=distance.VaryingPixelsPerFrame(structure_rotation))
     return effect
+
+
+class SingleColumn(object):
+    """Creates a row that is just one red pixel.
+
+    Can be useful to see how the shape flows up the HoE.
+    """
+
+    def __init__(self, layout, rotate):
+        self.layout = layout
+        self.rotate = rotate or translations.Rotate(layout.columns)
+        self.hue = 0
+
+    def start(self, now):
+        self.rotate.start(now)
+
+    def __call__(self, now, **kwargs):
+        row = np.zeros((self.layout.columns, 3), np.uint8)
+        row[10, :] = (255, 0, 0)  #color_utils.hsv2rgb((self.hue, 255, 255))
+        self.hue = (self.hue + 16) % 256
+        return self.rotate(row, now)
+
 
 
 SCENES = [
@@ -96,5 +139,10 @@ SCENES = [
         'stream-up',
         tags=[],
         collaboration_manager=collaboration.NoOpCollaborationManager(),
-        effects=[make_stream_up()])
+        effects=[make_stream_up()]),
+    af.Scene(
+        'stream-up-single',
+        tags=[],
+        collaboration_manager=collaboration.NoOpCollaborationManager(),
+        effects=[make_stream_up_single()])
 ]
