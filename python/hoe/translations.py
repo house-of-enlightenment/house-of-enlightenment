@@ -157,7 +157,7 @@ class Rotate(object):
 
 # idx can be negative
 def rotate(arr, idx):
-    return np.roll(arr, idx, axis=1)
+    return np.roll(arr, idx, axis=0)
 
 
 # constants to make moving easier to specify
