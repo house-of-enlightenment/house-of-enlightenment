@@ -45,11 +45,11 @@ class Ripple(Effect):
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
 
-        # attempt to get it to render every 2 frames, but it looks shitty
-        # self.frameCount += 1
-        # if (self.frameCount % 2 == 0):
-        #     pixels[:,:] = self.get_pixels()
-        #     return
+        # render every 2 frames so the ripples are slower
+        self.frameCount += 1
+        if (self.frameCount % 2 == 0):
+            pixels[:,:] = self.get_pixels()
+            return
 
         # only generate a ripple every couple frames
         if (random.random() < 0.12):
