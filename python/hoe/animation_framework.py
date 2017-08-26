@@ -303,7 +303,7 @@ def save_scenes(input_scenes, output_scenes, tags):
             if callable(value):
                 output_scenes[scene] = value
             else:
-                raise Exception('The value for scene %s is not callable'.format(scene))
+                raise Exception('The value for scene {} is not callable'.format(scene))
         else:
             if not isinstance(scene, Scene):
                 print "Got scene %s not of type Scene" % scene
