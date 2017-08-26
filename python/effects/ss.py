@@ -18,7 +18,7 @@ class SimonSays(af.Effect, af.CollaborationManager):
     def __init__(self):
         self.points = {i: 0 for i in range(6)}
         self.points['total'] = 0
-        self.step = game.SimonSaysGame(self.on_end_of_game) #tutorial.MultiLevelTutorial(on_finished=self.start_game)
+        self.step = tutorial.MultiLevelTutorial(on_finished=self.start_game)
 
     def start_game(self):
         self.step = game.SimonSaysGame(self.on_end_of_game)
@@ -37,6 +37,7 @@ class SimonSays(af.Effect, af.CollaborationManager):
     def on_end_of_game(self, winner):
         # nobody could be a winner
         print '%s is a winner' % winner
+        # TODO: what does the end of a game look like?
 
     def next_frame(self, pixels, now, state, osc):
         self.step.next_frame(pixels, now, state, osc)
