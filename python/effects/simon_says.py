@@ -1,4 +1,8 @@
+import functools
 import logging
+
+
+import numpy as np
 
 from hoe import animation_framework as af
 from hoe import stations
@@ -15,8 +19,15 @@ WON = 'won'
 
 logger = logging.getLogger(__name__)
 
-
+N_STATIONS = 6
+N_BUTTONS = 5
 BUTTON_COLORS = stations.BUTTON_COLORS
+
+
+# want to use GREEN / RED, but don't want to match
+# the colors that flash when a pattern is being set
+RIGHT_COLOR = (34, 139, 34) # forest green
+WRONG_COLOR = (176, 28, 46) # stop sign red
 
 
 class BasicSimonSays(af.Effect, af.CollaborationManager):
@@ -122,7 +133,7 @@ class CopyPattern(object):
         my_buttons = osc.buttons[self.station_id]
         if not my_buttons:
             return
-        # TOD: how likely is it that people would mash buttons
+        # TODO: how likely is it that people would mash buttons
         #      and we'd get two hits at the same time?
         expected = self.target_pattern[self.idx]
         if expected in my_buttons:
@@ -178,6 +189,264 @@ class DefinePattern(object):
                 s.set_button_values([1, 1, 0, 1, 1])
 
 
+# We need a tutorial to introduce everybody to the game.
+#
+# First round:
+# One button flashes.
+#    When pressed, the ring flashes that color
+# Another button flashes (at the same station)
+#    When pressed, the ring flashes
+# The center button flashes.
+# Now, the first button flashes on all of the other stations
+# After being pressed, the second one flashes.
+#
+# Second round, same thing, but with three buttons.
+#
+# Third round, the leader gets two options instead of being forced
+# 
+
+ENTER_BUTTON = 2
+GAME_BUTTONS = [0, 1, 3, 4]
+
+
+class Flash(object):
+    def __init__(self, parent, color, on_finish, now, duration=0.35):
+        self.parent = parent
+        self.color = color
+        self.on_finish = on_finish
+        self.until = now + duration
+        self.finished = False
+
+    def next_frame(self, pixels, now, state, osc):
+        if now >= self.until:
+            assert self.finished == False
+            self.on_finish()
+            self.finished = True
+        else:
+            self.draw(pixels)
+
+    def draw(self, pixels):
+        pixels[:2,] = self.color
+
+
+class FlashStation(Flash):
+    def __init__(self, parent, section_id, color, on_finish, now, duration=0.35):
+        self.section_id = section_id
+        Flash.__init__(self, parent, color, on_finish, now, duration)
+
+    def draw(self, pixels):
+        section = STATE.layout.STATIONS[self.section_id]
+        pixels[:2, section.left:section.right] = self.color
+
+
+class ColorStation(object):
+    def __init__(self, station_id, color):
+        self.station_id = station_id
+        self.color = color
+
+    def next_frame(self, pixels, now, state, osc):
+        section = STATE.layout.STATIONS[self.station_id]
+        pixels[:2, section.left:section.right] = self.color
+
+
+def get_random_game_button(excluding=None):
+    if excluding is None:
+        exclude = set()
+    elif isinstance(excluding, (list, tuple)):
+        exclude = set(excluding)
+    else:
+        exclude = set([excluding])
+    game_buttons = set(GAME_BUTTONS) - exclude
+    return np.random.choice(list(game_buttons))
+
+
+# I just realized that this game is basically an annoying state-machine
+# but its probably not worth the effort to incorporate a FSM library
+# ... I'll just write my own poor variant
+class SimonSaysTutorial(af.CollaborationManager, af.Effect):
+    def __init__(self, simon_station_id, pattern_length, on_finished):
+        self.simon_station_id = simon_station_id
+        self.pattern_length
+        self.step = TurnOnOnlyMyButtonAndWaitForPress(self, simon_station_id)
+        self.steps = []
+        self.render = None
+        self.pattern = None
+        self.on_finished = on_finished
+
+    def compute_state(self, now, state, osc):
+        if not self.step:
+            return
+        self.step.compute_state(now, state, osc)
+
+    def next_frame(self, pixels, now, state, osc):
+        if not self.render:
+            return
+        self.render.next_frame(pixels, now, state, osc)
+
+    def save_pattern(self):
+        self.pattern = [s.button for s in self.steps]
+
+    def finished(self, winner, losers):
+        self.step = None
+        self.render = None
+        self.on_finished(winners, losers)
+
+    def next_step(self):
+        self.render = None
+        self.steps.append(self.step)
+        if len(self.steps) < self.pattern_length:
+            self.step = TurnOnOnlyMyButtonAndWaitForPress(
+                self, self.simon_station_id, last_button=self.step.button)
+        elif len(self.steps) == self.pattern_length:
+            self.save_pattern()
+            self.step = TurnOnOnlyMyButtonAndWaitForPress(
+                self, self.simon_station_id, button=ENTER_BUTTON, flash=False)
+        elif len(self.steps) == self.pattern_length + 1:
+            other_stations = [s for s in range(N_STATIONS) if s != self.simon_station_id]
+            self.step = MultiStation(other_stations, self.pattern, self.finished)
+            # I don't like this practice, its too easy to forget to turn off the renderer
+            # after we've moved onto another step
+            self.render = self.step
+        else:
+            raise Exception("We shouldn't get here")
+
+
+class MultiStation(object):
+    # doesn't actually render anything, just passes the work along.
+    def __init__(self, stations, pattern, on_finished):
+        self.pattern = pattern
+        self.followers = [
+            PlayAndFollowPattern(s, pattern, self.next_step) for s in stations]
+        self.on_finished = on_finished
+        self.finished_count = 0
+
+    def compute_state(self, now, state, osc):
+        for follower in self.followers:
+            follower.compute_state(now, state, osc)
+
+    def next_frame(self, pixels, now, state, osc):
+        for follower in self.followers:
+            follower.next_frame(pixels, now, state, osc)
+
+    def next_step(self, correct):
+        if correct:
+            print 'Cool'
+        else:
+            print 'Dammit'
+        self.finished_count += 1
+        if self.finished_count == N_STATIONS - 1:
+            self.on_finished()
+
+
+class PlayAndFollowPattern(object):
+    def __init__(self, station_id, pattern, on_finished):
+        self.station_id = station_id
+        self.pattern = pattern
+        self.on_finished = on_finished
+        self.pattern_idx = -1
+        self.next_step(correct=True)
+        self.render = False
+
+    def compute_state(self, now, state, osc):
+        self.step.compute_state(now, state, osc)
+
+    def next_frame(self, pixels, now, state, osc):
+        if not self.render:
+            return
+        self.render.next_frame(pixels, now, state, osc)
+
+    def next_step(self, correct):
+        logger.debug('Removing the render')
+        self.render = None
+        if not correct:
+            print "You fucked up"
+            self.render = ColorStation(self.station_id, WRONG_COLOR)
+            self.on_finished(correct=False)
+            return
+        self.pattern_idx += 1
+        if self.pattern_idx >= len(self.pattern):
+            logger.debug('Stations %s is finished', self.station_id)
+            self.render = ColorStation(self.station_id, RIGHT_COLOR)
+            self.on_finished(correct=True)
+            return
+        self.step = TurnOnMyButtonAndWaitForPressFollower(
+            self, self.station_id, self.pattern[self.pattern_idx], flash=False)
+
+
+class TurnOnOnlyMyButtonAndWaitForPress(object):
+    def __init__(self, parent, station_id, button=None, last_button=None, flash=True):
+        self.parent = parent
+        self.station_id = station_id
+        self.button = self.get_button(button, last_button)
+        self.set_buttons = False
+        self.flash = flash
+
+    def get_button(self, button, last_button):
+        return button if button is not None else get_random_game_button(excluding=last_button)
+
+    def compute_state(self, now, state, osc):
+        if not self.set_buttons:
+            self._only_turn_on_my_button()
+            self.set_buttons = True
+        pressed_buttons = osc.buttons[self.station_id]
+        if self.button in pressed_buttons:
+            self._on_correct_button_press(now)
+        other_buttons = pressed_buttons - set([self.button])
+        if other_buttons:
+            self._on_wrong_button_press(now, other_buttons)
+
+    def _on_correct_button_press(self, now):
+        self._turn_off_button()
+        if self.flash:
+            self.parent.render = Flash(
+                self.parent, BUTTON_COLORS[self.button], self.parent.next_step, now)
+        else:
+            self.parent.next_step()
+
+    def _on_wrong_button_press(self, now, wrong_buttons):
+        pass
+
+    def _only_turn_on_my_button(self):
+        logger.debug('Setting buttons')
+        for i, s in enumerate(STATE.stations):
+            s.set_button_values([0, 0, 0, 0, 0])
+            if i == self.station_id:
+                s.buttons[self.button] = 1
+
+    def _turn_off_button(self):
+        STATE.stations[self.station_id].buttons[self.button] = 0
+
+
+class TurnOnMyButtonAndWaitForPress(TurnOnOnlyMyButtonAndWaitForPress):
+    def _only_turn_on_my_button(self):
+        logger.debug('Setting buttons for my section (%s - %s)', self.station_id, self.button)
+        station = STATE.stations[self.station_id]
+        station.set_button_values([0, 0, 0, 0, 0])
+        station.buttons[self.button] = 1
+
+
+class TurnOnMyButtonAndWaitForPressFollower(TurnOnMyButtonAndWaitForPress):
+    def __init__(self, parent, station_id, button=None, last_button=None, flash=True):
+        print 'button:', button
+        TurnOnMyButtonAndWaitForPress.__init__(self, parent, station_id, button, last_button, flash)
+
+    def _on_correct_button_press(self, now):
+        def callback():
+            self.parent.next_step(correct=True)
+        self._turn_off_button()
+        print 'Parent:', self.parent
+        self.parent.render = FlashStation(
+            self.parent, self.station_id, RIGHT_COLOR, callback, now)
+
+    def _on_wrong_button_press(self, now, wrong_buttons):
+        def callback():
+            self.parent.next_step(correct=False)
+        self._turn_off_button()
+        self.parent.render = FlashStation(
+            self.parent, self.station_id, WRONG_COLOR, callback, now)
+
+
 SCENES = [
-    af.Scene('basic-simon-says', tags=[], collaboration_manager=BasicSimonSays())
+    af.Scene('basic-simon-says', tags=[], collaboration_manager=BasicSimonSays()),
+    af.Scene('simon-says-tutorial', tags=[], collaboration_manager=SimonSaysTutorial(1))
 ]

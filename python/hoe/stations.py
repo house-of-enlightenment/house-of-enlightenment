@@ -42,6 +42,9 @@ class Stations(object):
         """Easy get access. Note that set is not specified - stations should not be re-set"""
         return self._stations[key]
 
+    def __setitem__(self, key, value):
+        raise Exception('Stations are readonly')
+
     def send_button_updates(self, force=False):
         # TODO: Asych
         for station in self._stations:
