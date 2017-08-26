@@ -154,6 +154,7 @@ class FiniteDifference(Effect):
         if self.master_station is None:
             return
 
+        # pylint: disable=unsubscriptable-object
         fader = STATE.stations[self.master_station].fader_value
         if self.fader_value is not None and fader != self.fader_value:
             self.diffusion_constant = fader_interpolate(fader, 0.00000001, 0.001)

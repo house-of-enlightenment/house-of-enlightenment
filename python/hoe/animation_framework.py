@@ -142,7 +142,7 @@ class AnimationFramework(object):
         last_frame, self.osc_data = self.osc_data, OSCDataAccumulator(last_data=self.osc_data)
         # We polled, now update the fader before the next frame
         for fader, value in last_frame.faders.items():
-            STATE.stations[fader].fader_value = value
+            STATE.stations[fader].fader_value = value # pylint: disable=unsubscriptable-object
         return last_frame
 
     def next_scene(self, increment=1):

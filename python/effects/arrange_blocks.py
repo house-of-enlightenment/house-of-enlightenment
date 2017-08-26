@@ -148,10 +148,11 @@ class ArrangeBlocks(collaboration.CollaborationManager, af.Effect):
         # each station has one, and only one, handler
         # if we get a key press we pass it along to the handler
         # and it will deal with moving blocks
-        for station, buttons in osc.buttons.items():
-            station_handler = self.station_handlers[station]
-            if buttons:  #in case button presses were empty
-                station_handler.handle_button_presses(buttons)
+        for station_id, buttons in osc.buttons.items():
+            if not buttons:
+                continue
+            station_handler = self.station_handlers[station_id]
+            station_handler.handle_button_presses(buttons)
         if self.did_we_win():
             self.on_winning(now)
         self.draw(pixels, now)
