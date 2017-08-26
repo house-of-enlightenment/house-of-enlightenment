@@ -20,7 +20,7 @@ class RisingLine(Effect):
                  color=(255, 255, 0),
                  border_color=None,
                  border_thickness=0,
-                 start_row=2,
+                 start_row=0,
                  start_col=16,
                  height=5,
                  delay=0,
@@ -53,12 +53,11 @@ class RisingLine(Effect):
         top = min(self.cur_top, STATE.layout.rows - 1)
 
         for y in range(bottom, top):
-            pixels[y, self.start_col] = self.color
-
-        if self.border_color:
-            for y in range(0, self.border_thickness):
-                pixels[bottom + y, self.start_col] = self.border_color
-                pixels[top - y, self.start_col] = self.border_color
+            # figure out if this pixel is the border, or in the middle
+            is_border = (y - self.cur_bottom <= self.border_thickness) or (self.cur_top - y <=
+                                                                           self.border_thickness)
+            color = self.border_color if is_border else self.color
+            pixels[y, self.start_col] = color
 
     def is_completed(self, t, osc_data):
         return self.cur_bottom >= self.ceil
@@ -69,7 +68,13 @@ class RomanCandleLauncher(MultiEffect):
     Roman Candle - go from left to right and back
     """
 
-    def __init__(self, start_col=16, end_col=24, color=(255, 0, 0)):
+    def __init__(self,
+                 start_col=16,
+                 end_col=24,
+                 color=(255, 0, 0),
+                 border_color=(0, 255, 0),
+                 border_thickness=4,
+                 height=30):
 
         forward_cols = range(start_col, end_col)
         backward_cols = forward_cols[::-1]  # reverse
@@ -83,7 +88,13 @@ class RomanCandleLauncher(MultiEffect):
         # print "sequence", sequence
 
         def make_line((i, col)):
-            return RisingLine(height=30, start_col=col, delay=i * 100, color=color)
+            return RisingLine(
+                height=height,
+                start_col=col,
+                delay=i * 100,
+                color=color,
+                border_color=border_color,
+                border_thickness=border_thickness)
 
         effects = map(make_line, enumerate(sequence))
 
@@ -103,8 +114,8 @@ class AroundTheWorldLauncher(MultiEffect):
                  start_col=16,
                  color=(0, 255, 0),
                  border_color=(255, 0, 0),
-                 border_thickness=3,
-                 height=9,
+                 border_thickness=6,
+                 height=18,
                  reverse=True):
 
         # [0, ..., 65]
@@ -138,7 +149,12 @@ class FZeroLauncher(MultiEffect):
     F-Zero Launcher - make a f-zero speed boost arrow around the start_col
     """
 
-    def __init__(self, start_col=16, color=(0, 255, 255)):
+    def __init__(self,
+                 start_col=16,
+                 color=(0, 255, 255),
+                 border_color=(255, 0, 0),
+                 border_thickness=10,
+                 height=50):
 
         # get 5 pixels to either side to select the 11 columns in this section
         section = range(start_col - 5, start_col + 5 + 1)
@@ -151,7 +167,6 @@ class FZeroLauncher(MultiEffect):
                   [section[1], section[9]],
                   [section[0], section[10]]]
 
-
         def make_line((i, col)):
 
             # fade the colors on the edges
@@ -160,7 +175,13 @@ class FZeroLauncher(MultiEffect):
                 rgb = colorsys.hsv_to_rgb(hsv[0], hsv[1], hsv[2] - (i * 0.12))
                 return (rgb[0] * 255, rgb[1] * 255, rgb[2] * 255)
 
-            return RisingLine(height=50, start_col=col, delay=i * 80, color=get_color())
+            return RisingLine(
+                height=height,
+                start_col=col,
+                delay=i * 80,
+                color=get_color(),
+                border_color=border_color,
+                border_thickness=border_thickness)
 
         effects = map(make_line, enumerate(levels))
 
