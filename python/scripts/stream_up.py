@@ -76,6 +76,7 @@ def main():
         row = SineRow(hoe_layout)
     elif args.row == 'linear':
         row = LinearBrightness(hoe_layout)
+
     if args.row == 'linear':
         effect = UpAndRotateEffect(
             hoe_layout, row, up_speed, rotate_speed=consistent_speed_to_pixels(0))

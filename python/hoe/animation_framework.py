@@ -17,6 +17,9 @@ from hoe.state import STATE
 from hoe.collaboration import NoOpCollaborationManager, CollaborationManager
 
 
+FAIL_ON_LOAD = True
+
+
 class AnimationFramework(object):
     def __init__(self,
                  osc_server,
@@ -279,6 +282,8 @@ def load_scenes_from_file(pkg_name, scenes, tags):
             return
         save_scenes(effect_dict.SCENES, scenes, tags)
     except (ImportError, SyntaxError) as e:
+        if FAIL_ON_LOAD:
+            raise
         import traceback
         print "WARNING: could not load effect %s" % pkg_name
         traceback.print_exc()
