@@ -368,6 +368,10 @@ class Effect(object):
     def is_completed(self, t, osc_data):
         return False
 
+    @classmethod
+    def factory(cls, *args, **kwargs):
+        return cls(*args, **kwargs)
+
 
 class MultiEffect(Effect):
     def __init__(self, *effects):
@@ -491,3 +495,30 @@ class EffectFactory(object):
         # None -> Effect
         print "\tCreating instance of effect %s" % self
         return self.clazz(**self.kwargs)
+
+
+class LaunchedEffect(object):
+    @classmethod
+    def launch_effect(cls, *args, **kwargs):
+        # TODO: inspect these?
+        return cls(*args, **kwargs)
+
+EffectPoolFactory = namedtuple(typename='EffectPoolFactory', field_names=['name', 'definitions', 'tags'])
+
+class LaunchedEffectPool(MultiEffect):
+    def __init__(self, effect_pool):
+        MultiEffect.__init__(self)
+        for effect in effect_pool:
+            pass
+            # assert isinstance(effect, LaunchedEffect), 'effect {} not instanceof LaunchedEffect'.format(effect)
+        self.effect_pool = effect_pool
+        self.button_mapping = None
+
+    def scene_starting(self, now, osc_data):
+        self.button_mapping = { s_id : [choice(self.effect_pool) for b in range(5)] for s_id in range(6) }
+        MultiEffect.scene_starting(self, now, osc_data)
+
+    def before_rendering(self, pixels, t, collaboration_state, osc_data):
+        for s_id, buttons in osc_data.buttons.items():
+            for b_id in buttons:
+                self.add_effect(self.button_mapping[s_id][b_id].launch_effect(s_id=s_id, b_id=b_id))
