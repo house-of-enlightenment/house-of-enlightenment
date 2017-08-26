@@ -29,10 +29,10 @@ WRONG_COLOR = (176, 28, 46) # stop sign red
 
 class SimonSays(af.Effect, af.CollaborationManager):
     def __init__(self):
-        self.step = MultiLevelTutorial(on_finished=self.start_game)
+        self.step = tutorial.MultiLevelTutorial(on_finished=self.start_game)
 
     def start_game(self):
-        self.step = BasicSimonSays()
+        self.step = game.SimonSaysGame(echo)
 
     def compute_state(self, now, state, osc):
         self.step.compute_state(now, state, osc)
@@ -48,5 +48,5 @@ def echo(*args):
 SCENES = [
 #    af.Scene('basic-simon-says', tags=[], collaboration_manager=BasicSimonSays()),
 #    af.Scene('simon-says-tutorial', tags=[], collaboration_manager=MultiLevelTutorial())
-    af.Scene('simon-says', tags=[], collaboration_manager=game.SimonSaysGame(echo))
+    af.Scene('simon-says', tags=[], collaboration_manager=SimonSays())
 ]
