@@ -3,13 +3,15 @@ from hoe.animation_framework import Effect
 from hoe.animation_framework import MultiEffect
 from generic_effects import NoOpCollaborationManager
 from hoe.state import STATE
+import hoe.stations
+import hoe.fountain_models as fm
 from shared import SolidBackground
 # from ripple import Ripple
 import time
 import numpy as np
 from collections import deque
 import colorsys
-
+from random import choice
 
 class RisingLine(Effect):
     """
@@ -63,45 +65,38 @@ class RisingLine(Effect):
         return self.cur_bottom >= self.ceil
 
 
-class RomanCandleLauncher(MultiEffect):
-    """
-    Roman Candle - go from left to right and back
-    """
+def roman_candle_fountain(start_col=16, width=8, color=(255, 0, 0),border_color=(0,255,0), border_thickness=4, height=30):
+    forward_cols = map(lambda col: col % STATE.layout.columns, range(start_col, start_col+width))
+    backward_cols = forward_cols[::-1]  # reverse
 
-    def __init__(self,
-                 start_col=16,
-                 end_col=24,
-                 color=(255, 0, 0),
-                 border_color=(0, 255, 0),
-                 border_thickness=4,
-                 height=30):
+    sequence = forward_cols + backward_cols
 
-        forward_cols = range(start_col, end_col)
-        backward_cols = forward_cols[::-1]  # reverse
+    #+ forward_cols + backward_cols
 
-        sequence = forward_cols + backward_cols
+    # print "forward_cols", forward_cols
+    # print "backward_cols", backward_cols
+    # print "sequence", sequence
 
-        #+ forward_cols + backward_cols
+    def make_line((i, col)):
+        return RisingLine(
+            height=height,
+            start_col=col,
+            delay=i * 100,
+            color=color,
+            border_color=border_color,
+            border_thickness=border_thickness)
 
-        # print "forward_cols", forward_cols
-        # print "backward_cols", backward_cols
-        # print "sequence", sequence
+    effects = map(make_line, enumerate(sequence))
 
-        def make_line((i, col)):
-            return RisingLine(
-                height=height,
-                start_col=col,
-                delay=i * 100,
-                color=color,
-                border_color=border_color,
-                border_thickness=border_thickness)
-
-        effects = map(make_line, enumerate(sequence))
-
-        MultiEffect.__init__(self, *effects)
+    return MultiEffect(*effects)
 
 
-class AroundTheWorldLauncher(MultiEffect):
+def around_the_world_fountain(start_col=16,
+                 color=(0, 255, 0),
+                 border_color=(255, 0, 0),
+                 border_thickness=6,
+                 height=18,
+                 reverse=True):
     """
     Arround the world launcher - shoot small lines all the way around the gazebo
 
@@ -110,101 +105,79 @@ class AroundTheWorldLauncher(MultiEffect):
     2*border_thickness < height
     """
 
-    def __init__(self,
-                 start_col=16,
-                 color=(0, 255, 0),
-                 border_color=(255, 0, 0),
-                 border_thickness=6,
-                 height=18,
-                 reverse=True):
+    # [0, ..., 65]
+    all_cols = range(0, STATE.layout.columns)
+    # [start_col, ..., 65, 0, ..., start_col - 1]
+    shifted = np.roll(all_cols, -start_col)
 
-        # [0, ..., 65]
-        all_cols = range(0, STATE.layout.columns)
-        # [start_col, ..., 65, 0, ..., start_col - 1]
-        shifted = np.roll(all_cols, -start_col)
+    if reverse:
+        shifted = shifted[::-1]  # reverse
 
-        if reverse:
-            shifted = shifted[::-1]  # reverse
+    # print "start_col", start_col
+    # print "shifted", shifted
 
-        # print "start_col", start_col
-        # print "shifted", shifted
+    def make_line((i, col)):
+        return RisingLine(
+            height=height,
+            start_col=col,
+            delay=i * 30,
+            color=color,
+            border_color=border_color,
+            border_thickness=border_thickness,
+            ceil=50)
 
-        def make_line((i, col)):
-            return RisingLine(
-                height=height,
-                start_col=col,
-                delay=i * 30,
-                color=color,
-                border_color=border_color,
-                border_thickness=border_thickness,
-                ceil=50)
+    effects = map(make_line, enumerate(shifted))
 
-        effects = map(make_line, enumerate(shifted))
-
-        MultiEffect.__init__(self, *effects)
+    return MultiEffect(*effects)
 
 
-class FZeroLauncher(MultiEffect):
-    """
-    F-Zero Launcher - make a f-zero speed boost arrow around the start_col
-    """
-
-    def __init__(self,
-                 start_col=16,
+def fzero_fountain(start_col=16,
                  color=(0, 255, 255),
                  border_color=(255, 0, 0),
                  border_thickness=10,
                  height=50):
+    """
+        F-Zero Launcher - make a f-zero speed boost arrow around the start_col
+        """
+    # get 5 pixels to either side to select the 11 columns in this section
+    cols = map(lambda c: c % STATE.layout.columns, range(start_col - 5, start_col + 5 + 1))
 
-        # get 5 pixels to either side to select the 11 columns in this section
-        section = range(start_col - 5, start_col + 5 + 1)
+    # group them by levels to make an f-zero speed boost arrow
+    levels = [[cols[5]],
+              [cols[4], cols[6]],
+              [cols[3], cols[7]],
+              [cols[2], cols[8]],
+              [cols[1], cols[9]],
+              [cols[0], cols[10]]]
 
-        # group them by levels to make an f-zero speed boost arrow
-        levels = [[section[5]],
-                  [section[4], section[6]],
-                  [section[3], section[7]],
-                  [section[2], section[8]],
-                  [section[1], section[9]],
-                  [section[0], section[10]]]
+    def make_line((i, col)):
+        # fade the colors on the edges
+        def get_color():
+            hsv = colorsys.rgb_to_hsv(color[0] // 255, color[1] // 255, color[2] // 255)
+            rgb = colorsys.hsv_to_rgb(hsv[0], hsv[1], hsv[2] - (i * 0.12))
+            return (rgb[0] * 255, rgb[1] * 255, rgb[2] * 255)
 
-        def make_line((i, col)):
+        return RisingLine(
+            height=height,
+            start_col=col,
+            delay=i * 80,
+            color=get_color(),
+            border_color=border_color,
+            border_thickness=border_thickness)
 
-            # fade the colors on the edges
-            def get_color():
-                hsv = colorsys.rgb_to_hsv(color[0] // 255, color[1] // 255, color[2] // 255)
-                rgb = colorsys.hsv_to_rgb(hsv[0], hsv[1], hsv[2] - (i * 0.12))
-                return (rgb[0] * 255, rgb[1] * 255, rgb[2] * 255)
+    effects = map(make_line, enumerate(levels))
 
-            return RisingLine(
-                height=height,
-                start_col=col,
-                delay=i * 80,
-                color=get_color(),
-                border_color=border_color,
-                border_thickness=border_thickness)
+    return MultiEffect(*effects)
 
-        effects = map(make_line, enumerate(levels))
+def pick_different_border_color(section, button):
+    return hoe.stations.BUTTON_COLORS[choice([i for i in range(5) if i!=button])]
 
-        MultiEffect.__init__(self, *effects)
-
+FOUNTAINS = [
+    fm.FountainDefinition("roman", roman_candle_fountain, tags=['fireworks'], arg_generators=fm.get_default_arg_generators(border_color=pick_different_border_color)),
+    fm.FountainDefinition("aroundtheworld", around_the_world_fountain, tags=['fireworks'], arg_generators=fm.get_default_arg_generators(border_color=pick_different_border_color)),
+    fm.FountainDefinition("fzero", fzero_fountain, tags=['fireworks'], arg_generators=fm.get_default_arg_generators(border_color=pick_different_border_color)),
+]
 
 SCENES = [
-    Scene(
-        "roman-candle",
-        tags=[Scene.TAG_EXAMPLE],
-        collaboration_manager=NoOpCollaborationManager(),
-        effects=[SolidBackground(color=(30, 30, 30)),
-                 RomanCandleLauncher(start_col=16)]),
-    Scene(
-        "around-the-world",
-        tags=[Scene.TAG_EXAMPLE],
-        collaboration_manager=NoOpCollaborationManager(),
-        effects=[SolidBackground(color=(30, 30, 30)),
-                 AroundTheWorldLauncher(start_col=16)]),
-    Scene(
-        "f-zero",
-        tags=[Scene.TAG_EXAMPLE],
-        collaboration_manager=NoOpCollaborationManager(),
-        effects=[SolidBackground(color=(30, 30, 30)),
-                 FZeroLauncher(start_col=16)]),
+    fm.FountainScene("fireworks", background_effects=[], tags=[Scene.TAG_EXAMPLE], foreground_tags=['fireworks'])
 ]

@@ -270,9 +270,9 @@ class Sprite(object):
 
 
 SCENES = [
-    af.Scene(
+    af.Game(
         'stop-the-light',
-        tags=[af.Scene.TAG_GAME],
+        tags=[],
         collaboration_manager=StopTheLight(STATE.layout),
         effects=[shared.BarelyGray()]
     )

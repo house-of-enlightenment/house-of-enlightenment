@@ -4,7 +4,8 @@ from random import randint
 from hoe.animation_framework import Scene
 from hoe.animation_framework import Effect
 from hoe.animation_framework import MultiEffect
-from generic_effects import NoOpCollaborationManager
+from hoe.collaboration import NoOpCollaborationManager
+import hoe.fountain_models as fm
 from hoe.state import STATE
 
 from shared import SolidBackground
@@ -15,11 +16,14 @@ class SolidRow(Effect):
         self.color = color
         self.start_row = start_row
         self.curr_row = start_row
+
         # TODO wraparound
-        end_col = end_col if end_col else STATE.layout.columns
+        end_col = end_col or STATE.layout.columns
+        if end_col<start_col:
+            end_col,start_col = start_col,end_col
         self.col_slice = slice(start_col, end_col)
 
-    def scene_starting(self, osc_data):
+    def scene_starting(self, now, osc_data):
         self.curr_row = self.start_row
 
     def next_frame(self, pixels, now, collaboration_state, osc_data):
@@ -42,11 +46,15 @@ class LaunchRows(MultiEffect):
                         end_col=11 * (sid + 1) + randint(0, 11)))
 
 
+FOUNTAINS = [
+    fm.FountainDefinition("simple_rising_row", SolidRow, arg_generators=fm.get_default_arg_generators(end_col=fm.pick_random_start_column))
+]
+
 SCENES = [
-    Scene(
+    fm.FountainScene(
         "groupdemo",
         tags=[Scene.TAG_EXAMPLE],
-        collaboration_manager=NoOpCollaborationManager(),
-        effects=[SolidBackground(color=(30, 30, 30)),
-                 LaunchRows()])
+        background_effects=[SolidBackground(color=(30, 30, 30))],
+        foreground_names=["simple_rising_row"]
+    )
 ]

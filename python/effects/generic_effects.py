@@ -2,11 +2,10 @@ import numpy as np
 
 from hoe.animation_framework import Scene
 from hoe.animation_framework import Effect
-from hoe.animation_framework import CollaborationManager
 from hoe.animation_framework import MultiEffect
 from hoe.animation_framework import OSCDataAccumulator
-from hoe.animation_framework import ButtonFeedbackDisplay
-from hoe.collaboration import ButtonToggleResponderManager, NoOpCollaborationManager
+from hoe.fountain_models import ButtonFeedbackDisplay, FountainScene
+from hoe.collaboration import CollaborationManager, ButtonToggleResponderManager, NoOpCollaborationManager
 import hoe.color_utils
 from hoe.osc_utils import update_buttons
 from hoe.state import STATE
@@ -132,17 +131,13 @@ SCENES = [
         collaboration_manager=ButtonToggleResponderManager(),
         effects=[ButtonFeedbackDisplay(), debugging_effects.PrintOSC()]),
     # A simple rainbow that rotates due to the FrameRotator
-    Scene(
+    FountainScene(
         "rotatingrainbow",
-        tags=[Scene.TAG_BACKGROUND],
-        collaboration_manager=NoOpCollaborationManager(),
-        effects=[rainbow, FrameRotator(rate=.75)]),
+        background_effects=[rainbow, FrameRotator(rate=.75)]),
     # A rainbow that has been distorted into spirals by using a RANGE as the offset
-    Scene(
+    FountainScene(
         "funkrainbow",
-        tags=[Scene.TAG_BACKGROUND],
-        collaboration_manager=ButtonToggleResponderManager(),
-        effects=[
+        background_effects=[
             rainbow,
             FunctionFrameRotator(
                 func=FunctionFrameRotator.sample_rotating_offset,
@@ -150,11 +145,9 @@ SCENES = [
         ]),
     # A rainbow that follows a sine wave up (due to the offsets) and
     # moves upwards due to a rolling offset function
-    Scene(
+    FountainScene(
         "sinerainbow",
-        tags=[Scene.TAG_BACKGROUND],
-        collaboration_manager=NoOpCollaborationManager(),
-        effects=[
+        background_effects=[
             rainbow,
             FunctionFrameRotator(
                 func=FunctionFrameRotator.sample_roll_offset,

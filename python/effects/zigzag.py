@@ -1,9 +1,11 @@
 from hoe.animation_framework import Scene
 from hoe.animation_framework import Effect
+import hoe.fountain_models as fm
 from generic_effects import NoOpCollaborationManager
 from hoe.state import STATE
+import hoe.stations
 from shared import SolidBackground
-
+from random import choice
 # from ripple import Ripple
 
 
@@ -66,17 +68,15 @@ class ZigZag(Effect):
     def is_completed(self, t, osc_data):
         return self.cur_bottom >= STATE.layout.rows - 1
 
+def pick_different_border_color(section, button):
+    return hoe.stations.BUTTON_COLORS[choice([i for i in range(5) if i!=button])]
+
+FOUNTAINS = [
+    fm.FountainDefinition("zigzag", ZigZag, arg_generators=fm.get_default_arg_generators(border_color=pick_different_border_color))
+]
 
 SCENES = [
-    Scene(
-        "zigzag",
-        tags=[Scene.TAG_EXAMPLE],
-        collaboration_manager=NoOpCollaborationManager(),
-        effects=[
-            SolidBackground(color=(30, 30, 30)),
-            #  Ripple(),
-            ZigZag()
-        ])
+
 ]
 """
 5 |             x

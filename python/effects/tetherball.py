@@ -7,8 +7,9 @@ from __future__ import division
 
 from hoe.animation_framework import Scene
 from hoe.animation_framework import Effect
-from hoe.animation_framework import CollaborationManager
+from hoe.animation_framework import Game
 from hoe.state import STATE
+from hoe.collaboration import CollaborationManager
 
 from shared import SolidBackground
 
@@ -340,10 +341,11 @@ class TetherBall(CollaborationManager, Effect):
 #             pixels[ii] = self.color
 
 SCENES = [
-    Scene(
+    Game(
         "tetherball",
-        tags=[Scene.TAG_GAME, Scene.TAG_WIP],
+        tags=[Scene.TAG_WIP],
         collaboration_manager=TetherBall(),
+        effects=[]
         # effects=[CollaborationCountBasedBackground()]
     )
 ]

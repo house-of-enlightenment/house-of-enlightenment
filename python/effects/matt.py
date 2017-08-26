@@ -1,10 +1,10 @@
 from hoe import color_utils
 from hoe.animation_framework import Scene
 from hoe.animation_framework import Effect
-from hoe.animation_framework import CollaborationManager
-from hoe.animation_framework import EffectFactory
+from hoe.collaboration import CollaborationManager
 from hoe.animation_framework import MultiEffect
 from hoe.state import STATE
+from hoe.fountain_models import FountainScene
 from random import choice
 from random import randint
 from random import getrandbits
@@ -303,5 +303,5 @@ class Noise(Effect):
 
 
 SCENES = [
-    Scene("smash", tags=[], collaboration_manager=NoOpCollaborationManager(), effects=[Noise()]),
+    FountainScene("smash", tags=[Scene.TAG_WIP], background_effects=[Noise()]),
 ]

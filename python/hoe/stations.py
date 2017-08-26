@@ -87,7 +87,6 @@ class Station(object):
         for i, v in enumerate(values):
             self.buttons[i] = v
 
-
 class StationButtons(object):
     BUTTON_OFF = 0
     BUTTON_ON = 1

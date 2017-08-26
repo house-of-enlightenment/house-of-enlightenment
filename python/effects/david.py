@@ -1,12 +1,13 @@
 from hoe import color_utils
-from hoe.animation_framework import Scene, Effect, MultiEffect
-from hoe.animation_framework import CollaborationManager
+from hoe.animation_framework import Scene, Game, Effect, MultiEffect
+from hoe.collaboration import CollaborationManager
 from hoe.animation_framework import OSCDataAccumulator
-from hoe.stations import StationButtons
+import hoe.fountain_models as fm
+from hoe.stations import StationButtons, BUTTON_COLORS
 from hoe.state import STATE
-from random import choice
-from random import randint
-from random import getrandbits
+
+from functools import partial
+from random import choice, randint, getrandbits
 from itertools import product
 from math import ceil
 from shared import SolidBackground
@@ -14,7 +15,7 @@ from generic_effects import Rainbow
 from generic_effects import NoOpCollaborationManager
 from generic_effects import FrameRotator
 from generic_effects import FunctionFrameRotator
-from functools import partial
+
 import examples
 import numpy as np
 import debugging_effects
@@ -28,7 +29,6 @@ class ButtonChaseController(Effect, CollaborationManager):
             num_stations=6,  # Deprecated
             draw_bottom_layer=True,  # Turn the bottom layer on or off
             flash_rate=10,  # Flash on (or off) every X frames
-            backwards_progress=False,  # If true, missing a button actually removes a target
             # Time to hit before picking a new one (if backwards_progress, also lose progress)
             selection_time=5):
 
@@ -49,7 +49,7 @@ class ButtonChaseController(Effect, CollaborationManager):
         self.button_colors = buttons_colors
         self.draw_bottom_layer = draw_bottom_layer
         self.flash_rate = flash_rate
-        self.backwards_progress = backwards_progress
+        self.backwards_progress = None
         self.selection_time = selection_time
 
         # TODO Get from STATE
@@ -64,7 +64,6 @@ class ButtonChaseController(Effect, CollaborationManager):
         self.flash_timer = 0
 
     def reset_state(self):
-        # type: (OSCDataAccumulator) -> None
         """Resets the state for on, off, buttons, and timer"""
         self.on = []
         self.off = [c for c in self.all_combos]
@@ -72,6 +71,9 @@ class ButtonChaseController(Effect, CollaborationManager):
         self.flash_timer = 0
         for station in STATE.stations:
             station.buttons.set_all(on=False)
+
+        sum_faders = sum(map(lambda station: station.fader_value, STATE.stations))
+        self.backwards_progress = sum_faders > 51*6  # Faders cranked up - make it harder!
         self.pick_next()
 
     def compute_state(self, t, collaboration_state, osc_data):
@@ -127,7 +129,7 @@ class ButtonChaseController(Effect, CollaborationManager):
         self.reset_state()
 
     def pick_next(self, missed=False):
-        # type: (OSCDataAccumulator, bool) -> bool
+        # type: (bool) -> bool
         self.flash_timer = 0
 
         if not missed and not self.off:
@@ -253,10 +255,11 @@ class DiskPulsers(Effect):
 class RotatingWedge(Effect):
     def __init__(self,
                  color=(255, 255, 0),
+                 start_col=0,
                  width=5,
                  direction=1,
                  angle=1,
-                 start_col=0,
+                 max_rotations=1,
                  additive=False,
                  scale_ratio=True):
         self.color = np.asarray(color, np.uint8)
@@ -264,9 +267,11 @@ class RotatingWedge(Effect):
         self.direction = direction
         self.angle = (angle * 1.0 * STATE.layout.columns / STATE.layout.rows
                       if scale_ratio else angle)
-        self.start_col = 0
+        self.start_col = start_col
         self.end_col = start_col + width
         self.additive = additive
+        self.max_frames = abs(1.0*max_rotations*STATE.layout.columns / direction)
+        self.frame_count=0
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
         if self.angle == 0:
@@ -290,47 +295,12 @@ class RotatingWedge(Effect):
                           np.arange(self.start_col, self.start_col + self.angle * STATE.layout.rows,
                                     self.angle))]
             pixels.update_slices(additive=self.additive, color=self.color, slices=slices)
+        self.frame_count += 1
         self.start_col = (self.start_col + self.direction) % STATE.layout.columns
         self.end_col = (self.end_col + self.direction) % STATE.layout.columns
 
-
-def button_launch_checker(t, collaboration_state, osc_data):
-    for s, buttons in osc_data.buttons.items():
-        if buttons:
-            return True
-    return False
-
-
-class GenericStatelessLauncher(MultiEffect):
-    def __init__(self, factory_method, launch_checker=button_launch_checker, **kwargs):
-        MultiEffect.__init__(self)
-        self.launch_checker = launch_checker
-        self.factory_method = factory_method
-        self.factory_args = kwargs
-
-    def before_rendering(self, pixels, t, collaboration_state, osc_data):
-        # TODO : Performance
-        if self.launch_checker(t=t, collaboration_state=collaboration_state, osc_data=osc_data):
-            self.add_effect(
-                self.factory_method(
-                    pixels=pixels,
-                    t=t,
-                    collaboration_state=collaboration_state,
-                    osc_data=osc_data,
-                    **self.factory_args))
-            print "Effect count", len(self.effects)
-
-
-def wedge_factory(**kwargs):
-    varnames = RotatingWedge.__init__.__func__.__code__.co_varnames
-    args = {n: kwargs[n] for n in varnames if n in kwargs}
-    if "color" not in args:
-        args["color"] = (randint(0, 255), randint(0, 255), randint(0, 255))
-    if "direction" not in args:
-        args["direction"] = randint(0, 1) * 2 - 1  # Cheap way to get -1 or 1
-    if "angle" not in args:
-        args["angle"] = randint(-1, 1)
-    return RotatingWedge(**args)
+    def is_completed(self, t, osc_data):
+        return self.frame_count > self.max_frames
 
 
 def distortion_rotation(offsets, t, start_t, frame):
@@ -419,23 +389,22 @@ class RisingTide(Effect):
     def __init__(self,
                  target_color=(255, 255, 255),
                  start_color=(10, 10, 10),
-                 start_column=0,
-                 end_column=None,
+                 section=None,
                  bottom_row=2,
                  top_row=None):
         self.target_color = target_color
         self.start_color = start_color
-        self.start_column = start_column
-        self.end_column = end_column
+        self.start_column = section*11
+        self.end_column = (section+1)*11
         self.bottom_row = bottom_row
-        self.top_row = top_row
+        self.top_row = top_row or STATE.layout.rows
         self.curr_top = self.bottom_row
         self.curr_bottom = self.bottom_row
         self.completed = False
 
         self.colors = [start_color]
         self.color_inc = tuple(
-            map(lambda t, s: (0.0 + t - s) / (self.top_row - self.bottom_row) + 30, target_color,
+            map(lambda t, s: (0.0 + t - s) / (self.top_row - self.bottom_row), target_color,
                 start_color))
         print self.start_color, self.target_color, self.color_inc
 
@@ -459,32 +428,6 @@ class RisingTide(Effect):
         return self.completed
 
 
-class TideLauncher(MultiEffect):
-    def before_rendering(self, pixels, t, collaboration_state, osc_data):
-        MultiEffect.before_rendering(self, pixels, t, collaboration_state, osc_data)
-        for s, buttons in osc_data.buttons.items():
-            if buttons:
-                self.launch_effect(t, s)
-
-    def launch_effect(self, t, s):
-        per_section = int(STATE.layout.columns / STATE.layout.sections)
-        c = (bool(getrandbits(1)), bool(getrandbits(1)), bool(getrandbits(1)))
-        print c
-        if not any(c):  #  Deal with all 0's case
-            c = (True, True, True)
-        print c
-        start_color = (c[0] * 10, c[1] * 10, c[2] * 10)
-        target_color = (c[0] * 255, c[1] * 255, c[2] * 255)
-        e = RisingTide(
-            start_column=s * per_section,
-            end_column=(s + 1) * per_section,
-            bottom_row=0,
-            top_row=216,
-            target_color=target_color,
-            start_color=start_color)
-        self.effects.append(e)
-
-
 def pick_mod_n(columns, mod=2, value=0, **kwargs):
     return filter(lambda x: x % mod == value, columns)
 
@@ -504,24 +447,40 @@ class Columns(Effect):
         else:
             pixels[:, columns] = self.color
 
+FOUNTAINS = [
+    fm.FountainDefinition('wedge',
+                          RotatingWedge,
+                          arg_generators = { 'start_col' : fm.pick_random_start_column,
+                                             'direction' : lambda section, button: choice([-1,1]),
+                                             'angle' : lambda section, button: choice([-1,0,1]),
+                                             'color' : fm.pick_button_color
+                                            }
+                         ),
+    # fm.FountainDefinition('tide', RisingTide.factory,
+    #                       arg_generators= {
+    #                           'target_color' : lambda section, button: BUTTON_COLORS[button],
+    #                           'start_color' : lambda section, button: map(lambda c: c*0.1, BUTTON_COLORS[button]),
+    #                           'section' : fm.pass_section
+    #                       }
+    #                       )
+]
 
 SCENES = [
-    Scene(
+    Game(
         "buttonchaser",
-        tags=[Scene.TAG_EXAMPLE, Scene.TAG_GAME],
+        tags=[],
         collaboration_manager=ButtonChaseController(draw_bottom_layer=True),
         effects=[ButtonRainbow(max_value=255 - 30), Pulser()]),
-    Scene(
-        "buttonloser",
-        tags=[Scene.TAG_GAME],
-        collaboration_manager=ButtonChaseController(
-            draw_bottom_layer=True, backwards_progress=True, selection_time=1),
-        effects=[ButtonRainbow(), Pulser()]),
-    Scene(
-        "wedges",
+    fm.FountainScene(
+        name="wedges",
         tags=[Scene.TAG_EXAMPLE],
-        collaboration_manager=NoOpCollaborationManager(),
-        effects=[GenericStatelessLauncher(wedge_factory, width=3, additive=False)]),
+        background_effects=[],
+        foreground_names=['wedge']
+    ),
+    fm.FountainScene(
+        name="plainfountain",
+        background_effects=[SolidBackground(color=(30,30,30))]
+    ),
     Scene(
         "sinedots",
         tags=[Scene.TAG_EXAMPLE],
@@ -545,12 +504,6 @@ SCENES = [
         collaboration_manager=NoOpCollaborationManager(),
         effects=[Rainbow(hue_start=0, hue_end=255),
                  SwappingLidar()]),
-    Scene(
-        "risingtide",
-        tags=[Scene.TAG_WIP],
-        collaboration_manager=NoOpCollaborationManager(),
-        effects=[SolidBackground(), TideLauncher(),
-                 FrameRotator()]),
     Scene(
         "rainbowblackoutcolumns",
         tags=[Scene.TAG_EXAMPLE],

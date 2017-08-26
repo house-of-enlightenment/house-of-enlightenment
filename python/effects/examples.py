@@ -1,10 +1,7 @@
 from hoe import color_utils
-from hoe.animation_framework import Scene
-from hoe.animation_framework import Effect
-from hoe.animation_framework import CollaborationManager
-from hoe.animation_framework import EffectFactory
-from hoe.animation_framework import MultiEffect
+from hoe.animation_framework import Scene, Effect, MultiEffect
 from hoe.state import STATE
+import hoe.fountain_models as fm
 from generic_effects import NoOpCollaborationManager
 from shared import SolidBackground
 from random import randrange
@@ -38,8 +35,8 @@ class SpatialStripesBackground(Effect):
 
 
 class ColumnStreak(Effect):
-    def __init__(self, column, color=(255, 255, 255), streak_length=5, row_start=2):
-        self.column = column
+    def __init__(self, start_col, color=(255, 255, 255), streak_length=5, row_start=2):
+        self.column = start_col
         self.streak_length = streak_length
         self.bottom_row = row_start
         self.row = row_start
@@ -55,7 +52,6 @@ class ColumnStreak(Effect):
     def is_completed(self, t, osc_data):
         # TODO run off the top
         return self.row >= STATE.layout.rows
-
 
 class AdjustableFillFromBottom(Effect):
     def __init__(self, max_in=100):
@@ -84,9 +80,12 @@ class SampleEffectLauncher(MultiEffect):
     def launch_effect(self, t, s):
         per_section = int(STATE.layout.columns / STATE.layout.sections)
         e = ColumnStreak(
-            column=randrange(0 + s * per_section, (s + 1) * per_section), color=(255, 0, 0))
+            start_col=randrange(0 + s * per_section, (s + 1) * per_section), color=(255, 0, 0))
         self.effects.append(e)
 
+FOUNTAINS = [
+    fm.FountainDefinition('streak', ColumnStreak)
+]
 
 SCENES = [
     # These scenes are too slow
@@ -100,10 +99,18 @@ SCENES = [
     #     tags=[Scene.TAG_EXAMPLE],
     #     collaboration_manager=NoOpCollaborationManager(),
     #     effects=[SolidBackground(), AdjustableFillFromBottom()]),
+    # Removed in favor of fountaindots example
+    # Scene(
+    #     "launchdots",
+    #     tags=[Scene.TAG_EXAMPLE],
+    #     collaboration_manager=NoOpCollaborationManager(),
+    #     effects=[SolidBackground(color=(30, 30, 30)),
+    #              SampleEffectLauncher()]),
     Scene(
-        "launchdots",
+        "fountaindots",
         tags=[Scene.TAG_EXAMPLE],
         collaboration_manager=NoOpCollaborationManager(),
         effects=[SolidBackground(color=(30, 30, 30)),
-                 SampleEffectLauncher()]),
+                 fm.FountainLaunchingController(fountain_pool=FOUNTAINS)]
+    )
 ]
