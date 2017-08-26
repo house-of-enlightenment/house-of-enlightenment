@@ -50,6 +50,17 @@ class AnimationFramework(object):
         self.osc_data = OSCDataAccumulator(last_data=None)
         self.setup_osc_input_handlers({0: 50})
 
+    def _get_queued_scene(self):
+        return self._queued_scene
+
+    def _set_queued_scene(self, value):
+        if value:
+            self._queued_scene = value()
+        else:
+            self._queued_scene = value
+
+    queued_scene = property(_get_queued_scene, _set_queued_scene)
+
     def next_scene_handler(self, path, tags, args, source):
         if not args or args[0] == "":
             self.next_scene()
@@ -282,18 +293,29 @@ def load_scenes_from_file(pkg_name, scenes, tags):
 
 
 def save_scenes(input_scenes, output_scenes, tags):
+    # this supports to ways of specifying SCENES in a module:
+    # as a dictionary of names -> factories
+    # SCENES = {name1: callable1, name2: callable2}
+    # or as a list: SCENES = [Scene(), Scene()]
     for scene in input_scenes:
-        if not isinstance(scene, Scene):
-            print "Got scene %s not of type Scene" % scene
-            continue
-        if scene.name in output_scenes:
-            print "Cannot register scene %s. Scene with name already exists" % scene.name
-            continue
-        if not tags or any(tag in tags for tag in scene.tags):
-            print "Registering %s" % scene
-            output_scenes[scene.name] = scene
+        if isinstance(scene, basestring):
+            value = input_scenes[scene]
+            if callable(value):
+                output_scenes[scene] = value
+            else:
+                raise Exception('The value for scene {} is not callable'.format(scene))
         else:
-            print "Skipped %s. Tags %s not in %s" % (scene, scene.tags, tags)
+            if not isinstance(scene, Scene):
+                print "Got scene %s not of type Scene" % scene
+                continue
+            if scene.name in output_scenes:
+                print "Cannot register scene %s. Scene with name already exists" % scene.name
+                continue
+            if not tags or any(tag in tags for tag in scene.tags):
+                print "Registering %s" % scene
+                output_scenes[scene.name] = lambda: scene
+            else:
+                print "Skipped %s. Tags %s not in %s" % (scene, scene.tags, tags)
 
 
 def get_first_non_empty(pixels):

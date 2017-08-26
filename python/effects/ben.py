@@ -280,18 +280,22 @@ class RedGreenSquares(DavesAbstractLidarClass):
 
 #========================================================================
 
-SCENES = [
-    Scene(
+def make_full_seizure_scene():
+    return Scene(
         "full_seizure",
         tags=[Scene.TAG_BACKGROUND],
         collaboration_manager=NoOpCollaborationManager(),
-        effects=[SolidBackground(), SeizureMode()]),
+        effects=[SolidBackground(), SeizureMode()])
+
+def make_seizure_mode():
     Scene(
         "seizure_mode",
         tags=[Scene.TAG_BACKGROUND],
         collaboration_manager=NoOpCollaborationManager(),
-        effects=[LaunchSeizure()]),
-    Scene(
+        effects=[LaunchSeizure()])
+
+def make_waves():
+    return Scene(
         "waves_of_diffusion",
         tags=[Scene.TAG_BACKGROUND],
         collaboration_manager=NoOpCollaborationManager(),
@@ -300,8 +304,10 @@ SCENES = [
             #SolidBackground(color=(0,0xFF,0), start_col=0, end_col=2, start_row=120, end_row=124),
             FrameRotator(rate=0.5),
             FiniteDifference(master_station=0, boundary=FiniteDifference.NEUMANN, base_hue=0)
-        ]),
-    Scene(
+        ])
+
+def make_wedding():
+    return Scene(
         "wedding0",
         tags=[Scene.TAG_BACKGROUND],
         collaboration_manager=NoOpCollaborationManager(),
@@ -319,24 +325,33 @@ SCENES = [
                 auto_damp=False,
                 base_hue=0,
                 wave_type=FiniteDifference.VALUE)
-        ]),
-    Scene(
+        ])
+
+
+def make_up_bloc():
+    return Scene(
         "up_bloc",
         tags=[Scene.TAG_BACKGROUND],
         collaboration_manager=NoOpCollaborationManager(),
         effects=[
             LaunchUpBlock(except_station=0),
             FiniteDifference(master_station=0, boundary=FiniteDifference.NEUMANN)
-        ]),
-    Scene(
+        ])
+
+
+def make_zig_wave():
+    return Scene(
         "zig_wave",
         tags=[Scene.TAG_BACKGROUND],
         collaboration_manager=NoOpCollaborationManager(),
         effects=[
             LaunchZigZag(except_station=0),
             FiniteDifference(master_station=0, boundary=FiniteDifference.NEUMANN)
-        ]),
-    Scene(
+        ])
+
+
+def make_zig_fusion():
+    return Scene(
         "zig_fusion",
         tags=[Scene.TAG_BACKGROUND],
         collaboration_manager=NoOpCollaborationManager(),
@@ -345,8 +360,11 @@ SCENES = [
             FiniteDifference(
                 master_station=0, boundary=FiniteDifference.NEUMANN, pde=FiniteDifference.DIFFUSION)
             #darken_mids=bool(rand.getrandbits(1)))
-        ]),
-    Scene(
+        ])
+
+
+def make_lidar_fusion():
+    return Scene(
         "lidar_fusion",
         tags=[Scene.TAG_BACKGROUND],
         collaboration_manager=NoOpCollaborationManager(),
@@ -357,8 +375,11 @@ SCENES = [
                 boundary=FiniteDifference.CONTINUOUS,
                 pde=FiniteDifference.DIFFUSION,
                 darken_mids=True)
-        ]),
-    Scene(
+        ])
+
+
+def make_lidar_wave():
+    return Scene(
         "lidar_wave",
         tags=[Scene.TAG_BACKGROUND],
         collaboration_manager=NoOpCollaborationManager(),
@@ -367,4 +388,17 @@ SCENES = [
             FiniteDifference(
                 master_station=0, boundary=FiniteDifference.CONTINUOUS, pde=FiniteDifference.WAVE)
         ])
-]
+
+
+
+SCENES = {
+    'full_seizure': make_full_seizure_scene,
+    'seizure_mode': make_seizure_mode,
+    'waves_of_diffusion': make_waves,
+    'wedding0': make_wedding,
+    "up_bloc": make_up_bloc,
+    "zig_wave": make_zig_wave,
+    "zig_fusion": make_zig_fusion,
+    "lidar_fusion": make_lidar_fusion,
+    "lidar_wave": make_lidar_wave
+}
