@@ -80,3 +80,11 @@ class SwappingLidar(DavesAbstractLidarClass):
             pixels[row_bottom:row_top, col_indices] = pixels[row_top:row_bottom:-1,
                                                              reversed_indices]
 
+class NoiseyLidar(DavesAbstractLidarClass):
+    def __init__(self):
+        pass
+
+    def render_lidar_input(self, pixels, obj_id, row_bottom, row_top, col_left, col_right):
+        slices = self.get_default_slices(row_bottom, row_top, col_left, col_right)
+        for rs,cs in slices:
+            pixels[rs,cs] = np.random.random_integers(low=30, high=220, size=(len(pixels[rs,0]),len(pixels[0,cs]),3))

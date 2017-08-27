@@ -127,7 +127,7 @@ class FountainScene(Scene):
     def __init__(self, name, background_effects, tags=[], foreground_names=None, foreground_tags=[], feedback=None, lidar=None):
         effects = background_effects
         if lidar is None:
-            effects.append(hoe.lidar.OpaqueLidar())
+            effects.append(hoe.lidar.NoiseyLidar())
         elif isinstance(lidar, Effect):
             effects.append(lidar)
 
