@@ -4,7 +4,7 @@ from hoe.animation_framework import Scene
 from hoe.animation_framework import Effect
 from hoe.animation_framework import MultiEffect
 from hoe.animation_framework import OSCDataAccumulator
-from hoe.fountain_models import ButtonFeedbackDisplay, FountainScene
+from hoe.fountain_models import FountainScene
 from hoe.collaboration import CollaborationManager, ButtonToggleResponderManager, NoOpCollaborationManager
 import hoe.color_utils
 from hoe.osc_utils import update_buttons
@@ -125,11 +125,12 @@ class FunctionFrameRotator(Effect):
 
 rainbow = Rainbow(hue_start=0, hue_end=255)
 SCENES = [
-    Scene(
-        "buttontoggler",
-        tags=[Scene.TAG_TEST],
-        collaboration_manager=ButtonToggleResponderManager(),
-        effects=[ButtonFeedbackDisplay(), debugging_effects.PrintOSC()]),
+    # This broke and it's just for debugging so no worries
+    # Scene(
+    #     "buttontoggler",
+    #     tags=[Scene.TAG_TEST],
+    #     collaboration_manager=ButtonToggleResponderManager(),
+    #     effects=[ButtonFeedbackDisplay(), debugging_effects.PrintOSC()]),
     # A simple rainbow that rotates due to the FrameRotator
     FountainScene(
         "rotatingrainbow",

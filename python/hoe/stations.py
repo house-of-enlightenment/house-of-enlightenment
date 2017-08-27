@@ -26,7 +26,9 @@ colors_to_rgb = {
     "GREEN": (0, 255, 0),
     "BLUE": (0, 0, 255),
     "YELLOW": (200, 200, 0),
-    "WHITE": (255, 255, 255)
+    "WHITE": (255, 255, 255),
+    "ORANGE": (255,165,0),
+    "PURPLE": (186,85,211)
 }
 
 N_BUTTONS = 5
@@ -283,3 +285,6 @@ class Codes(object):
             stations[station_id] = [
                 id_to_color_names[i] in scene_code_array[color] for i in range(5)]
         return get_code_as_int(stations)
+
+    def get_station_rgb_color(self, station_id):
+        return colors_to_rgb[self.station_ids_to_station_colors[station_id]]

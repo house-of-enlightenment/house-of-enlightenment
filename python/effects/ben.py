@@ -6,6 +6,7 @@ import numpy as np
 from hoe import color_utils
 from hoe.animation_framework import Scene, Effect, MultiEffect
 from hoe.collaboration import NoOpCollaborationManager
+from hoe.lidar import DavesAbstractLidarClass
 from hoe.fountain_models import FountainDefinition
 from hoe.stations import StationButtons
 from hoe.state import STATE
@@ -15,7 +16,7 @@ from generic_effects import FrameRotator
 from shared import SolidBackground
 
 from zigzag import ZigZag
-from david import DavesAbstractLidarClass
+
 from finite_difference import FiniteDifference
 
 

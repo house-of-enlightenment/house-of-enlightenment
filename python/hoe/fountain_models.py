@@ -3,6 +3,7 @@ from random import choice, randrange
 
 import numpy as np
 
+import hoe.lidar
 import hoe.stations
 from animation_framework import MultiEffect, Scene
 from collaboration import ButtonToggleResponderManager
@@ -123,8 +124,14 @@ class FountainLaunchingController(MultiEffect):
 
 
 class FountainScene(Scene):
-    def __init__(self, name, background_effects, tags=[], foreground_names=None, foreground_tags=[], feedback=None):
-        effects = background_effects+[feedback or ButtonFeedbackDisplay()]
+    def __init__(self, name, background_effects, tags=[], foreground_names=None, foreground_tags=[], feedback=None, lidar=None):
+        effects = background_effects
+        if lidar is None:
+            effects.append(hoe.lidar.OpaqueLidar())
+        elif isinstance(lidar, Effect):
+            effects.append(lidar)
+
+        effects.append(feedback or ButtonStationFaderFeedbackDisplay())
         Scene.__init__(self, name, tags, ButtonToggleResponderManager(), effects=effects)
         # ^... Response Manager could probably be shared...
 
@@ -139,7 +146,7 @@ class FountainScene(Scene):
         self.add_effect(launcher, before=False)
 
 
-class ButtonFeedbackDisplay(Effect):
+class ButtonStationFaderFeedbackDisplay(Effect):
     count_to_indices = {
         0: [],
         1: [(1, 10)],
@@ -148,14 +155,17 @@ class ButtonFeedbackDisplay(Effect):
         4: [(1, 3), (3, 5), (6, 8), (8, 10)],
         5: [(1, 3), (3, 5), (5, 6), (6, 8), (8, 10)]
     }
+    bottom_row = [STATE.codes.get_station_rgb_color(c/11) if c % 11 not in [0,10] else (0,0,0) for c in range(STATE.layout.columns) ]
 
     def next_frame(self, pixels, now, collaboration_state, osc_data):
-        colors = np.zeros((STATE.layout.columns, 3), np.uint8)
+        pixels[0, :] = self.bottom_row
+
+        button_colors = np.zeros((STATE.layout.columns, 3), np.uint8)
         for s_id, station in enumerate(STATE.stations):
             high_buttons = station.buttons.get_high_buttons()
             for i, sli in zip(high_buttons,
-                              ButtonFeedbackDisplay.count_to_indices[len(high_buttons)]):
-                colors[sli[0] + s_id * 11:sli[1] + s_id * 11, :] = hoe.stations.colors_to_rgb[
+                              ButtonStationFaderFeedbackDisplay.count_to_indices[len(high_buttons)]):
+                button_colors[sli[0] + s_id * 11:sli[1] + s_id * 11, :] = hoe.stations.colors_to_rgb[
                     hoe.stations.id_to_color_names[i]]
 
-        pixels[0:2, :] = colors
+        pixels[1, :] = button_colors
