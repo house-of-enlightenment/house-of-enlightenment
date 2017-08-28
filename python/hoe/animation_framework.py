@@ -37,6 +37,9 @@ class AnimationFramework(object):
         self.max_scene_timeout = max_scene_timeout
 
         # Load all scenes from effects package. Then set initial index and load it up
+        if not tags:
+            print "Tags not specified. Using only scenes with tags [production]"
+            tags = [Scene.TAG_PRODUCTION]
         loaded_scenes = load_scenes_and_fountains(tags=tags)
         self.scenes = scenes or loaded_scenes
         self.non_game_scenes = [name for name, scene in self.scenes.items()
