@@ -31,7 +31,7 @@ class ButtonChaseController(Effect, CollaborationManager):
             draw_bottom_layer=True,  # Turn the bottom layer on or off
             flash_rate=10,  # Flash on (or off) every X frames
             # Time to hit before picking a new one (if backwards_progress, also lose progress)
-            selection_time=5):
+            selection_time=1):
 
         # TODO Is this super initialization needed? Probably not, but future-proofs it
         Effect.__init__(self)

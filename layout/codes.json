@@ -8,7 +8,7 @@
     "PURPLE": 5
   },
   "book": {
-    "stop-the-light": {
+    "tetherball": {
       "RED": [
         "RED", "YELLOW"
       ],
@@ -27,7 +27,7 @@
       "PURPLE" : [
         "GREEN", "BLUE"
       ]
-    }, "scene2": {
+    }, "stop-the-light": {
       "RED": [
         "WHITE", "RED"
       ],
@@ -46,7 +46,7 @@
       "PURPLE" : [
         "GREEN"
       ]
-    },"scene3": {
+    },"simon-says": {
       "RED": [
         "GREEN", "BLUE"
       ],
@@ -65,7 +65,7 @@
       "PURPLE" : [
         "RED"
       ]
-    }, "scene4": {
+    }, "buttonchaser": {
       "RED": [
         "WHITE"
       ],
@@ -84,7 +84,7 @@
       "PURPLE" : [
         "YELLOW", "GREEN", "BLUE"
       ]
-    }, "scene5": {
+    }, "arrange-blocks": {
       "RED": [
         "WHITE"
       ],
@@ -103,7 +103,7 @@
       "PURPLE" : [
         "YELLOW"
       ]
-    }, "scene6": {
+    }, "arrange-blocks-debug": {
       "RED": [
         "BLUE"
       ],
