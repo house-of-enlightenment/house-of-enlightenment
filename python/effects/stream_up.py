@@ -5,6 +5,7 @@ import numpy as np
 from hoe import animation_framework as af
 from hoe import collaboration
 from hoe import distance
+import hoe.fountain_models as fm
 from hoe import sources
 from hoe.state import STATE
 from hoe import translations
@@ -125,24 +126,19 @@ class SingleColumn(object):
 
 
 SCENES = [
-    af.Scene(
+    fm.FountainScene(
         'stroboscopic-complement',
         tags=[],
-        collaboration_manager=collaboration.NoOpCollaborationManager(),
-        effects=[make_stroboscopic_effect_complement()]),
-    af.Scene(
+        background_effects=[make_stroboscopic_effect_complement()]),
+    fm.FountainScene(
         'stroboscopic-analogous',
         tags=[],
-        collaboration_manager=collaboration.NoOpCollaborationManager(),
-        effects=[make_stroboscopic_effect_analogous()]),
-    af.Scene(
+        background_effects=[make_stroboscopic_effect_analogous()]),
+    fm.FountainScene(
         'stream-up',
         tags=[],
-        collaboration_manager=collaboration.NoOpCollaborationManager(),
-        effects=[make_stream_up()]),
-    af.Scene(
+        background_effects=[make_stream_up()]),
+    fm.FountainScene(
         'stream-up-single',
-        tags=[],
-        collaboration_manager=collaboration.NoOpCollaborationManager(),
-        effects=[make_stream_up_single()])
+        background_effects=[make_stream_up_single()])
 ]

@@ -179,5 +179,6 @@ FOUNTAINS = [
 ]
 
 SCENES = [
+    #TODO Fader background and pulses
     fm.FountainScene("fireworks", background_effects=[], tags=[Scene.TAG_EXAMPLE], foreground_tags=['fireworks'])
 ]

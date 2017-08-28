@@ -419,30 +419,27 @@ SCENES = [
         ]),
     Scene(
         "lidaropaque",
-        tags=[Scene.TAG_EXAMPLE],
+        tags=[Scene.TAG_EXAMPLE, Scene.TAG_TEST],
         collaboration_manager=NoOpCollaborationManager(),
         effects=[SolidBackground(color=(30, 30, 30)),
                  hoe.lidar.OpaqueLidar()]),
     Scene(
         "lidarswap",
-        tags=[Scene.TAG_WIP],
+        tags=[Scene.TAG_WIP, Scene.TAG_TEST],
         collaboration_manager=NoOpCollaborationManager(),
         effects=[Rainbow(hue_start=0, hue_end=255),
                  hoe.lidar.SwappingLidar()]),
-    Scene(
+    fm.FountainScene(
         "rainbowblackoutcolumns",
         tags=[Scene.TAG_EXAMPLE],
-        collaboration_manager=NoOpCollaborationManager(),
-        effects=[
+        background_effects=[
             Rainbow(hue_start=0, hue_end=255),
             FrameRotator(rate=-.25),
             Columns(color=(0, 0, 0), column_picker=partial(pick_mod_n, mod=10)),
             FrameRotator(rate=.25)
         ]),
-    Scene(
+    fm.FountainScene(
         "diskrainbow",
         tags=[Scene.TAG_BACKGROUND],
-        collaboration_manager=NoOpCollaborationManager(),
-        effects=[Rainbow(hue_start=0, hue_end=255),
-                 DiskPulsers()])
+        background_effects=[Rainbow(hue_start=0, hue_end=255), DiskPulsers()])
 ]

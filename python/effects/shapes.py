@@ -141,21 +141,21 @@ FOUNTAINS = [
 ]
 
 SCENES = [
-    Scene(
-        "sinediamond",
-        tags=[Scene.TAG_WIP],
-        effects=[
-            SolidBackground(),
-            Shape(
-                indices=_diamond_indicies(4, 4),
-                movement_function=move_along_horizontal_sine_wave,
-                start_row=20)
-        ]),
-    Scene(
-        "distortingdiamond",
-        tags=[Scene.TAG_WIP],
-        effects=[
-            SolidBackground(),
-            Shape(indices=_diamond_indicies(5, 5), movement_function=rotate_in_place, start_row=20)
-        ])
+    # Scene(
+    #     "sinediamond",
+    #     tags=[Scene.TAG_WIP],
+    #     effects=[
+    #         SolidBackground(),
+    #         Shape(
+    #             indices=_diamond_indicies(4, 4),
+    #             movement_function=move_along_horizontal_sine_wave,
+    #             start_row=20)
+    #     ]),
+    # Scene(
+    #     "distortingdiamond",
+    #     tags=[Scene.TAG_WIP],
+    #     effects=[
+    #         SolidBackground(),
+    #         Shape(indices=_diamond_indicies(5, 5), movement_function=rotate_in_place, start_row=20)
+    #     ])
 ]

@@ -13,6 +13,7 @@ import numpy as np
 from hoe import animation_framework as af
 from hoe import collaboration
 from hoe import color_utils
+import hoe.fountain_models as fm
 from hoe import pixels
 from hoe.state import STATE
 from hoe import translations as t
@@ -109,10 +110,9 @@ class Dla(af.Effect):
 
 
 SCENES = [
-    af.Scene(
+    fm.FountainScene(
         'diffusion-limited-aggregation',
         tags=[],
-        collaboration_manager=collaboration.NoOpCollaborationManager(),
-        effects=[Dla()]
+        background_effects=[Dla()]
     ),
 ]

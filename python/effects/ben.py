@@ -7,7 +7,7 @@ from hoe import color_utils
 from hoe.animation_framework import Scene, Effect, MultiEffect
 from hoe.collaboration import NoOpCollaborationManager
 from hoe.lidar import DavesAbstractLidarClass
-from hoe.fountain_models import FountainDefinition
+import hoe.fountain_models as fm
 from hoe.stations import StationButtons
 from hoe.state import STATE
 from hoe.utils import fader_interpolate
@@ -239,7 +239,7 @@ class LaunchSeizure(MultiEffect):
     def __init__(self, button=2):
         MultiEffect.__init__(self)
         self.button = button
-        #self._update_buttons()
+        self._update_buttons()
 
     def _update_buttons(self):
         for sid in range(STATE.layout.sections):
@@ -286,26 +286,29 @@ FOUNTAINS = [
     # FountainDefinition("up_bloc", UpBlock)   #  Same as ColumnStreak?
 ]
 
+# Note - FiniteDifference does a lot of launching of effects, so we do not use fountains there
+#  Instead, we just use the collaboration manager from the fountains to control buttons
 SCENES = [
-    Scene(
-        "full_seizure",
-        tags=[Scene.TAG_BACKGROUND],
-        collaboration_manager=NoOpCollaborationManager(),
-        effects=[SolidBackground(), SeizureMode()]),
-    Scene(
-        "seizure_mode",
-        tags=[Scene.TAG_BACKGROUND],
-        collaboration_manager=NoOpCollaborationManager(),
-        effects=[LaunchSeizure()]),
+    # Dave: commented out because we don't want to give anybody a real seizure (epilepsy is real folks)
+    # fm.FountainScene(
+    #     "full_seizure",
+    #     tags=[Scene.TAG_BACKGROUND],
+    #     background_effects=[SolidBackground(), SeizureMode()]),
+    # Scene(
+    #     "seizure_mode",
+    #     tags=[Scene.TAG_BACKGROUND],
+    #     effects=[LaunchSeizure()]),
+    # FiniteDifference does it's own button work
     Scene(
         "waves_of_diffusion",
         tags=[Scene.TAG_BACKGROUND],
-        collaboration_manager=NoOpCollaborationManager(),
+        collaboration_manager=fm.ButtonToggleResponderManager(),
         effects=[
             SolidBackground(color=(0xFF, 0, 0), start_col=0, end_col=2, start_row=30, end_row=34),
             #SolidBackground(color=(0,0xFF,0), start_col=0, end_col=2, start_row=120, end_row=124),
             FrameRotator(rate=0.5),
-            FiniteDifference(master_station=0, boundary=FiniteDifference.NEUMANN, base_hue=0)
+            FiniteDifference(master_station=0, boundary=FiniteDifference.NEUMANN, base_hue=0),
+            fm.ButtonStationFaderFeedbackDisplay()
         ]),
     Scene(
         "wedding0",
@@ -326,51 +329,58 @@ SCENES = [
                 base_hue=0,
                 wave_type=FiniteDifference.VALUE)
         ]),
+    # FiniteDifference does it's own button work
     Scene(
         "up_bloc",
         tags=[Scene.TAG_BACKGROUND],
-        collaboration_manager=NoOpCollaborationManager(),
+        collaboration_manager=fm.ButtonToggleResponderManager(),
         effects=[
             LaunchUpBlock(except_station=0),
-            FiniteDifference(master_station=0, boundary=FiniteDifference.NEUMANN)
+            FiniteDifference(master_station=0, boundary=FiniteDifference.NEUMANN),
+            fm.ButtonStationFaderFeedbackDisplay()
         ]),
+    # FiniteDifference does it's own button work
     Scene(
         "zig_wave",
         tags=[Scene.TAG_BACKGROUND],
-        collaboration_manager=NoOpCollaborationManager(),
+        collaboration_manager=fm.ButtonToggleResponderManager(),
         effects=[
             LaunchZigZag(except_station=0),
-            FiniteDifference(master_station=0, boundary=FiniteDifference.NEUMANN)
+            FiniteDifference(master_station=0, boundary=FiniteDifference.NEUMANN),
+            fm.ButtonStationFaderFeedbackDisplay()
         ]),
     Scene(
         "zig_fusion",
         tags=[Scene.TAG_BACKGROUND],
-        collaboration_manager=NoOpCollaborationManager(),
+        collaboration_manager=fm.ButtonToggleResponderManager(),
         effects=[
             LaunchZigZag(except_station=0),
             FiniteDifference(
-                master_station=0, boundary=FiniteDifference.NEUMANN, pde=FiniteDifference.DIFFUSION)
+                master_station=0, boundary=FiniteDifference.NEUMANN, pde=FiniteDifference.DIFFUSION),
+            fm.ButtonStationFaderFeedbackDisplay()
             #darken_mids=bool(rand.getrandbits(1)))
         ]),
     Scene(
         "lidar_fusion",
         tags=[Scene.TAG_BACKGROUND],
-        collaboration_manager=NoOpCollaborationManager(),
+        collaboration_manager=fm.ButtonToggleResponderManager(),
         effects=[
             RedGreenSquares(),
             FiniteDifference(
                 master_station=0,
                 boundary=FiniteDifference.CONTINUOUS,
                 pde=FiniteDifference.DIFFUSION,
-                darken_mids=True)
+                darken_mids=True),
+            fm.ButtonStationFaderFeedbackDisplay()
         ]),
     Scene(
         "lidar_wave",
         tags=[Scene.TAG_BACKGROUND],
-        collaboration_manager=NoOpCollaborationManager(),
+        collaboration_manager=fm.ButtonToggleResponderManager(),
         effects=[
             RedGreenSquares(),
             FiniteDifference(
-                master_station=0, boundary=FiniteDifference.CONTINUOUS, pde=FiniteDifference.WAVE)
+                master_station=0, boundary=FiniteDifference.CONTINUOUS, pde=FiniteDifference.WAVE),
+            fm.ButtonStationFaderFeedbackDisplay()
         ])
 ]
