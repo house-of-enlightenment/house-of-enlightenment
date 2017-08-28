@@ -393,45 +393,45 @@ FOUNTAINS = [
 SCENES = [
     Game(
         "buttonchaser",
-        tags=[],
+        tags=[Scene.TAG_PRODUCTION],
         collaboration_manager=ButtonChaseController(draw_bottom_layer=True),
         effects=[ButtonRainbow(max_value=255 - 30), Pulser()]),
     fm.FountainScene(
         name="wedges",
-        tags=[Scene.TAG_EXAMPLE],
+        tags=[Scene.TAG_EXAMPLE, Scene.TAG_PRODUCTION],
         background_effects=[],
         foreground_names=['wedge']
     ),
-    fm.FountainScene(
-        name="plainfountain",
-        background_effects=[SolidBackground(color=(30,30,30))]
-    ),
-    Scene(
-        "sinedots",
-        tags=[Scene.TAG_EXAMPLE],
-        collaboration_manager=NoOpCollaborationManager(),
-        effects=[
-            SolidBackground(color=(30, 30, 30)),
-            examples.SampleEffectLauncher(),
-            FunctionFrameRotator(
-                func=FunctionFrameRotator.no_op,
-                start_offsets=5 * np.sin(np.linspace(0, 8 * np.pi, STATE.layout.rows)))
-        ]),
-    Scene(
-        "lidaropaque",
-        tags=[Scene.TAG_EXAMPLE, Scene.TAG_TEST],
-        collaboration_manager=NoOpCollaborationManager(),
-        effects=[SolidBackground(color=(30, 30, 30)),
-                 hoe.lidar.OpaqueLidar()]),
-    Scene(
-        "lidarswap",
-        tags=[Scene.TAG_WIP, Scene.TAG_TEST],
-        collaboration_manager=NoOpCollaborationManager(),
-        effects=[Rainbow(hue_start=0, hue_end=255),
-                 hoe.lidar.SwappingLidar()]),
+    # fm.FountainScene(
+    #     name="plainfountain",
+    #     background_effects=[SolidBackground(color=(30,30,30))]
+    # ),
+    # Scene(
+    #     "sinedots",
+    #     tags=[Scene.TAG_EXAMPLE],
+    #     collaboration_manager=NoOpCollaborationManager(),
+    #     effects=[
+    #         SolidBackground(color=(30, 30, 30)),
+    #         examples.SampleEffectLauncher(),
+    #         FunctionFrameRotator(
+    #             func=FunctionFrameRotator.no_op,
+    #             start_offsets=5 * np.sin(np.linspace(0, 8 * np.pi, STATE.layout.rows)))
+    #     ]),
+    # Scene(
+    #     "lidaropaque",
+    #     tags=[Scene.TAG_EXAMPLE, Scene.TAG_TEST],
+    #     collaboration_manager=NoOpCollaborationManager(),
+    #     effects=[SolidBackground(color=(30, 30, 30)),
+    #              hoe.lidar.OpaqueLidar()]),
+    # Scene(
+    #     "lidarswap",
+    #     tags=[Scene.TAG_WIP, Scene.TAG_TEST],
+    #     collaboration_manager=NoOpCollaborationManager(),
+    #     effects=[Rainbow(hue_start=0, hue_end=255),
+    #              hoe.lidar.SwappingLidar()]),
     fm.FountainScene(
         "rainbowblackoutcolumns",
-        tags=[Scene.TAG_EXAMPLE],
+        tags=[Scene.TAG_EXAMPLE], # Not production
         background_effects=[
             Rainbow(hue_start=0, hue_end=255),
             FrameRotator(rate=-.25),
@@ -440,6 +440,6 @@ SCENES = [
         ]),
     fm.FountainScene(
         "diskrainbow",
-        tags=[Scene.TAG_BACKGROUND],
+        tags=[Scene.TAG_BACKGROUND, Scene.TAG_PRODUCTION],
         background_effects=[Rainbow(hue_start=0, hue_end=255), DiskPulsers()])
 ]

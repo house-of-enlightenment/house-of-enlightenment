@@ -251,7 +251,8 @@ class TetherBall(CollaborationManager, Effect):
         self.velocity = self.velocity * .98
 
     def next_frame(self, pixels, t, collaboration_state, osc_data):
-        print "BALL X: %s  VELOCITY: %s" % (self.x, self.velocity)
+        if STATE.verbose:
+            print "BALL X: %s  VELOCITY: %s" % (self.x, self.velocity)
         self._calculate_velocity()
         self._set_active_buttons()
         self._set_background_pixels(pixels)
@@ -343,7 +344,7 @@ class TetherBall(CollaborationManager, Effect):
 SCENES = [
     Game(
         "tetherball",
-        tags=[Scene.TAG_WIP],
+        tags=[Scene.TAG_WIP, Scene.TAG_PRODUCTION],
         collaboration_manager=TetherBall(),
         effects=[]
         # effects=[CollaborationCountBasedBackground()]

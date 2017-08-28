@@ -53,7 +53,7 @@ FOUNTAINS = [
 SCENES = [
     fm.FountainScene(
         "groupdemo",
-        tags=[Scene.TAG_EXAMPLE],
+        tags=[Scene.TAG_EXAMPLE], # Not production
         background_effects=[SolidBackground(color=(30, 30, 30))],
         foreground_names=["simple_rising_row"]
     )

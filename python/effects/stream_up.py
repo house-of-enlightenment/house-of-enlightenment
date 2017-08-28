@@ -128,16 +128,17 @@ class SingleColumn(object):
 SCENES = [
     fm.FountainScene(
         'stroboscopic-complement',
-        tags=[],
+        tags=[af.Scene.TAG_PRODUCTION],
         background_effects=[make_stroboscopic_effect_complement()]),
     fm.FountainScene(
         'stroboscopic-analogous',
-        tags=[],
+        tags=[af.Scene.TAG_PRODUCTION],
         background_effects=[make_stroboscopic_effect_analogous()]),
     fm.FountainScene(
         'stream-up',
-        tags=[],
+        tags=[af.Scene.TAG_PRODUCTION],
         background_effects=[make_stream_up()]),
+    # Not production
     fm.FountainScene(
         'stream-up-single',
         background_effects=[make_stream_up_single()])

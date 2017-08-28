@@ -189,32 +189,32 @@ class BreatheDown(af.Effect):
 SCENES = [
     FountainScene(
         'rgb-static',
-        tags=[],
+        tags=[af.Scene.TAG_PRODUCTION],
         background_effects=[Static()]
     ),
     FountainScene(
         'analogous-color-static',
-        tags=[],
+        tags=[af.Scene.TAG_PRODUCTION],
         background_effects=[AnalogousColorStatic()]
     ),
     FountainScene(
         'rainbow-blink',
-        tags=[],
+        tags=[af.Scene.TAG_PRODUCTION],
         background_effects=[RainbowBlink()]
     ),
     FountainScene(
         'color-breathe-8',
-        tags=[],
+        tags=[af.Scene.TAG_PRODUCTION],
         background_effects=[Breathe(STATE.layout, 8)]
     ),
     FountainScene(
         'color-breathe-32',
-        tags=[],
+        tags=[af.Scene.TAG_PRODUCTION],
         background_effects=[Breathe(STATE.layout, 32)]
     ),
     FountainScene(
         'color-breathe-down-32',
-        tags=[],
+        tags=[af.Scene.TAG_PRODUCTION],
         background_effects=[BreatheDown(STATE.layout, 32)]
     ),
 

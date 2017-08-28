@@ -301,18 +301,19 @@ SCENES = [
     # FiniteDifference does it's own button work
     Scene(
         "waves_of_diffusion",
-        tags=[Scene.TAG_BACKGROUND],
+        tags=[Scene.TAG_BACKGROUND, Scene.TAG_PRODUCTION],
         collaboration_manager=fm.ButtonToggleResponderManager(),
         effects=[
             SolidBackground(color=(0xFF, 0, 0), start_col=0, end_col=2, start_row=30, end_row=34),
             #SolidBackground(color=(0,0xFF,0), start_col=0, end_col=2, start_row=120, end_row=124),
             FrameRotator(rate=0.5),
+            RedGreenSquares(),
             FiniteDifference(master_station=0, boundary=FiniteDifference.NEUMANN, base_hue=0),
             fm.ButtonStationFaderFeedbackDisplay()
         ]),
     Scene(
         "wedding0",
-        tags=[Scene.TAG_BACKGROUND],
+        tags=[Scene.TAG_BACKGROUND, Scene.TAG_PRODUCTION],
         collaboration_manager=NoOpCollaborationManager(),
         effects=[
             SolidBackground(color=(0xFF, 0, 0), start_col=0, end_col=2, start_row=120, end_row=124),
@@ -332,9 +333,10 @@ SCENES = [
     # FiniteDifference does it's own button work
     Scene(
         "up_bloc",
-        tags=[Scene.TAG_BACKGROUND],
+        tags=[Scene.TAG_BACKGROUND, Scene.TAG_PRODUCTION],
         collaboration_manager=fm.ButtonToggleResponderManager(),
         effects=[
+            RedGreenSquares(),
             LaunchUpBlock(except_station=0),
             FiniteDifference(master_station=0, boundary=FiniteDifference.NEUMANN),
             fm.ButtonStationFaderFeedbackDisplay()
@@ -342,45 +344,49 @@ SCENES = [
     # FiniteDifference does it's own button work
     Scene(
         "zig_wave",
-        tags=[Scene.TAG_BACKGROUND],
+        tags=[Scene.TAG_BACKGROUND, Scene.TAG_PRODUCTION],
         collaboration_manager=fm.ButtonToggleResponderManager(),
         effects=[
+            RedGreenSquares(),
             LaunchZigZag(except_station=0),
             FiniteDifference(master_station=0, boundary=FiniteDifference.NEUMANN),
             fm.ButtonStationFaderFeedbackDisplay()
         ]),
     Scene(
         "zig_fusion",
-        tags=[Scene.TAG_BACKGROUND],
+        tags=[Scene.TAG_BACKGROUND, Scene.TAG_PRODUCTION],
         collaboration_manager=fm.ButtonToggleResponderManager(),
         effects=[
+            RedGreenSquares(),
             LaunchZigZag(except_station=0),
             FiniteDifference(
                 master_station=0, boundary=FiniteDifference.NEUMANN, pde=FiniteDifference.DIFFUSION),
             fm.ButtonStationFaderFeedbackDisplay()
             #darken_mids=bool(rand.getrandbits(1)))
         ]),
-    Scene(
-        "lidar_fusion",
-        tags=[Scene.TAG_BACKGROUND],
-        collaboration_manager=fm.ButtonToggleResponderManager(),
-        effects=[
-            RedGreenSquares(),
-            FiniteDifference(
-                master_station=0,
-                boundary=FiniteDifference.CONTINUOUS,
-                pde=FiniteDifference.DIFFUSION,
-                darken_mids=True),
-            fm.ButtonStationFaderFeedbackDisplay()
-        ]),
-    Scene(
-        "lidar_wave",
-        tags=[Scene.TAG_BACKGROUND],
-        collaboration_manager=fm.ButtonToggleResponderManager(),
-        effects=[
-            RedGreenSquares(),
-            FiniteDifference(
-                master_station=0, boundary=FiniteDifference.CONTINUOUS, pde=FiniteDifference.WAVE),
-            fm.ButtonStationFaderFeedbackDisplay()
-        ])
+    # Commented out as they do not operate unless lidar is on. Lidar added to other scenes here instead.
+    # @Ben will want to review loss of CONTINUOUS mode
+    # Scene(
+    #     "lidar_fusion",
+    #     tags=[Scene.TAG_BACKGROUND],
+    #     collaboration_manager=fm.ButtonToggleResponderManager(),
+    #     effects=[
+    #         RedGreenSquares(),
+    #         FiniteDifference(
+    #             master_station=0,
+    #             boundary=FiniteDifference.CONTINUOUS,
+    #             pde=FiniteDifference.DIFFUSION,
+    #             darken_mids=True),
+    #         fm.ButtonStationFaderFeedbackDisplay()
+    #     ]),
+    # Scene(
+    #     "lidar_wave",
+    #     tags=[Scene.TAG_BACKGROUND],
+    #     collaboration_manager=fm.ButtonToggleResponderManager(),
+    #     effects=[
+    #         RedGreenSquares(),
+    #         FiniteDifference(
+    #             master_station=0, boundary=FiniteDifference.CONTINUOUS, pde=FiniteDifference.WAVE),
+    #         fm.ButtonStationFaderFeedbackDisplay()
+    #     ])
 ]

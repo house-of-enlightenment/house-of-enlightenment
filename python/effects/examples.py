@@ -108,7 +108,7 @@ SCENES = [
     #              SampleEffectLauncher()]),
     Scene(
         "fountaindots",
-        tags=[Scene.TAG_EXAMPLE],
+        tags=[Scene.TAG_EXAMPLE], # Not production
         collaboration_manager=NoOpCollaborationManager(),
         effects=[SolidBackground(color=(30, 30, 30)),
                  fm.FountainLaunchingController(fountain_pool=FOUNTAINS)]

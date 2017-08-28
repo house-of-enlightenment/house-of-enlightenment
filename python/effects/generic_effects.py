@@ -134,10 +134,12 @@ SCENES = [
     # A simple rainbow that rotates due to the FrameRotator
     FountainScene(
         "rotatingrainbow",
+        tags=[Scene.TAG_PRODUCTION],
         background_effects=[rainbow, FrameRotator(rate=.75)]),
     # A rainbow that has been distorted into spirals by using a RANGE as the offset
     FountainScene(
         "funkrainbow",
+        tags=[Scene.TAG_PRODUCTION],
         background_effects=[
             rainbow,
             FunctionFrameRotator(
@@ -148,6 +150,7 @@ SCENES = [
     # moves upwards due to a rolling offset function
     FountainScene(
         "sinerainbow",
+        tags=[Scene.TAG_PRODUCTION],
         background_effects=[
             rainbow,
             FunctionFrameRotator(

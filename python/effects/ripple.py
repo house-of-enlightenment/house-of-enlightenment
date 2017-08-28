@@ -6,6 +6,7 @@ import numpy as np
 from hoe.animation_framework import Scene
 from hoe.animation_framework import Effect
 from hoe.animation_framework import MultiEffect
+import hoe.fountain_models as fm
 from hoe import color_utils
 from hoe.state import STATE
 
@@ -95,11 +96,11 @@ class Ripple(Effect):
 
 
 SCENES = [
-    Scene(
+    # It would be nicer to have the ripple OVER the launched effects, but c'est la vie.
+    fm.FountainScene(
         "ripple",
-        tags=[Scene.TAG_EXAMPLE],
-        collaboration_manager=NoOpCollaborationManager(),
-        effects=[
+        tags=[Scene.TAG_EXAMPLE, Scene.TAG_PRODUCTION],
+        background_effects=[
             Ripple()
             # Ripple(
             #     color=blue,

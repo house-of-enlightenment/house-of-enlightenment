@@ -451,6 +451,7 @@ class EffectLauncher(MultiEffect):
 
 class Scene(MultiEffect):
     TAG_BACKGROUND = 'background'
+    TAG_PRODUCTION = 'production'
     TAG_TEST = 'test'
     TAG_EXAMPLE = 'example'
     TAG_WIP = 'wip'  # Work in Progress

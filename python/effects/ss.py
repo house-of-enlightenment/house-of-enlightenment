@@ -44,5 +44,5 @@ class SimonSays(af.Effect, af.CollaborationManager):
 
 
 SCENES = [
-    af.Game('simon-says', tags=[], collaboration_manager=SimonSays(), effects=[])
+    af.Game('simon-says', tags=[af.Scene.TAG_PRODUCTION], collaboration_manager=SimonSays(), effects=[])
 ]

@@ -49,5 +49,5 @@ class Noise(Effect):
 
 
 SCENES = [
-    FountainScene("smash", tags=[Scene.TAG_WIP], background_effects=[Noise()]),
+    FountainScene("smash", tags=[Scene.TAG_WIP, Scene.TAG_PRODUCTION], background_effects=[Noise()]),
 ]

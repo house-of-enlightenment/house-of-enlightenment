@@ -112,7 +112,7 @@ class Dla(af.Effect):
 SCENES = [
     fm.FountainScene(
         'diffusion-limited-aggregation',
-        tags=[],
+        tags=[af.Scene.TAG_PRODUCTION],
         background_effects=[Dla()]
     ),
 ]
