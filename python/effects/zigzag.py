@@ -4,6 +4,7 @@ import hoe.fountain_models as fm
 from generic_effects import NoOpCollaborationManager
 from hoe.state import STATE
 import hoe.stations
+from hoe.pixels import cleanup_pairwise_indicies
 from shared import SolidBackground
 from random import choice
 # from ripple import Ripple
@@ -41,6 +42,8 @@ class ZigZag(Effect):
         bottom = max(self.cur_bottom, self.start_row)
         top = min(self.cur_top, STATE.layout.rows - 1)
 
+        indices = []
+        border_indices = []
         for y in range(bottom, top):
             # zig zag is 11 wide
             # there is probably a better way to do this...
@@ -54,16 +57,15 @@ class ZigZag(Effect):
                 x = mod - 20
 
             # draw it 3 pixels wide
-            pixels[y, self.start_col + x] = self.color
-            pixels[y, self.start_col + x - 1] = self.color
-            pixels[y, self.start_col + x + 1] = self.color
+            indices.extend([(y,self.start_col+x+i) for i in range(-1,2)])
 
             # add a border if border_color is defined
             if self.border_color:
-                pixels[y, self.start_col + x - 2] = self.border_color
-                pixels[y, self.start_col + x + 2] = self.border_color
-                pixels[y, self.start_col + x - 3] = self.border_color
-                pixels[y, self.start_col + x + 3] = self.border_color
+                border_indices.extend([(y,self.start_col+x+i) for i in [-3,-2,2,3]])
+
+        pixels.update_pairwise(additive=False, color=self.color, pairwise=cleanup_pairwise_indicies(indices))
+        if self.border_color:
+            pixels.update_pairwise(additive=False, color=self.border_color, pairwise=cleanup_pairwise_indicies(border_indices))
 
     def is_completed(self, t, osc_data):
         return self.cur_bottom >= STATE.layout.rows - 1
